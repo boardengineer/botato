@@ -1,0 +1,35 @@
+{
+	"name": "AutoBattler",
+	"namespace": "Pasha",
+	"version_number": "0.2.0",
+	"description": "Do you want to work for potatoes or do you want potatoes to work for you?",
+	"website_url": "",
+	"dependencies": ["Darkly77-ContentLoader", "dami-ModOptions"],
+	"extra": {
+		"godot": {
+			"incompatibilities": [],
+			"authors": ["Pasha"],
+			"compatible_mod_loader_version": "4.0.0",
+			"compatible_game_version": ["0.8.0.3"],
+			"config_defaults": {
+				"enable_autobattler":false,
+                "enable_smoothing":true,
+                "smoothing_speed":1,
+                "smoothing_speed_min":1,
+                "smoothing_speed_max":100,
+                "item_weight":0.5,
+                "item_weight_min":0.0,
+                "item_weight_max":100.0,
+                "projectile_weight":1.0,
+                "projectile_weight_min":0.0,
+                "projectile_weight_max":100.0,
+                "tree_weight":2.0,
+                "tree_weight_min":0.0,
+                "tree_weight_max":100.0,
+                "boss_weight":3.0,
+                "boss_weight_min":0.0,
+                "boss_weight_max":100.0 
+			}
+		}
+	}
+}

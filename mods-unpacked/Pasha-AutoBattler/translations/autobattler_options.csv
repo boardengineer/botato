@@ -1,0 +1,8 @@
+keys,en
+ENABLE_AUTOBATTLER,Enable AutoBattler
+ENABLE_SMOOTHING,Enable Camera Smoothing
+SMOOTHING_SPEED,Camera Smoothing Speed
+ITEM_WEIGHT,Item Weight
+PROJECTILE_WEIGHT,Projectile Weight
+TREE_WEIGHT,Tree Weight
+BOSS_WEIGHT,Boss Weight
