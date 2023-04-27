@@ -11,6 +11,8 @@ func get_movement()->Vector2:
 	var projectile_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["projectile_weight"]
 	var tree_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["tree_weight"]
 	var boss_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["boss_weight"]
+	var bumper_weight = 5.0
+	var egg_weight = 5.0
 
 	if not enabled:
 		$"/root/Main/Camera".smoothing_enabled = false
@@ -92,9 +94,21 @@ func get_movement()->Vector2:
 	# Go away from projectiles
 	var projectile_weight_squared = projectile_weight * projectile_weight
 	for projectile in projectiles_container.get_children():
+		var projectile_shape = projectile._hitbox._collision.shape
+		var extra_range = 0
+		if projectile_shape is CircleShape2D:
+			extra_range = projectile_shape.radius
+		elif projectile_shape is RectangleShape2D:
+			extra_range = projectile_shape.extents.x
+			if projectile_shape.extents.y > extra_range:
+				extra_range = projectile_shape.extents.y
+		
 		var projectile_pos = projectile.position
 		var projectile_to_player = projectile_pos - player.position
-		var squared_distance_to_item = projectile_to_player.length_squared()
+		var extra_range_squared = extra_range * extra_range
+		var squared_distance_to_item = projectile_to_player.length_squared() - extra_range_squared
+		if squared_distance_to_item < 0:
+			squared_distance_to_item = .001
 		
 		var to_add = (projectile_to_player.normalized() / squared_distance_to_item) * -1 * projectile_weight_squared
 		if squared_distance_to_item > 250_000:
@@ -104,11 +118,11 @@ func get_movement()->Vector2:
 	
 	var shooting_anyone = false
 	var must_run_away = false
-	
-	# return enemies + bosses
+	var egg_weight_squared = egg_weight * egg_weight
 	
 	# Move towards distant enemies, away from nearby ones.  Determined by weapons range.
 	for enemy in _entity_spawner.enemies:
+		var is_egg = enemy._attack_behavior is SpawningAttackBehavior
 		var enemy_to_player = enemy.position - player.position
 		var squared_distance_to_enemy = (enemy_to_player).length_squared()
 		
@@ -119,6 +133,9 @@ func get_movement()->Vector2:
 			
 		if squared_distance_to_enemy < (preferred_distance_squared / 4):
 			must_run_away = true
+			
+		if is_egg:
+			to_add = to_add * egg_weight_squared
 		
 		move_vector = move_vector + to_add
 		
@@ -148,11 +165,70 @@ func get_movement()->Vector2:
 		var corner_to_player = corner - player.position
 		var squared_distance_to_corner = corner_to_player.length_squared()
 		
-		var to_add = (corner_to_player.normalized() / squared_distance_to_corner) * -1 * 2
+		var to_add = (corner_to_player.normalized() / squared_distance_to_corner) * -2
 		if squared_distance_to_corner > square_corner_distance:
 			to_add = Vector2.ZERO
 		if not is_nan(to_add.x) and not is_nan(to_add.y):
 			move_vector = move_vector + to_add
+	
+	var bumper_x = 0
+	var bumper_distance = 100
+	var square_bumper_distance = bumper_distance * bumper_distance
+	
+	while bumper_x < far_corner.x:
+		var bumper_position = Vector2(bumper_x, 0)
+		
+		var squared_distance = (bumper_position - player.position).length_squared()
+		
+		var to_add = (Vector2(-1,1).normalized() / squared_distance) * bumper_weight
+		if squared_distance > square_bumper_distance:
+			to_add = Vector2.ZERO
+		if not is_nan(to_add.x) and not is_nan(to_add.y):
+			move_vector = move_vector + to_add
+		
+		bumper_x = bumper_x + bumper_distance
+		
+	bumper_x = 0
+	while bumper_x < far_corner.x:
+		var bumper_position = Vector2(bumper_x, far_corner.y)
+		
+		var squared_distance = (bumper_position - player.position).length_squared()
+		
+		var to_add = (Vector2(1,-1).normalized() / squared_distance) * bumper_weight
+		if squared_distance > square_bumper_distance:
+			to_add = Vector2.ZERO
+		if not is_nan(to_add.x) and not is_nan(to_add.y):
+			move_vector = move_vector + to_add
+		
+		bumper_x = bumper_x + bumper_distance
+		
+	var bumper_y = 0
+	while bumper_y < far_corner.y:
+		var bumper_position = Vector2(0, bumper_y)
+		
+		var squared_distance = (bumper_position - player.position).length_squared()
+		
+		var to_add = (Vector2(1,1).normalized() / squared_distance) * bumper_weight
+		if squared_distance > square_bumper_distance:
+			to_add = Vector2.ZERO
+		if not is_nan(to_add.x) and not is_nan(to_add.y):
+			move_vector = move_vector + to_add
+		
+		bumper_y = bumper_y + bumper_distance
+		
+	bumper_y = 0
+	while bumper_y < far_corner.y:
+		var bumper_position = Vector2(far_corner.x, bumper_y)
+		
+		var squared_distance = (bumper_position - player.position).length_squared()
+		
+		var to_add = (Vector2(-1,-1).normalized() / squared_distance) * bumper_weight
+		if squared_distance > square_bumper_distance:
+			to_add = Vector2.ZERO
+		if not is_nan(to_add.x) and not is_nan(to_add.y):
+			move_vector = move_vector + to_add
+		
+		bumper_y = bumper_y + bumper_distance
 		
 	if (shooting_anyone and not must_run_away) and is_soldier:
 		return Vector2.ZERO
