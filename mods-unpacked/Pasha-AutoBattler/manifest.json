@@ -13,6 +13,7 @@
 			"compatible_game_version": ["0.8.0.3"],
 			"config_defaults": {
 				"enable_autobattler":false,
+                "enable_ai_visuals":false,
                 "enable_smoothing":true,
                 "smoothing_speed":1,
                 "smoothing_speed_min":1,

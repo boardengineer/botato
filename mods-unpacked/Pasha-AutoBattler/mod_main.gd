@@ -14,6 +14,7 @@ func _init(modLoader = ModLoader):
 	trans_dir = dir + "translations/"
 	
 	# Add extensions
+	modLoader.install_script_extension(ext_dir + "main.gd")
 	modLoader.install_script_extension(ext_dir + "entities/units/movement_behaviors/player_movement_behavior.gd")
 
 	modLoader.add_translation_from_resource(trans_dir + "autobattler_options.en.translation")
