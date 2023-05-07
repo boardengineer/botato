@@ -1,0 +1,16 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+
+[deps]
+
+files=[ "res://mods-unpacked/Pasha-AutoBattler/translations/autobattler_options.en.translation" ]
+
+source_file="res://mods-unpacked/Pasha-AutoBattler/translations/autobattler_options.csv"
+dest_files=[ "res://mods-unpacked/Pasha-AutoBattler/translations/autobattler_options.en.translation" ]
+
+[params]
+
+compress=true
+delimiter=0
