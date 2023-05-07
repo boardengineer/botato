@@ -1,7 +1,7 @@
 {
 	"name": "AutoBattler",
 	"namespace": "Pasha",
-	"version_number": "0.8.0",
+	"version_number": "1.0.0",
 	"description": "Do you want to work for potatoes or do you want potatoes to work for you?",
 	"website_url": "",
 	"dependencies": ["Darkly77-ContentLoader", "dami-ModOptions"],
@@ -14,7 +14,7 @@
 			"config_defaults": {
 				"enable_autobattler":false,
                 "enable_ai_visuals":false,
-                "enable_ai_marker":true,
+                "enable_ai_marker":false,
                 "enable_smoothing":true,
                 "smoothing_speed":1,
                 "smoothing_speed_min":1,
