@@ -14,22 +14,23 @@
 			"config_defaults": {
 				"enable_autobattler":false,
                 "enable_ai_visuals":false,
+                "enable_ai_marker":true,
                 "enable_smoothing":true,
                 "smoothing_speed":1,
                 "smoothing_speed_min":1,
-                "smoothing_speed_max":100,
+                "smoothing_speed_max":10.0,
                 "item_weight":0.5,
                 "item_weight_min":0.0,
                 "item_weight_max":100.0,
-                "projectile_weight":1.0,
+                "projectile_weight":2.0,
                 "projectile_weight_min":0.0,
-                "projectile_weight_max":100.0,
+                "projectile_weight_max":10.0,
                 "tree_weight":2.0,
                 "tree_weight_min":0.0,
-                "tree_weight_max":100.0,
+                "tree_weight_max":10.0,
                 "boss_weight":3.0,
                 "boss_weight_min":0.0,
-                "boss_weight_max":100.0 
+                "boss_weight_max":10.0 
 			}
 		}
 	}

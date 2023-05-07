@@ -4,9 +4,7 @@ func get_movement()->Vector2:
 	var ModsConfigInterface = get_node("/root/ModLoader/dami-ModOptions/ModsConfigInterface")
 
 	var enabled = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["enable_autobattler"]
-	var enable_smoothing = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["enable_smoothing"]
-	var smoothing_speed = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["smoothing_speed"]
-
+	
 	var item_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["item_weight"]
 	var projectile_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["projectile_weight"]
 	var tree_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["tree_weight"]
@@ -17,9 +15,6 @@ func get_movement()->Vector2:
 	if not enabled:
 		$"/root/Main/Camera".smoothing_enabled = false
 		return .get_movement()
-
-	$"/root/Main/Camera".smoothing_enabled = enable_smoothing 
-	$"/root/Main/Camera".smoothing_speed = smoothing_speed 
 
 	var _entity_spawner = $"/root/Main/EntitySpawner"
 	var _consumables_container = $"/root/Main/Consumables"
