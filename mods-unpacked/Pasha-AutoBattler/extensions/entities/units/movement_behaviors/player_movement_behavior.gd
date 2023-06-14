@@ -22,6 +22,7 @@ func get_movement()->Vector2:
 	var projectiles_container = $"/root/Main/Projectiles"
 	var is_soldier = RunData.current_character.my_id == "character_soldier"
 	var is_bull = RunData.current_character.my_id == "character_bull"
+	var is_pacifist = RunData.current_character.my_id == "character_pacifist"
 	
 	var all_enemies = _entity_spawner.get_all_enemies()
 	var player = $"/root/Main"._player
@@ -43,6 +44,9 @@ func get_movement()->Vector2:
 		
 		if max_range < weapon_range:
 			weapon_range = max_range
+		if is_pacifist:
+			weapon_range = 1000
+
 	var preferred_distance_squared = weapon_range * weapon_range
 	
 	var move_vector = Vector2.ZERO
