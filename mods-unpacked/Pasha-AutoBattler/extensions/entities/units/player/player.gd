@@ -8,8 +8,12 @@ func _ready():
 	ai_icon = ai_icon_scene.instance()
 	add_child(ai_icon)
 	
-	ModsConfigInterface = get_node("/root/ModLoader/dami-ModOptions/ModsConfigInterface")
-	ModsConfigInterface.connect("setting_changed", self, "on_setting_changed")
+	if $"/root/ModLoader/dami-ModOptions/ModsConfigInterface":
+		ModsConfigInterface = get_node("/root/ModLoader/dami-ModOptions/ModsConfigInterface")
+		ModsConfigInterface.connect("setting_changed", self, "on_setting_changed")
+	else:
+		var options_node = $"/root/AutobattlerOptions"
+		options_node.connect("setting_changed", self, "on_setting_changed")
 	
 	check_marker_params()
 	check_smoother_params()

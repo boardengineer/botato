@@ -3,6 +3,10 @@ extends Node2D
 func _draw():
 	if $"/root/Main"._wave_timer.time_left < .05:
 		return
+	
+	if not $"/root/ModLoader".has_node("dami-ModOptions"):
+		return
+	
 	var ModsConfigInterface = get_node("/root/ModLoader/dami-ModOptions/ModsConfigInterface")
 	
 	var visuals_enabled = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["enable_ai_visuals"]
