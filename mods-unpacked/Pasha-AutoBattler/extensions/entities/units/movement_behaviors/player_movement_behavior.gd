@@ -23,7 +23,6 @@ func get_movement()->Vector2:
 	var is_soldier = RunData.current_character.my_id == "character_soldier"
 	var is_bull = RunData.current_character.my_id == "character_bull"
 	
-	var all_enemies = _entity_spawner.get_all_enemies()
 	var player = $"/root/Main"._player
 	
 	var weapon_range = 1_000

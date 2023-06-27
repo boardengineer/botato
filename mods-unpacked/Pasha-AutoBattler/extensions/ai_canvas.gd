@@ -133,8 +133,6 @@ func _draw():
 			draw_circle(projectile.position, size, Color.red)
 			
 	# Move towards distant enemies, away from nearby ones.  Determined by weapons range.
-	var shooting_anyone = false
-	var must_run_away = false
 	var egg_weight_squared = egg_weight * egg_weight
 	
 	for enemy in _entity_spawner.enemies:
@@ -147,15 +145,11 @@ func _draw():
 		
 		var to_add = (enemy_to_player.normalized() / squared_distance_to_enemy)
 		if squared_distance_to_enemy < preferred_distance_squared:
-			shooting_anyone = true
 			color = red
 			to_add = to_add * -1
 			
-		if squared_distance_to_enemy < (preferred_distance_squared / 4):
-			must_run_away = true
-			
 		if is_egg:
-			size = size * egg_weight
+			size = size * egg_weight_squared
 		
 		if size > circle_max_size:
 			size = circle_max_size
@@ -174,12 +168,8 @@ func _draw():
 		
 		var to_add = (boss_to_player.normalized() / squared_distance_to_boss) * boss_weight_squared
 		if squared_distance_to_boss < preferred_distance_squared:
-			shooting_anyone = true
 			color = red
 			to_add = to_add * -1
-			
-		if squared_distance_to_boss < (preferred_distance_squared / 4):
-			must_run_away = true
 			
 		if size > circle_max_size:
 			size = circle_max_size
@@ -270,5 +260,5 @@ func _draw():
 		
 		bumper_y = bumper_y + bumper_distance
 
-func _process(delta):
+func _process(_delta):
 	update()

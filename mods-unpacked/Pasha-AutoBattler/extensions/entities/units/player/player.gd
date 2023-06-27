@@ -21,7 +21,7 @@ func _ready():
 	check_marker_params()
 	check_smoother_params()
 
-func on_setting_changed(setting_name:String, value, mod_name):
+func on_setting_changed(setting_name:String, _value, _mod_name):
 	if setting_name == "enable_ai_marker" or setting_name == "enable_autobattler":
 		check_marker_params()
 	if setting_name == "smoothing_speed" or setting_name == "enable_smoothing":
