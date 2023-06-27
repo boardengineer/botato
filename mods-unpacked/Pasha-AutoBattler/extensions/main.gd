@@ -7,7 +7,7 @@ var canvas_layer
 func _ready():
 	canvas_layer = AICanvas.new()
 	add_child(canvas_layer)
-	
+
 func free():
 	remove_child(canvas_layer)
 	.free()

@@ -38,8 +38,6 @@ func check_marker_params():
 	var ai_enabled = options_node.enable_autobattler
 	var ai_marker_enabled = options_node.enable_ai_marker
 	
-	print("ai marker ", options_node.enable_ai_marker)
-	
 	if ai_enabled and ai_marker_enabled:
 		ai_icon.show()
 	else:
