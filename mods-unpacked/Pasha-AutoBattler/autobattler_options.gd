@@ -25,13 +25,12 @@ func _ready():
 	
 func _input(event):
 	if event is InputEventKey:
-		var were_both_pressed = was_shift_pressed and was_space_pressed
 		if event.shift and event.scancode == KEY_SPACE and option_cooldown < 0.0:
 			option_cooldown = DEFAULT_COOLDOWN
 			enable_autobattler = not enable_autobattler
 			emit_signal("setting_changed", "enable_autobattler", enable_autobattler, "Pasha-AutoBattler")
 			
-			if $"/root/ModLoader/dami-ModOptions/ModsConfigInterface":
+			if $"/root/ModLoader".has_node("dami-ModOptions"):
 				var mod_configs_interface = get_node("/root/ModLoader/dami-ModOptions/ModsConfigInterface")
 				var mod_configs = mod_configs_interface.mod_configs
 			
