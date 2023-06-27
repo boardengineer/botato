@@ -1,5 +1,7 @@
 extends Node 
 
+signal setting_changed(setting_name, value, mod_name)
+
 # This Mirrors Configs to act as a backup and make reads shorter without string lookups
 var enable_autobattler
 var enable_ai_visuals
@@ -27,20 +29,25 @@ func _input(event):
 		if event.shift and event.scancode == KEY_SPACE and option_cooldown < 0.0:
 			option_cooldown = DEFAULT_COOLDOWN
 			enable_autobattler = not enable_autobattler
+			emit_signal("setting_changed", "enable_autobattler", enable_autobattler, "Pasha-AutoBattler")
 			
-			var mod_configs_interface = get_node("/root/ModLoader/dami-ModOptions/ModsConfigInterface")
-			var mod_configs = mod_configs_interface.mod_configs
+			if $"/root/ModLoader/dami-ModOptions/ModsConfigInterface":
+				var mod_configs_interface = get_node("/root/ModLoader/dami-ModOptions/ModsConfigInterface")
+				var mod_configs = mod_configs_interface.mod_configs
 			
-			if mod_configs.has("Pasha-AutoBattler"):
-				var config = mod_configs["Pasha-AutoBattler"]
-				config["enable_autobattler"] = enable_autobattler
-				mod_configs_interface.on_setting_changed("enable_autobattler", enable_autobattler, "Pasha-AutoBattler")
+				if mod_configs.has("Pasha-AutoBattler"):
+					var config = mod_configs["Pasha-AutoBattler"]
+					config["enable_autobattler"] = enable_autobattler
+					mod_configs_interface.on_setting_changed("enable_autobattler", enable_autobattler, "Pasha-AutoBattler")
 			
 
 func _process(delta):
 	option_cooldown -= delta
 
 func load_mod_options():
+	if not $"/root/ModLoader".has_node("dami-ModOptions"):
+		return
+		
 	var mod_configs = get_node("/root/ModLoader/dami-ModOptions/ModsConfigInterface").mod_configs
 
 	if mod_configs.has("Pasha-AutoBattler"):
