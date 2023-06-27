@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/defect.png-82e84d4537067143e39cb7e21fe8120d.stex"
+path="res://.import/defect.png-be5cc743c38f15111814a37561ed09f9.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://mods-unpacked/Pasha-AutoBattler/extensions/UI/defect.png"
-dest_files=[ "res://.import/defect.png-82e84d4537067143e39cb7e21fe8120d.stex" ]
+source_file="res://mods-unpacked/Pasha-AutoBattler/ui/defect.png"
+dest_files=[ "res://.import/defect.png-be5cc743c38f15111814a37561ed09f9.stex" ]
 
 [params]
 

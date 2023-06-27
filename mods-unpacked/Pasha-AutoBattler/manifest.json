@@ -14,7 +14,7 @@
 			"config_defaults": {
 				"enable_autobattler":false,
                 "enable_ai_visuals":false,
-                "enable_ai_marker":false,
+                "enable_ai_marker":true,
                 "enable_smoothing":true,
                 "smoothing_speed":1,
                 "smoothing_speed_min":1,

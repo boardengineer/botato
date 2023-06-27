@@ -1,14 +1,14 @@
 extends "res://entities/units/movement_behaviors/player_movement_behavior.gd"
 
 func get_movement()->Vector2:
-	var ModsConfigInterface = get_node("/root/ModLoader/dami-ModOptions/ModsConfigInterface")
+	var options_node = $"/root/AutobattlerOptions"
 
-	var enabled = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["enable_autobattler"]
+	var enabled = options_node.enable_autobattler
 	
-	var item_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["item_weight"]
-	var projectile_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["projectile_weight"]
-	var tree_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["tree_weight"]
-	var boss_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["boss_weight"]
+	var item_weight = options_node.item_weight
+	var projectile_weight = options_node.projectile_weight
+	var tree_weight = options_node.tree_weight
+	var boss_weight = options_node.boss_weight
 	var bumper_weight = 2.0
 	var egg_weight = 5.0
 
