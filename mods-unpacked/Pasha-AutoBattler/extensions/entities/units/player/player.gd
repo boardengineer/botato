@@ -25,10 +25,8 @@ func _ready():
 	check_smoother_params()
 
 func on_setting_changed(setting_name:String, _value, _mod_name):
-	if setting_name == "enable_ai_marker" or setting_name == "enable_autobattler":
-		check_marker_params()
-	if setting_name == "smoothing_speed" or setting_name == "enable_smoothing":
-		check_smoother_params()
+	check_marker_params()
+	check_smoother_params()
 
 func check_marker_params():
 	var options_node = $"/root/AutobattlerOptions"
