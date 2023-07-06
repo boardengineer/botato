@@ -121,9 +121,17 @@ func get_movement()->Vector2:
 		var squared_distance_to_enemy = (enemy_to_player).length_squared()
 		
 		var to_add = (enemy_to_player.normalized() / squared_distance_to_enemy)
+		
+		if enemy.stats.base_drop_chance == 1:
+			to_add = to_add * egg_weight_squared * 4
+		
 		if squared_distance_to_enemy < preferred_distance_squared:
 			shooting_anyone = true
 			to_add = to_add * -1
+			if enemy._current_attack_behavior is ChargingAttackBehavior:
+				if enemy._move_locked:
+					enemy_to_player = enemy._current_attack_behavior._charge_direction.tangent()
+					to_add = to_add * 4
 			
 		if squared_distance_to_enemy < (preferred_distance_squared / 4):
 			must_run_away = true
@@ -143,6 +151,10 @@ func get_movement()->Vector2:
 		if squared_distance_to_boss < preferred_distance_squared:
 			shooting_anyone = true
 			to_add = to_add * -1
+			if boss._current_attack_behavior is ChargingAttackBehavior:
+				if boss._move_locked:
+					squared_distance_to_boss = squared_distance_to_boss / 4
+					boss_to_player = boss._current_attack_behavior._charge_direction.tangent()
 			
 		if squared_distance_to_boss < (preferred_distance_squared / 4):
 			must_run_away = true
