@@ -24,7 +24,7 @@ func _ready():
 	check_marker_params()
 	check_smoother_params()
 
-func on_setting_changed(setting_name:String, _value, _mod_name):
+func on_setting_changed(_setting_name:String, _value, _mod_name):
 	check_marker_params()
 	check_smoother_params()
 
