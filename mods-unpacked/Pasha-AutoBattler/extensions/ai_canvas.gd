@@ -9,7 +9,7 @@ func _draw():
 	
 	var ModsConfigInterface = get_node("/root/ModLoader/dami-ModOptions/ModsConfigInterface")
 	
-	var visuals_enabled = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["enable_ai_visuals"]
+	var visuals_enabled = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["ENABLE_AI_VISUALS"]
 	
 	if not visuals_enabled:
 		return
@@ -18,10 +18,10 @@ func _draw():
 	var weapon_range = 1_000
 	var _entity_spawner = $"/root/Main/EntitySpawner"
 	
-	var item_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["item_weight"]
-	var projectile_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["projectile_weight"]
-	var tree_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["tree_weight"]
-	var boss_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["boss_weight"]
+	var item_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["ITEM_WEIGHT"]
+	var projectile_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["PROJECTILE_WEIGHT"]
+	var tree_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["TREE_WEIGHT"]
+	var boss_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["BOSS_WEIGHT"]
 	
 	var bumper_weight = 1.0
 	var egg_weight = 5.0
