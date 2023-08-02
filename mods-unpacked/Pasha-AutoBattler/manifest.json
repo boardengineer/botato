@@ -11,26 +11,59 @@
 			"authors": ["Pasha"],
 			"compatible_mod_loader_version": ["6.0.0"],
 			"compatible_game_version": ["0.8.0.3"],
-			"config_defaults": {
-				"enable_autobattler":false,
-                "enable_ai_visuals":false,
-                "enable_ai_marker":true,
-                "enable_smoothing":true,
-                "smoothing_speed":1,
-                "smoothing_speed_min":1,
-                "smoothing_speed_max":10.0,
-                "item_weight":0.5,
-                "item_weight_min":0.0,
-                "item_weight_max":100.0,
-                "projectile_weight":2.0,
-                "projectile_weight_min":0.0,
-                "projectile_weight_max":10.0,
-                "tree_weight":2.0,
-                "tree_weight_min":0.0,
-                "tree_weight_max":10.0,
-                "boss_weight":3.0,
-                "boss_weight_min":0.0,
-                "boss_weight_max":10.0 
+			
+			"config_schema": {
+				"title": "Autobattler Settings",
+				"description": "Config for Botato",
+				"type" : "object",
+				"properties" : {
+					"ENABLE_AUTOBATTLER" : {
+						"type": "boolean",
+						"default": false,
+					},
+					"ENABLE_AI_VISUALS" : {
+						"type": "boolean",
+						"default": false,
+					},
+					"ENABLE_AI_MARKER" : {
+						"type": "boolean",
+						"default": true
+					},
+					"ENABLE_SMOOTHING" : {
+						"type": "boolean",
+						"default": true,
+					},
+					"SMOOTHING_SPEED" : {
+						"type": "number",
+						"minimum" : 0,
+						"maximum" : 10.0,
+						"default" : 1.0,
+					},
+					"ITEM_WEIGHT" : {
+						"type": "number",
+						"minimum": 0.0,
+						"maximum": 10.0,
+						"default": 0.5,
+					},
+					"PROJECTILE_WEIGHT": {
+						"type": "number",
+						"minimum": 0.0,
+						"maximum": 10.0,
+						"default": 2.0,
+					},
+					"TREE_WEIGHT": {
+						"type": "number",
+						"minimum": 0.0,
+						"maximum": 10.0,
+						"default": 2.0,
+					},
+					"BOSS_WEIGHT": {
+						"type": "number",
+						"minimum": 0.0,
+						"maximum": 10.0,
+						"default": 3.0,
+					}
+				},
 			}
 		}
 	}
