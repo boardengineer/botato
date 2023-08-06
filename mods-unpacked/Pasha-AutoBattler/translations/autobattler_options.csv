@@ -8,4 +8,12 @@ TREE_WEIGHT,Tree Weight
 BOSS_WEIGHT,Boss Weight
 ENABLE_AI_VISUALS,Enable AI Visualization
 ENABLE_AI_MARKER,Show AI Marker
-ENABLE_AUTOBATTLER_TOOLTIP,Enable the AutoBattler
+ENABLE_AUTOBATTLER_TOOLTIP,"Enable the AutoBattler.  When activated a bot will take control of the game during the wave attempting to keep an optimals distance from enemies and projectiles."
+ENABLE_AI_VISUALS_TOOLTIP,"Enable Visualizations for the AI.  When active, elements that the bot cares about will be highlighted with bigger highlights for objects the bot cares about more."
+ENABLE_AI_MARKER_TOOLTIP,"Show a marker next to the player when the AI is Active.  This is intended for streaming and video recording when you want to highlight the fact that a human is not in control of the game."
+ENABLE_SMOOTHING_TOOLTIP,"Enable Camera smoothing.  Many find the AI's sudden movements painful to follow.  Smoothing prevents the camera from being hard snapped to the player's position."
+SMOOTHING_SPEED_TOOLTIP,"The rate at which the smoothing camera will follow the player."
+ITEM_WEIGHT_TOOLTIP,"Controls how strongly the bot will be attracted to gold pickups."
+PROJECTILE_WEIGHT_TOOLTIP,"Controls how strongly the bot will be repelled by enemy projectiles."
+TREE_WEIGHT_TOOLTIP,"Controls how strongly the bot will be attracted to trees."
+BOSS_WEIGHT_TOOLTIP,"Controls how stronlg the bot will be attracted to bosses."

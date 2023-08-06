@@ -20,48 +20,58 @@
 					"ENABLE_AUTOBATTLER" : {
 						"type": "boolean",
 						"default": false,
+						"tooltip": "ENABLE_AUTOBATTLER_TOOLTIP"
 					},
 					"ENABLE_AI_VISUALS" : {
 						"type": "boolean",
 						"default": false,
+						"tooltip": "ENABLE_AI_VISUALS_TOOLTIP",
 					},
 					"ENABLE_AI_MARKER" : {
 						"type": "boolean",
-						"default": true
+						"default": true,
+						"tooltip": "ENABLE_AI_MARKER_TOOLTIP",
 					},
 					"ENABLE_SMOOTHING" : {
 						"type": "boolean",
 						"default": true,
+						"tooltip": "ENABLE_SMOOTHING_TOOLTIP",
 					},
 					"SMOOTHING_SPEED" : {
 						"type": "number",
 						"minimum" : 0,
 						"maximum" : 10.0,
 						"default" : 1.0,
+						"tooltip": "SMOOTHING_SPEED_TOOLTIP"
 					},
 					"ITEM_WEIGHT" : {
 						"type": "number",
 						"minimum": 0.0,
 						"maximum": 10.0,
 						"default": 0.5,
+						"tooltip": "ITEM_WEIGHT_TOOLTIP",
+						"format": "%.2f X",
 					},
 					"PROJECTILE_WEIGHT": {
 						"type": "number",
 						"minimum": 0.0,
 						"maximum": 10.0,
 						"default": 2.0,
+						"tooltip": "PROJECTILE_WEIGHT_TOOLTIP",
 					},
 					"TREE_WEIGHT": {
 						"type": "number",
 						"minimum": 0.0,
 						"maximum": 10.0,
 						"default": 2.0,
+						"tooltip": "TREE_WEIGHT_TOOLTIP",
 					},
 					"BOSS_WEIGHT": {
 						"type": "number",
 						"minimum": 0.0,
 						"maximum": 10.0,
 						"default": 3.0,
+						"tooltip": "BOSS_WEIGHT_TOOLTIP",
 					}
 				},
 			}
