@@ -58,6 +58,7 @@
 						"maximum": 10.0,
 						"default": 2.0,
 						"tooltip": "PROJECTILE_WEIGHT_TOOLTIP",
+                        "format": "%.2f X",
 					},
 					"TREE_WEIGHT": {
 						"type": "number",
@@ -65,6 +66,7 @@
 						"maximum": 10.0,
 						"default": 2.0,
 						"tooltip": "TREE_WEIGHT_TOOLTIP",
+                        "format": "%.2f X",
 					},
 					"BOSS_WEIGHT": {
 						"type": "number",
@@ -72,6 +74,31 @@
 						"maximum": 10.0,
 						"default": 3.0,
 						"tooltip": "BOSS_WEIGHT_TOOLTIP",
+                        "format": "%.2f X",
+					},
+                    "BUMPER_WEIGHT": {
+						"type": "number",
+						"minimum": 0.0,
+						"maximum": 10.0,
+						"default": 2.0,
+						"tooltip": "BUMPER_WEIGHT_TOOLTIP",
+                        "format": "%.2f X",
+					},
+                    "EGG_WEIGHT": {
+						"type": "number",
+						"minimum": 0.0,
+						"maximum": 10.0,
+						"default": 5.0,
+						"tooltip": "EGG_WEIGHT_TOOLTIP",
+                        "format": "%.2f X",
+					},
+                    "BUMPER_DISTANCE": {
+						"type": "number",
+						"minimum": 1.0,
+						"maximum": 1000.0,
+						"default": 300.0,
+						"tooltip": "BUMPER_DISTANCE_TOOLTIP",
+                        "format": "%1.0f",
 					}
 				},
 			}

@@ -12,6 +12,9 @@ var item_weight
 var projectile_weight
 var tree_weight
 var boss_weight
+var bumper_weight
+var egg_weight
+var bumper_distance
 
 var was_space_pressed = false
 var was_shift_pressed = false
@@ -28,7 +31,7 @@ func _input(event):
 		if event.shift and event.scancode == KEY_SPACE and option_cooldown < 0.0:
 			option_cooldown = DEFAULT_COOLDOWN
 			enable_autobattler = not enable_autobattler
-			emit_signal("setting_changed", "enable_autobattler", enable_autobattler, "Pasha-AutoBattler")
+			emit_signal("setting_changed", "ENABLE_AUTOBATTLER", enable_autobattler, "Pasha-AutoBattler")
 			
 			if $"/root/ModLoader".has_node("dami-ModOptions"):
 				var mod_configs_interface = get_node("/root/ModLoader/dami-ModOptions/ModsConfigInterface")
@@ -36,14 +39,15 @@ func _input(event):
 			
 				if mod_configs.has("Pasha-AutoBattler"):
 					var config = mod_configs["Pasha-AutoBattler"]
-					config["enable_autobattler"] = enable_autobattler
-					mod_configs_interface.on_setting_changed("enable_autobattler", enable_autobattler, "Pasha-AutoBattler")
+					config["ENABLE_AUTOBATTLER"] = enable_autobattler
+					mod_configs_interface.on_setting_changed("ENABLE_AUTOBATTLER", enable_autobattler, "Pasha-AutoBattler")
 			
 
 func _process(delta):
 	option_cooldown -= delta
 
 func load_mod_options():
+	
 	if not $"/root/ModLoader".has_node("dami-ModOptions"):
 		return
 		
@@ -52,32 +56,41 @@ func load_mod_options():
 	if mod_configs.has("Pasha-AutoBattler"):
 		var config = mod_configs["Pasha-AutoBattler"]
 		
-		if config.has("enable_autobattler"):
-			enable_autobattler = config["enable_autobattler"]
-			
-		if config.has("enable_ai_visuals"):
-			enable_ai_visuals = config["enable_ai_visuals"]
-			
-		if config.has("enable_ai_marker"):
-			enable_ai_marker = config["enable_ai_marker"]
-			
-		if config.has("enable_smoothing"):
-			enable_smoothing = config["enable_smoothing"]
+		if config.has("ENABLE_AUTOBATTLER"):
+			enable_autobattler = config["ENABLE_AUTOBATTLER"]
 		
-		if config.has("smoothing_speed"):
-			smoothing_speed = config["smoothing_speed"]
+		if config.has("ENABLE_AI_VISUALS"):
+			enable_ai_visuals = config["ENABLE_AI_VISUALS"]
 		
-		if config.has("item_weight"):
-			item_weight = config["item_weight"]
+		if config.has("ENABLE_AI_MARKER"):
+			enable_ai_marker = config["ENABLE_AI_MARKER"]
 			
-		if config.has("projectile_weight"):
-			projectile_weight = config["projectile_weight"]
-			
-		if config.has("tree_weight"):
-			tree_weight = config["tree_weight"]
-			
-		if config.has("boss_weight"):
-			boss_weight = config["boss_weight"]
+		if config.has("ENABLE_SMOOTHING"):
+			enable_smoothing = config["ENABLE_SMOOTHING"]
+		
+		if config.has("SMOOTHING_SPEED"):
+			smoothing_speed = config["SMOOTHING_SPEED"]
+		
+		if config.has("ITEM_WEIGHT"):
+			item_weight = config["ITEM_WEIGHT"]
+		
+		if config.has("PROJECTILE_WEIGHT"):
+			projectile_weight = config["PROJECTILE_WEIGHT"]
+		
+		if config.has("TREE_WEIGHT"):
+			tree_weight = config["TREE_WEIGHT"]
+		
+		if config.has("BOSS_WEIGHT"):
+			boss_weight = config["BOSS_WEIGHT"]
+		
+		if config.has("BUMPER_WEIGHT"):
+			bumper_weight = config["BUMPER_WEIGHT"]
+		
+		if config.has("EGG_WEIGHT"):
+			egg_weight = config["EGG_WEIGHT"]
+		
+		if config.has("BUMPER_DISTANCE"):
+			bumper_distance = config["BUMPER_DISTANCE"]
 
 
 func reset_defaults() -> void:
@@ -91,3 +104,6 @@ func reset_defaults() -> void:
 	projectile_weight = 2.0
 	tree_weight = 2.0
 	boss_weight = 3.0
+	bumper_weight = 2.0
+	egg_weight = 5.0
+	bumper_distance = 50
