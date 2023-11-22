@@ -6,6 +6,9 @@ ITEM_WEIGHT,Item Weight
 PROJECTILE_WEIGHT,Projectile Weight
 TREE_WEIGHT,Tree Weight
 BOSS_WEIGHT,Boss Weight
+BUMPER_WEIGHT,Wall bumper Weight
+EGG_WEIGHT,Egg Weight
+BUMPER_DISTANCE,Wall Bumper Distance
 ENABLE_AI_VISUALS,Enable AI Visualization
 ENABLE_AI_MARKER,Show AI Marker
 ENABLE_AUTOBATTLER_TOOLTIP,"Enable the AutoBattler.  When activated a bot will take control of the game during the wave attempting to keep an optimals distance from enemies and projectiles."
@@ -16,4 +19,7 @@ SMOOTHING_SPEED_TOOLTIP,"The rate at which the smoothing camera will follow the 
 ITEM_WEIGHT_TOOLTIP,"Controls how strongly the bot will be attracted to gold pickups."
 PROJECTILE_WEIGHT_TOOLTIP,"Controls how strongly the bot will be repelled by enemy projectiles."
 TREE_WEIGHT_TOOLTIP,"Controls how strongly the bot will be attracted to trees."
-BOSS_WEIGHT_TOOLTIP,"Controls how stronlg the bot will be attracted to bosses."
+BOSS_WEIGHT_TOOLTIP,"Controls how strongly the bot will be attracted to bosses."
+BUMPER_WEIGHT_TOOLTIP,"Controls how strongly the bot will be repelled by walls."
+EGG_WEIGHT_TOOLTIP,"Controls how strongly the bot will be attracted to unhatched eggs."
+BUMPER_DISTANCE_TOOLTIP,"Controls the minimum distance to a wall the bot will try to maintain."

@@ -9,8 +9,12 @@ func get_movement()->Vector2:
 	var projectile_weight = options_node.projectile_weight
 	var tree_weight = options_node.tree_weight
 	var boss_weight = options_node.boss_weight
-	var bumper_weight = 2.0
-	var egg_weight = 5.0
+	var bumper_weight = options_node.bumper_weight
+	var egg_weight = options_node.egg_weight
+	var bumper_distance = options_node.bumper_distance
+	
+#	print_debug("bumper distnace: ", bumper_distance)
+#	print_debug("item_weight: ", item_weight)
 
 	if not enabled:
 		$"/root/Main/Camera".smoothing_enabled = false
@@ -26,6 +30,7 @@ func get_movement()->Vector2:
 	var player = $"/root/Main"._player
 	
 	var weapon_range = 1_000
+	var bumper_spacing = 50
 	
 	var max_health = float(player.max_stats.health)
 	var current_health = float(player.current_stats.health)
@@ -178,8 +183,7 @@ func get_movement()->Vector2:
 			move_vector = move_vector + to_add
 	
 	var bumper_x = 0
-	var bumper_distance = 50
-	var square_bumper_distance = bumper_distance * bumper_distance * 40
+	var square_bumper_distance = bumper_distance * bumper_distance
 	
 	while bumper_x < far_corner.x:
 		var bumper_position = Vector2(bumper_x, 0)
@@ -192,7 +196,7 @@ func get_movement()->Vector2:
 		if not is_nan(to_add.x) and not is_nan(to_add.y):
 			move_vector = move_vector + to_add
 		
-		bumper_x = bumper_x + bumper_distance
+		bumper_x = bumper_x + bumper_spacing
 		
 	bumper_x = 0
 	while bumper_x < far_corner.x:
@@ -206,7 +210,7 @@ func get_movement()->Vector2:
 		if not is_nan(to_add.x) and not is_nan(to_add.y):
 			move_vector = move_vector + to_add
 		
-		bumper_x = bumper_x + bumper_distance
+		bumper_x = bumper_x + bumper_spacing
 		
 	var bumper_y = 0
 	while bumper_y < far_corner.y:
@@ -220,7 +224,7 @@ func get_movement()->Vector2:
 		if not is_nan(to_add.x) and not is_nan(to_add.y):
 			move_vector = move_vector + to_add
 		
-		bumper_y = bumper_y + bumper_distance
+		bumper_y = bumper_y + bumper_spacing
 		
 	bumper_y = 0
 	while bumper_y < far_corner.y:
@@ -234,7 +238,7 @@ func get_movement()->Vector2:
 		if not is_nan(to_add.x) and not is_nan(to_add.y):
 			move_vector = move_vector + to_add
 		
-		bumper_y = bumper_y + bumper_distance
+		bumper_y = bumper_y + bumper_spacing
 		
 	if (shooting_anyone and not must_run_away) and is_soldier:
 		return Vector2.ZERO
