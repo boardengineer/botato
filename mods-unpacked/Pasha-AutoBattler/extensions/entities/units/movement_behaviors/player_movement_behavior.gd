@@ -24,10 +24,13 @@ func get_movement()->Vector2:
 	var _consumables_container = $"/root/Main/Consumables"
 	var items_container = $"/root/Main/Items"
 	var projectiles_container = $"/root/Main/Projectiles"
-	var is_soldier = RunData.current_character.my_id == "character_soldier"
-	var is_bull = RunData.current_character.my_id == "character_bull"
 	
-	var player = $"/root/Main"._player
+	var char_name = RunData.get_player_character(0).name
+	
+	var is_soldier = char_name == "character_soldier"
+	var is_bull = char_name == "character_bull"
+	
+	var player = $"/root/Main"._players[0]
 	
 	var weapon_range = 1_000
 	var bumper_spacing = 50
