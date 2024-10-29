@@ -245,5 +245,8 @@ func get_movement()->Vector2:
 		
 	if (shooting_anyone and not must_run_away) and is_soldier:
 		return Vector2.ZERO
+
+        if (move_vector == Vector2.ZERO):
+                move_vector = Vector2(rand_range(-1, 1), rand_range(-1, 1))
 		
 	return move_vector.normalized()
