@@ -27,8 +27,8 @@ func get_movement()->Vector2:
 	
 	var char_name = RunData.get_player_character(0).name
 	
-	var is_soldier = char_name == "character_soldier"
-	var is_bull = char_name == "character_bull"
+	var is_soldier = char_name == "CHARACTER_SOLDIER"
+	var is_bull = char_name == "CHARACTER_BULL"
 	
 	var player = $"/root/Main"._players[0]
 	
