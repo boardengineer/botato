@@ -25,7 +25,7 @@ func get_movement()->Vector2:
 	var items_container = $"/root/Main/Items"
 	var projectiles_container = $"/root/Main/Projectiles"
 	
-	var char_name = RunData.get_player_character(0).name
+	var char_name = RunData.get_player_character(0).name.to_lower()
 	
 	var is_soldier = char_name == "character_soldier"
 	var is_bull = char_name == "character_bull"
