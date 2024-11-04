@@ -14,7 +14,7 @@ func _draw():
 	if not visuals_enabled:
 		return
 	
-	var player = $"/root/Main"._player
+	var player = $"/root/Main"._players[0]
 	var weapon_range = 1_000
 	var _entity_spawner = $"/root/Main/EntitySpawner"
 	
@@ -144,6 +144,9 @@ func _draw():
 		var is_egg = enemy._attack_behavior is SpawningAttackBehavior
 		var enemy_to_player = enemy.position - player.position
 		var squared_distance_to_enemy = (enemy_to_player).length_squared()
+		
+		if circle_size_multiplier == 0:
+			continue
 		
 		var size = 1 / squared_distance_to_enemy * circle_size_multiplier
 		
