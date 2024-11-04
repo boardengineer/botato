@@ -17,14 +17,15 @@ func _draw():
 	var player = $"/root/Main"._players[0]
 	var weapon_range = 1_000
 	var _entity_spawner = $"/root/Main/EntitySpawner"
+	var options_node = $"/root/AutobattlerOptions"
 	
-	var item_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["ITEM_WEIGHT"]
-	var projectile_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["PROJECTILE_WEIGHT"]
-	var tree_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["TREE_WEIGHT"]
-	var boss_weight = ModsConfigInterface.mod_configs["Pasha-AutoBattler"]["BOSS_WEIGHT"]
+	var item_weight = options_node.item_weight
+	var projectile_weight = options_node.projectile_weight
+	var tree_weight = options_node.tree_weight
+	var boss_weight = options_node.boss_weight
 	
-	var bumper_weight = 1.0
-	var egg_weight = 5.0
+	var bumper_weight = options_node.bumper_weight
+	var egg_weight = options_node.egg_weight
 	
 	var circle_size_multiplier = 1_000_000
 	var circle_max_size = 100
@@ -185,7 +186,7 @@ func _draw():
 		
 	var far_corner = ZoneService.current_zone_max_position
 	var bumper_x = 0
-	var bumper_distance = 50
+	var bumper_distance = options_node.bumper_distance
 	var square_bumper_distance = bumper_distance * bumper_distance * 40
 	
 	while bumper_x < far_corner.x:
