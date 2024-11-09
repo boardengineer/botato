@@ -15,7 +15,7 @@ func _ready():
 
 func update_select_button_for_player():
 	var color : Color = CoopService.get_player_color(CoopService.current_player_index)
-	var stylebox_theme = selector_button.get_stylebox("normal")
+	var stylebox_theme = selector_button.get_stylebox("normal").duplicate()
 	stylebox_theme.bg_color  = color
 	
 	selector_button.add_stylebox_override("normal", stylebox_theme)
