@@ -3,20 +3,17 @@ extends "res://singletons/coop_service.gd"
 signal selecting_player_changed
 
 var current_player_index = 0
+var focus_by_player_index : Array = [null, null, null, null]
 
 
 func _ready():
+	var _err = get_viewport().connect("gui_focus_changed", self, "on_focus_changed")
 	InputService.set_process_input(false)
 
 
 func _input(event):
 	_input_service_input(event)
 	if event is InputEventKey and event.pressed:
-#		if event.scancode == KEY_TAB:
-#			print_debug("changing active player")
-#			CoopService.current_player_index = (1 + CoopService.current_player_index) % CoopService.connected_players.size()
-#			emit_signal("selecting_player_changed")
-#			update_select_button_for_player()
 		if get_tree().current_scene.name == "CharacterSelection":
 			if event.scancode == KEY_F1:
 				if connected_players.size() < 4:
@@ -46,3 +43,7 @@ func _input_service_input(event:InputEvent)->void :
 		InputService.using_gamepad = true
 	elif is_keyboard_input:
 		InputService.using_gamepad = false
+
+
+func on_focus_changed(focused_node : Control) -> void:
+	focus_by_player_index[CoopService.current_player_index] = focused_node
