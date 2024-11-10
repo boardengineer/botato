@@ -22,6 +22,7 @@ func _init():
 	ModLoaderMod.install_script_extension(ext_dir + "ui/menus/global/focus_emulator.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "ui/menus/pages/main_menu.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "ui/menus/run/character_selection.gd")
+	ModLoaderMod.install_script_extension(ext_dir + "ui/menus/run/coop_join_panel.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "ui/menus/run/weapon_selection.gd")
 	
 	ModLoaderMod.add_translation(trans_dir + "autobattler_options.en.translation")

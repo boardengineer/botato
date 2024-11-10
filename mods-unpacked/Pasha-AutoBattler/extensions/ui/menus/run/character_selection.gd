@@ -8,7 +8,6 @@ func _ready():
 	selector_button.text = "SELECTING FOR"
 	update_select_button_for_player()
 	add_child(selector_button)
-	print_debug("ready character selection")
 	CoopService.connect("selecting_player_changed", self, "update_select_button_for_player")
 
 
@@ -23,9 +22,9 @@ func update_select_button_for_player():
 func _on_element_focused(element:InventoryElement, inventory_player_index:int) -> void:
 	var player_index = FocusEmulatorSignal.get_player_index(element)
 	var panel = _get_panels()[player_index]
-	print_debug("is visible ", panel.visible, " player index ", player_index)
 	if not panel.visible or player_index == CoopService.current_player_index:
-		._on_element_focused(element, inventory_player_index)
+		if player_index >= 0:
+			._on_element_focused(element, inventory_player_index)
 
 
 func _on_element_pressed(element:InventoryElement, _inventory_player_index:int) -> void:
