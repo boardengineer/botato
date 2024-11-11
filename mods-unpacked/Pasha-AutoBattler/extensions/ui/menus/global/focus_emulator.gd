@@ -7,14 +7,27 @@ func _ready() -> void:
 	var _err = get_viewport().connect("gui_focus_changed", self, "on_focus_changed")
 
 
-func _draw() -> void:
-	._draw()
+func _draw()->void :
+	if focused_control == null:
+		return 
+	
+	var player_indices = focused_control.get_meta("focus_player_indices", [])
+	if player_indices.size() == 0 or player_indices[0] != player_index:
+		return 
 
 
 func _set_focused_control_with_style(control:Control, emit_signals:bool) -> void:
+	if focused_control: 
+		if not focused_control.has_meta("original_stylebox_overrides"):
+			var stylebox_overrides = {}
+			for name in _stylebox_theme_names():
+				if focused_control.has_stylebox_override(name):
+					stylebox_overrides[name] = focused_control.get_stylebox(name)
+			focused_control.set_meta("original_stylebox_overrides", stylebox_overrides)
+	
 	_ensure_control_visible(control)
 	if player_index != CoopService.current_player_index:
-		return 
+		return
 	._set_focused_control_with_style(control, emit_signals)
 
 
@@ -33,16 +46,47 @@ func _update_focus_style_for_players(control:Control) -> bool:
 	return ._update_focus_style_for_players(control)
 
 
+func _set_focus_state_for_current_player() -> void:
+	_set_focus_for_player(CoopService.current_player_index)
+
+
+func _set_focus_for_player(coop_player_index : int) -> void:
+	if _can_focus_element_for_player(coop_player_index):
+		focused_control = CoopService.focus_by_player_index[coop_player_index]
+		if focused_control:
+			var player_indices = focused_control.get_meta("focus_player_indices", [])
+			if not player_indices.has(coop_player_index):
+				player_indices.push_back(coop_player_index)
+			focused_control.set_meta("focus_player_indices", player_indices)
+
+
+func _can_focus_current_element() -> bool:
+	return _can_focus_element_for_player(CoopService.current_player_index) 
+
+
+func _can_focus_element_for_player(coop_player_index : int) -> bool:
+	return CoopService.focus_by_player_index[coop_player_index] and is_instance_valid(CoopService.focus_by_player_index[coop_player_index])
+
+
 func _handle_input(event:InputEvent) -> bool:
 	if event is InputEventKey and event.pressed:
 		if event.scancode == KEY_TAB:
+			# Save the focused state of the players we're leaving behind, maybe?
+			
+#			for player_index in CoopService.connected_players.size():
+#				_set_focus_for_player(player_index)
+			
+			
 			CoopService.current_player_index = (1 + CoopService.current_player_index) % CoopService.connected_players.size()
 			CoopService.emit_signal("selecting_player_changed")
 			
-			if CoopService.focus_by_player_index[CoopService.current_player_index] and is_instance_valid(CoopService.focus_by_player_index[CoopService.current_player_index]):
-				focused_control = CoopService.focus_by_player_index[CoopService.current_player_index]
+			if _can_focus_current_element():
+				_set_focus_state_for_current_player()
 				CoopService.focus_by_player_index[CoopService.current_player_index].grab_focus()
 			
+			for player_index in CoopService.connected_players.size():
+				_set_focus_for_player(player_index)
+				
 			return true
 	if Utils.is_maybe_action_pressed(event, "ui_accept_%s" % _device):
 		pass
@@ -74,7 +118,10 @@ func _handle_input(event:InputEvent) -> bool:
 				focused_control.set_pressed_no_signal(toggled)
 				FocusEmulatorSignal.emit(focused_control, "toggled", player_index, toggled)
 			else :
-				FocusEmulatorSignal.emit(CoopService.focus_by_player_index[CoopService.current_player_index], "pressed", CoopService.current_player_index)
+				var current_focus = CoopService.focus_by_player_index[CoopService.current_player_index]
+				if current_focus != null and is_instance_valid(current_focus):
+					print_debug("should emit for control ", current_focus)
+					FocusEmulatorSignal.emit(current_focus, "pressed", CoopService.current_player_index)
 		return true
 		
 	return ._handle_input(event)
@@ -86,3 +133,5 @@ func on_focus_changed(focused_node : Control) -> void:
 
 func _is_coop_ui_action(event:InputEvent) -> bool:
 	return true
+
+
