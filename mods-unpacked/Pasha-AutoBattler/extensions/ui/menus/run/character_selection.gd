@@ -20,14 +20,22 @@ func update_select_button_for_player():
 
 
 func _on_element_focused(element:InventoryElement, inventory_player_index:int) -> void:
+	if not RunData.is_coop_run:
+		._on_element_focused(element, inventory_player_index)
+		return
+	
 	var player_index = FocusEmulatorSignal.get_player_index(element)
-	var panel = _get_panels()[player_index]
-	if not panel.visible or player_index == CoopService.current_player_index:
+#	var panel = _get_panels()[player_index]
+	if player_index == CoopService.current_player_index:
 		if player_index >= 0:
 			._on_element_focused(element, inventory_player_index)
 
 
 func _on_element_pressed(element:InventoryElement, _inventory_player_index:int) -> void:
+	if not RunData.is_coop_run:
+		._on_element_pressed(element, _inventory_player_index)
+		return
+	
 	FocusEmulatorSignal.override_player_index = true
 	._on_element_pressed(element, _inventory_player_index)
 	FocusEmulatorSignal.override_player_index = false
