@@ -27,6 +27,7 @@ func _set_focused_control_with_style(control:Control, emit_signals:bool) -> void
 	
 	_ensure_control_visible(control)
 	if player_index != CoopService.current_player_index:
+		print_debug("wrong player index")
 		return
 	._set_focused_control_with_style(control, emit_signals)
 
@@ -70,7 +71,9 @@ func _can_focus_element_for_player(coop_player_index : int) -> bool:
 
 func _handle_input(event:InputEvent) -> bool:
 	if event is InputEventKey and event.pressed:
+		print_debug("key registered in focus emulator")
 		if event.scancode == KEY_TAB:
+			print_debug("pressed tab ")
 			# Save the focused state of the players we're leaving behind, maybe?
 			
 #			for player_index in CoopService.connected_players.size():
@@ -88,9 +91,6 @@ func _handle_input(event:InputEvent) -> bool:
 				_set_focus_for_player(player_index)
 				
 			return true
-	if Utils.is_maybe_action_pressed(event, "ui_accept_%s" % _device):
-		pass
-		
 		
 	var modal = get_viewport().get_modal_stack_top()
 	if modal is PopupMenu:
@@ -109,7 +109,10 @@ func _handle_input(event:InputEvent) -> bool:
 		if not focused_control.is_visible_in_tree():
 			return true
 		if focused_control is BaseButton:
+			print_debug("accepted?")
+#			print_debug("button?")
 			if focused_control.disabled:
+#				print_debug("disabled")
 				return true
 			if focused_control is OptionButton:
 				_open_option_button(focused_control)
@@ -120,14 +123,22 @@ func _handle_input(event:InputEvent) -> bool:
 			else :
 				var current_focus = CoopService.focus_by_player_index[CoopService.current_player_index]
 				if current_focus != null and is_instance_valid(current_focus):
-					print_debug("should emit for control ", current_focus)
 					FocusEmulatorSignal.emit(current_focus, "pressed", CoopService.current_player_index)
+				else:
+					print_debug("no focus")
 		return true
-		
+	
+	var previous: = focused_control
+	var result: = _get_focus_neighbour_for_event(event, previous)
+	var new = result.control
+	if not (new == null or new == previous):
+		CoopService.focus_by_player_index[CoopService.current_player_index] = new
+	
 	return ._handle_input(event)
 
 
 func on_focus_changed(focused_node : Control) -> void:
+#	print_debug("focus changed?")
 	CoopService.focus_by_player_index[CoopService.current_player_index] = focused_node
 
 
