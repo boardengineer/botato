@@ -18,7 +18,7 @@ func _input(event):
 			if event.scancode == KEY_F1:
 				if connected_players.size() < 4:
 					current_player_index = connected_players.size()
-					_add_player(connected_players.size(), PlayerType.KEYBOARD_AND_MOUSE)
+					_add_bot_player(PlayerType.KEYBOARD_AND_MOUSE)
 
 
 func _input_service_input(event:InputEvent)->void :
@@ -47,3 +47,8 @@ func _input_service_input(event:InputEvent)->void :
 
 func on_focus_changed(focused_node : Control) -> void:
 	focus_by_player_index[CoopService.current_player_index] = focused_node
+
+
+func _add_bot_player(player_type:int)->void :
+	connected_players.push_back([7, player_type])
+	emit_signal("connected_players_updated", connected_players)
