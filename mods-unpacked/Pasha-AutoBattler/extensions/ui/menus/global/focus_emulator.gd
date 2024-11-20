@@ -4,7 +4,6 @@ extends "res://ui/menus/global/focus_emulator.gd"
 func _draw() -> void:
 	._draw()
 
-
 func _set_focused_control_with_style(control:Control, emit_signals:bool) -> void:
 	print_debug("this is where i should be setting focus? ", control)
 	_ensure_control_visible(control)
@@ -30,9 +29,6 @@ func _update_focus_style_for_players(control:Control) -> bool:
 
 
 func _handle_input(event:InputEvent) -> bool:
-	if event is InputEventMouseButton:
-		print_debug("short handle input")
-		return false
 	if event is InputEventKey and event.pressed:
 		if event.scancode == KEY_TAB:
 			print_debug("changing active player")
@@ -40,7 +36,3 @@ func _handle_input(event:InputEvent) -> bool:
 			CoopService.emit_signal("selecting_player_changed")
 			return true
 	return ._handle_input(event)
-
-
-func _is_coop_ui_action(event:InputEvent) -> bool:
-	return true
