@@ -30,7 +30,7 @@ func get_movement()->Vector2:
 	var is_soldier = char_name == "character_soldier"
 	var is_bull = char_name == "character_bull"
 	
-	var player = get_parent()
+	var player = $"/root/Main"._players[0]
 	
 	var weapon_range = 1_000
 	var bumper_spacing = 50
