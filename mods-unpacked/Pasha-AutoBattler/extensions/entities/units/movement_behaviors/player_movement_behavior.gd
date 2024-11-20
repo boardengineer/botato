@@ -16,7 +16,9 @@ func get_movement()->Vector2:
 #	print_debug("bumper distnace: ", bumper_distance)
 #	print_debug("item_weight: ", item_weight)
 
-	if not enabled:
+	var player = get_parent()
+
+	if not enabled and not CoopService.is_bot_by_index[player.player_index]:
 		$"/root/Main/Camera".smoothing_enabled = false
 		return .get_movement()
 
@@ -29,8 +31,6 @@ func get_movement()->Vector2:
 	
 	var is_soldier = char_name == "character_soldier"
 	var is_bull = char_name == "character_bull"
-	
-	var player = $"/root/Main"._players[0]
 	
 	var weapon_range = 1_000
 	var bumper_spacing = 50
