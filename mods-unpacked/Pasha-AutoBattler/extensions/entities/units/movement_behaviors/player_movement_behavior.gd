@@ -23,8 +23,8 @@ func get_movement()->Vector2:
 		return .get_movement()
 
 	var _entity_spawner = $"/root/Main/EntitySpawner"
-	var _consumables_container = $"/root/Main/Consumables"
-	var items_container = $"/root/Main/Items"
+	var _consumables_container = $"/root/Main/"._consumables
+	var items_container = $"/root/Main/"._active_golds
 	var projectiles_container = $"/root/Main/Projectiles"
 	
 	var char_name = RunData.get_player_character(0).name.to_lower()
@@ -57,7 +57,7 @@ func get_movement()->Vector2:
 	var consumable_weight = (1.0 - (current_health / max_health)) * 2
 	
 	# Eat consumables, weighted by missing hp
-	for consumable in _consumables_container.get_children():
+	for consumable in _consumables_container:
 		var consumable_pos = consumable.position
 		var consumable_to_player = consumable_pos - player.position
 		var squared_distance_to_consumable = consumable_to_player.length_squared()
@@ -68,7 +68,7 @@ func get_movement()->Vector2:
 	
 	# Go towards "items" (gold pickups)
 	var item_weight_squared = item_weight * item_weight
-	for item in items_container.get_children():
+	for item in items_container:
 		var item_pos = item.position
 		var item_to_player = item_pos - player.position
 		var squared_distance_to_item = item_to_player.length_squared()
