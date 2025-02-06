@@ -46,8 +46,8 @@ func _draw():
 	var current_health = float(player.current_stats.health)
 	var consumable_weight = (1.0 - (current_health / max_health)) * 2
 	
-	var _consumables_container = $"/root/Main/Consumables"
-	for consumable in _consumables_container.get_children():
+	var _consumables_container = $"/root/Main/"._consumables
+	for consumable in _consumables_container:
 		var consumable_pos = consumable.position
 		var consumable_to_player = consumable_pos - player.position
 		var squared_distance_to_consumable = consumable_to_player.length_squared()
@@ -64,9 +64,9 @@ func _draw():
 			draw_circle(consumable.position, size, Color.blue)
 	
 	# Go towards "items" (gold pickups)
-	var items_container = $"/root/Main/Items"
+	var items_container = $"/root/Main/"._active_golds
 	var item_weight_squared = item_weight * item_weight
-	for item in items_container.get_children():
+	for item in items_container:
 		var item_pos = item.position
 		var item_to_player = item_pos - player.position
 		var squared_distance_to_item = item_to_player.length_squared()
