@@ -105,7 +105,7 @@ func _draw():
 			draw_circle(neutral.position, size, color)
 			
 	# Go away from projectiles
-	var projectiles_container = $"/root/Main/Projectiles"
+	var projectiles_container = $"/root/Main/EnemyProjectiles"
 	var projectile_weight_squared = projectile_weight * projectile_weight
 	for projectile in projectiles_container.get_children():
 		var projectile_shape = projectile._hitbox._collision.shape

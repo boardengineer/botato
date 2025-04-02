@@ -1,7 +1,7 @@
 {
 	"name": "AutoBattler",
 	"namespace": "Pasha",
-	"version_number": "1.2.0",
+	"version_number": "1.3.0",
 	"description": "Do you want to work for potatoes or do you want potatoes to work for you?",
 	"website_url": "",
 	"dependencies": [],
