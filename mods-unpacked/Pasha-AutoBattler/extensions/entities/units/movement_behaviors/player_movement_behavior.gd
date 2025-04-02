@@ -25,7 +25,7 @@ func get_movement()->Vector2:
 	var _entity_spawner = $"/root/Main/EntitySpawner"
 	var _consumables_container = $"/root/Main/"._consumables
 	var items_container = $"/root/Main/"._active_golds
-	var projectiles_container = $"/root/Main/Projectiles"
+	var projectiles_container = $"/root/Main/EnemyProjectiles"
 	
 	var char_name = RunData.get_player_character(0).name.to_lower()
 	
