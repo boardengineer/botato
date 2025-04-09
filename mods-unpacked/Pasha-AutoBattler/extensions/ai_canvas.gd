@@ -108,6 +108,8 @@ func _draw():
 	var projectiles_container = $"/root/Main/EnemyProjectiles"
 	var projectile_weight_squared = projectile_weight * projectile_weight
 	for projectile in projectiles_container.get_children():
+		if not projectile._hitbox or not projectile._hitbox.active:
+			continue
 		var projectile_shape = projectile._hitbox._collision.shape
 		var extra_range = 0
 		if projectile_shape is CircleShape2D:
