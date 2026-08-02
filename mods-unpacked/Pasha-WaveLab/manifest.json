@@ -1,0 +1,16 @@
+{
+	"name": "WaveLab",
+	"namespace": "Pasha",
+	"version_number": "1.0.0",
+	"description": "Reproducible wave-replay test bed: auto-continues a saved run, replays the wave, prints a machine-readable result, quits. Inert without --wavelab=1.",
+	"website_url": "",
+	"dependencies": [],
+	"extra": {
+		"godot": {
+			"incompatibilities": [],
+			"authors": ["Pasha"],
+			"compatible_mod_loader_version": ["6.0.0"],
+			"compatible_game_version": ["0.8.0.3"]
+		}
+	}
+}
