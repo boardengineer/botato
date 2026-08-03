@@ -7,3 +7,6 @@
 # member 1 — the founding benchmark: croc chain-dasher + boosting pursuers
 # + Loud swarm density, fragile 59-HP build. Won 2/45 ever.
 20260802-w11-loud-d5-hp59.json
+# member 2 — early-wave weak build (29 max HP), screen 3/3 deaths at 34-45s:
+# late-wave grind-down profile, not the burst deaths of member 1.
+20260731-w8-gangster-d5-hp29.json
