@@ -13,15 +13,16 @@
 # member 3 — ultra-fragile early wave (7 HP entering w5): tests near-perfect
 # avoidance; screen 2/3 deaths at 30-32s.
 20260803-w5-loud-d5-hp7.json
-# reserve (NOT a member): same run/build as member 3, adjacent wave —
-# redundant unless the bed comes up short. Screened 2/3 deaths.
-# 20260803-w4-loud-d5-hp1.json
+# member 9 (promoted from reserve to complete the bed): same run/build as
+# member 3, adjacent wave, 1-HP entry. Screened 2/3 deaths.
+20260803-w4-loud-d5-hp1.json
 # member 4 — wave-3 opening chaos on a 12-HP start (sailor). Screen 3/3
 # deaths at 17-25s. Replaced w3-renegade-hp12 (same context, only 2/3
 # deaths — weaker signal); renegade kept as reserve below.
 20260803-w3-sailor-d5-hp12.json
-# reserve (NOT a member): same context as member 4, dies only 2/3.
-# 20260803-w3-renegade-d5-hp12.json
+# member 10 (promoted from reserve to complete the bed): same context as
+# member 4 but renegade; dies 2/3.
+20260803-w3-renegade-d5-hp12.json
 # member 5 — fisherman wave-2 opener, heaviest early intake seen (22-26 dmg
 # in 11-16s). Screen 2/3 deaths.
 20260803-w2-fisherman-d5-hp12.json
