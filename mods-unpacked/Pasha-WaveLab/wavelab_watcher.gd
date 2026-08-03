@@ -20,6 +20,8 @@ var _state = STATE_MENU
 var _delay = 0.0
 var _hooked_player = null
 var _dmg = 0.0
+var _elapsed = 0.0
+var _last_hp = 0
 
 
 func _ready():
@@ -69,7 +71,7 @@ func _process(delta):
 
 	elif _state == STATE_SHOP and scene.name == "Shop":
 		_delay += delta
-		if _delay < 1.0:
+		if _delay < 0.4:
 			return
 		# Seed both generators right before the wave scene loads, so every
 		# spawn roll after this point comes from the seed
@@ -78,25 +80,39 @@ func _process(delta):
 			seed(rng_seed)
 		_state = STATE_WAVE
 		_delay = 0.0
-		scene._on_GoButton_pressed()
+		# The AutoBattler focus emulator may have toggled Endless on the
+		# final-wave shop before we get here — force it back off
+		RunData.is_endless_run = false
+		scene._on_GoButton_pressed(0)
 
-	elif _state == STATE_WAVE and scene.name == "Main":
-		if scene._players.empty():
-			return
-		var player = scene._players[0]
-		if _hooked_player != player:
-			_hooked_player = player
-			player.connect("took_damage", self, "_on_player_took_damage")
-			if speed > 1.0:
-				Engine.time_scale = speed
-			print("WAVELAB WAVE_START wave=%d char=%s hp=%d/%d" % [
-				RunData.current_wave,
-				RunData.get_player_character(0).my_id,
-				int(player.current_stats.health), int(player.max_stats.health)])
-		if player.dead:
-			_finish(scene, "died")
-		elif scene._wave_timer.time_left <= 0.05:
-			_finish(scene, "survived")
+	elif _state == STATE_WAVE:
+		if scene.name == "Main":
+			if scene._players.empty():
+				return
+			var player = scene._players[0]
+			if _hooked_player != player:
+				_hooked_player = player
+				player.connect("took_damage", self, "_on_player_took_damage")
+				if speed > 1.0:
+					Engine.time_scale = speed
+				print("WAVELAB WAVE_START wave=%d char=%s hp=%d/%d" % [
+					RunData.current_wave,
+					RunData.get_player_character(0).my_id,
+					int(player.current_stats.health), int(player.max_stats.health)])
+			# max(): the timer resets in the final frames of a won wave — a
+			# plain sample would report t=0 at the finish
+			_elapsed = max(_elapsed, scene._wave_timer.wait_time - scene._wave_timer.time_left)
+			_last_hp = int(player.current_stats.health)
+			if player.dead:
+				_finish("died")
+			# NOTE: no timer-based survive check — on the final wave the timer
+			# ends while the boss fight continues (enrage). The wave is over
+			# only when the game leaves Main: shop (normal), end screens (won).
+		elif _hooked_player != null:
+			var outcome = "survived"
+			if is_instance_valid(_hooked_player) and _hooked_player.dead:
+				outcome = "died"
+			_finish(outcome)
 
 
 func _on_player_took_damage(_unit, value, _kb, _is_crit, is_dodge, is_protected, _armor, _args, _hit_type, _one_shot):
@@ -105,14 +121,15 @@ func _on_player_took_damage(_unit, value, _kb, _is_crit, is_dodge, is_protected,
 	_dmg += value
 
 
-func _finish(main, outcome):
+func _finish(outcome):
 	_state = STATE_DONE
 	var hp_end = 0
 	if is_instance_valid(_hooked_player) and not _hooked_player.dead:
 		hp_end = int(_hooked_player.current_stats.health)
+	elif outcome == "survived":
+		hp_end = _last_hp # player node freed by the run-won scene change
 	print("WAVELAB RESULT wave=%d outcome=%s dmg=%d hp_end=%d t=%d" % [
-		RunData.current_wave, outcome, int(_dmg), hp_end,
-		int(main._wave_timer.wait_time - main._wave_timer.time_left)])
+		RunData.current_wave, outcome, int(_dmg), hp_end, int(_elapsed)])
 	_quit()
 
 
