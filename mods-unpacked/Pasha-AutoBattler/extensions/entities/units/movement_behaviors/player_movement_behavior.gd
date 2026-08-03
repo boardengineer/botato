@@ -34,26 +34,6 @@ const KITE_HP_FACTOR = 0.4               # kite radius grows to weapon_range*1.4
 const IN_RANGE_ATTRACT_DAMP = 0.35       # damp gold/food/distant-enemy pull while already in weapon range
 const ENEMY_PANIC_RADIUS = 120.0         # inside this, contact repulsion ramps ~1/d^4
 const ENEMY_PANIC_RAMP_MAX = 6.0         # cap on that ramp
-const FAST_CHASER_REACTION = 0.5         # chaser outpacing us: panic radius = its speed x this many seconds
-const FAST_CHASER_PANIC_MAX = 320.0      # cap; a max-boost pursuer (600 px/s) would otherwise quarantine 300+ px
-const FAST_CHASER_STRENGTH = 0.003       # x ramp(<=6) x caution(<=4): 1/d^2 panic (~0.001) loses to dodge commits
-const FAST_CHASER_LOOKAHEAD = 0.4        # s; score a fast chaser's FUTURE position too — it crosses ~300 px per dodge commit
-const FAST_CHASER_CORRIDOR_TTI = 0.9     # s to intercept; closer than this, a boosted chaser IS a dash in flight
-const FAST_CHASER_CORRIDOR_MARGIN = 60.0 # synthetic corridor half-width beyond body radius (it re-aims; keep it narrow)
-const BODY_SLIDE_RANGE = 220.0           # this close to an enemy body, start shedding the into-body component (bot ~350 px/s + closing enemy: 170 was ~0.25 s of margin, less than one dodge commit)
-const BODY_SLIDE_CONTACT = 60.0          # full block at contact distance
-const BODY_SLIDE_MIN_KEEP = 0.35         # swarm cancels everything: squeezing the thinnest gap beats standing still
-const CORRIDOR_LAT_KEEP = 0.85           # body slide may never shave the dodge's corridor-lateral share below this
-# -- Lap kiting --
-const LAP_MIN_ENEMIES = 8                # below this, purely local kiting is fine
-const LAP_STRENGTH = 0.006               # tangential drive along the lap; dodge commits (0.01+) still override locally
-const LAP_RING_MARGIN = 380.0            # hold the orbit this far inside the nearest wall (stadium-shaped lap)
-const LAP_RING_GAIN = 0.5                # radial correction toward the ring, per 300 px of error
-const LAP_PROBE = 420.0                  # look this far along the lap for blockage
-const LAP_FLIP_COOLDOWN_MS = 3000        # flips cut back through the streamed swarm — make them rare
-const LAP_BLOCK_ROOM = 230.0             # min(wall, enemy) room at the probe below this = lap direction blocked
-const LAP_ALIGN_BONUS = 120.0            # px-of-room equivalent: dodge side that advances the lap wins near-ties
-const LAP_ALIGN_BONUS_CF = 80.0          # same idea for the 16-dir crossfire exit picker
 # -- Projectiles --
 const PROJECTILE_RANGE_SQ = 250_000.0    # 500 px cutoff
 const STATIONARY_SPEED_SQ = 100.0        # velocity < 10 px/s => ground AoE (pillar)
@@ -64,9 +44,6 @@ const AOE_PANIC_RAMP_MAX = 8.0           # inside the footprint, repulsion ramps
 const AOE_FLEE_MIN = 2                   # this many pillars within ENCIRCLE_AOE_RADIUS = on-player cluster
 const AOE_FLEE_STRENGTH = 0.05           # a centered cluster cancels its own repulsion; commit and sprint
 const AOE_FLEE_COMMIT_MS = 400           # hold the exit until (nearly) clear of the telegraph
-const PILLAR_FIELD_MIN = 8               # this many live pillars map-wide = saturation; navigate, don't react
-const PILLAR_NAV_STRENGTH = 0.03         # below AOE_FLEE so an on-player cluster still dominates
-const PILLAR_NAV_COMMIT_MS = 300         # re-pick cadence for the field exit
 const PROJ_CLOSE_ALWAYS_SQ = 10_000.0    # within 100 px repel regardless of heading
 const PROJ_CORRIDOR_MARGIN = 60.0        # player half-size + margin for line-of-fire test
 const PROJ_IMMINENT_TTI = 0.7            # seconds to impact that makes a shot "imminent"
@@ -93,8 +70,6 @@ const WAVE_COUNTER_STRENGTH = 0.05       # upstream push; fleeing WITH a ring en
 
 var _escape_dir = Vector2.ZERO
 var _escape_until_ms = 0
-var _lap_sign = 1.0
-var _lap_flip_ms = 0
 var escaping = false                     # read by ai_telemetry / ai_canvas
 var _counter_dir = Vector2.ZERO
 var countering = false                   # read by ai_telemetry / ai_canvas
@@ -109,9 +84,6 @@ var last_corridor_count = 0              # actual corridors this frame; read by 
 var _proj_dodge_dir = Vector2.ZERO
 var _proj_dodge_until_ms = 0
 var proj_dodging = false                 # imminent-bullet dodge active; read by ai_telemetry
-var _pillar_nav_dir = Vector2.ZERO
-var _pillar_nav_until_ms = 0
-var pillar_navigating = false            # pillar-field navigation active; read by ai_telemetry
 
 
 func get_movement()->Vector2:
@@ -224,8 +196,6 @@ func get_movement()->Vector2:
 	var threat_angles = []
 	# Positions of live ground-AoE telegraphs right on top of us
 	var aoe_close = []
-	# ALL live unspent ground-AoE telegraphs, map-wide (invoker saturation)
-	var pillar_positions = []
 
 	# Go away from projectiles
 	var projectile_weight_squared = projectile_weight * projectile_weight
@@ -257,8 +227,6 @@ func get_movement()->Vector2:
 		if proj_speed_sq < STATIONARY_SPEED_SQ:
 			var spent = projectile._hitbox.is_disabled() and projectile._animation_player.is_playing() \
 					and projectile._animation_player.current_animation_position > AOE_HARMLESS_ANIM_POS
-			if not spent:
-				pillar_positions.push_back(projectile.position)
 			if not spent and proj_off.length_squared() < ENCIRCLE_AOE_RADIUS * ENCIRCLE_AOE_RADIUS:
 				threat_angles.push_back(proj_off.angle())
 				aoe_close.push_back(projectile.position)
@@ -277,30 +245,13 @@ func get_movement()->Vector2:
 	var close_enemy_positions = []
 
 	# Move towards distant enemies, away from nearby ones.  Determined by weapons range.
-	var player_speed = player.get_move_speed()
 	for enemy in _entity_spawner.enemies:
 		if enemy.dead or enemy._pending_die:
 			continue
 		if enemy.get_charmed_by_player_index() != - 1:
 			continue # allied, harmless
 
-		var chaser_speed = enemy.get_move_speed()
 		var corridor = _get_charge_corridor(enemy, player.position)
-		if corridor.empty() and chaser_speed > player_speed and not enemy.is_loot:
-			# A boosted pursuer IS a dash in flight — it homes at up to
-			# 600 px/s and only slows by landing a hit. Its intercepts used
-			# to resolve as rounding-error radial panic while the croc
-			# corridor owned the dodge (burst deaths: 2-3 x 23 dmg inside
-			# dodge commits). As a corridor, croc dash + pursuer intercept
-			# become the two-threat crossfire exit it actually is
-			var to_us = player.position - enemy.position
-			var intercept_time = to_us.length() / max(chaser_speed, 1.0)
-			if intercept_time < FAST_CHASER_CORRIDOR_TTI:
-				var c_dir = to_us.normalized()
-				var c_urgency = clamp(1.0 - intercept_time / FAST_CHASER_CORRIDOR_TTI, 0.3, 1.0)
-				var c_strength = clamp(CHARGE_DODGE_NEAR / max(to_us.length(), 100.0), 0.5, 2.0) * CHARGE_INFLIGHT_MULT
-				var c_length = chaser_speed * FAST_CHASER_CORRIDOR_TTI + CHARGE_LOOKAHEAD_MARGIN
-				corridor = [enemy.position, c_dir, _get_body_radius(enemy) + FAST_CHASER_CORRIDOR_MARGIN, 0.0, c_urgency, c_strength, false, c_length, true]
 		if not corridor.empty():
 			must_run_away = true
 			charge_corridors.push_back(corridor)
@@ -316,11 +267,6 @@ func get_movement()->Vector2:
 
 		if squared_distance_to_enemy < CROSSFIRE_ENEMY_RANGE_SQ and not enemy.is_loot:
 			close_enemy_positions.push_back(enemy.position)
-			# A faster-than-us chaser covers ~300 px during one dodge commit;
-			# a side scored "clear" by its current position is an intercept
-			# course. Score where it will be, too
-			if chaser_speed > player_speed:
-				close_enemy_positions.push_back(enemy.position + (player.position - enemy.position).normalized() * chaser_speed * FAST_CHASER_LOOKAHEAD)
 
 		if squared_distance_to_enemy < ENCIRCLE_RADIUS * ENCIRCLE_RADIUS:
 			threat_angles.push_back(enemy_to_player.angle())
@@ -347,24 +293,9 @@ func get_movement()->Vector2:
 			var panic_radius = ENEMY_PANIC_RADIUS
 			if enemy._current_attack_behavior is ChargingAttackBehavior:
 				panic_radius = CHARGER_PANIC_RADIUS
-			# Boosting chasers (pursuer: 150 + 45/s, 600 px/s at max stack,
-			# resets only on hit) outrun any build — 120 px is 0.2 s of
-			# warning. Flee has to start while weapons still have time to
-			# kill them on approach; radial escape alone can't win
-			if chaser_speed > player_speed:
-				panic_radius = max(panic_radius, min(chaser_speed * FAST_CHASER_REACTION, FAST_CHASER_PANIC_MAX))
 			if squared_distance_to_enemy < panic_radius * panic_radius:
 				var panic = min((panic_radius * panic_radius) / max(squared_distance_to_enemy, 1.0), ENEMY_PANIC_RAMP_MAX)
 				to_add = to_add * panic
-				# The 1/d^2 panic term tops out ~0.001 — a committed dodge
-				# (0.01-0.045) walks straight through it (loud-w11: 0/6, three
-				# 23-dmg pursuer hits inside dodge commits). Chasers we cannot
-				# outrun get an absolute-strength term that can bend a dodge
-				if chaser_speed > player_speed:
-					var caution = clamp(1.0 + 2.0 * enemy.current_stats.damage / max(current_health, 1.0), 1.0, DAMAGE_CAUTION_MAX)
-					var fast_term = enemy_to_player.normalized() * - 1 * FAST_CHASER_STRENGTH * panic * caution
-					if fast_term.length() > to_add.length():
-						to_add = fast_term
 			move_vector = move_vector + to_add
 		else:
 			# Attraction-only bonuses; never boost repulsion from harmless targets
@@ -546,33 +477,6 @@ func get_movement()->Vector2:
 		edge_push.y -= 1.0 - (far_corner.y - player.position.y) / EDGE_GUARD_DISTANCE
 	move_vector = move_vector + edge_push * EDGE_GUARD_STRENGTH
 
-	# -- Lap kiting: hold ONE rotational direction around the arena --
-	# Reactive escapes reverse heading every 1-2 s, cutting back through the
-	# swarm front — which is exactly when contact enemies (pursuers at up to
-	# 600 px/s) connect. A held lap streams the whole wave into one coherent
-	# tail behind us; nothing intercepts from ahead. Computed BEFORE the
-	# dodges: with a chain-dasher on the field a corridor is live most ticks,
-	# so the dodges themselves must advance the lap (alignment bonus in
-	# their side/exit scoring) or the lap never establishes
-	var lap_dir = Vector2.ZERO
-	if _entity_spawner.enemies.size() >= LAP_MIN_ENEMIES:
-		var lap_center = far_corner * 0.5
-		var from_center = player.position - lap_center
-		if from_center.length_squared() < 1.0:
-			from_center = Vector2.RIGHT
-		lap_dir = from_center.tangent().normalized() * _lap_sign
-		var lap_now = OS.get_ticks_msec()
-		var lap_probe = player.position + lap_dir * LAP_PROBE
-		if min(_wall_room(lap_probe, far_corner), _enemy_room(lap_probe, close_enemy_positions)) < LAP_BLOCK_ROOM \
-				and lap_now - _lap_flip_ms > LAP_FLIP_COOLDOWN_MS:
-			_lap_sign = - _lap_sign
-			_lap_flip_ms = lap_now
-			lap_dir = - lap_dir
-		# Radial correction: hold the ring LAP_RING_MARGIN inside the walls
-		var lap_room_err = clamp((_wall_room(player.position, far_corner) - LAP_RING_MARGIN) / 300.0, - 1.0, 1.0)
-		var lap_vec = (lap_dir + from_center.normalized() * lap_room_err * LAP_RING_GAIN).normalized()
-		move_vector = move_vector + lap_vec * LAP_STRENGTH
-
 	# Charge dodging: a single corridor gets the perpendicular sidestep; crossing
 	# corridors get a max-min exit (dodging one dash must not step into another).
 	# Both scale with repel_caution: at low HP any clip is lethal while loot pull
@@ -590,19 +494,10 @@ func get_movement()->Vector2:
 		# bot from 456 px of open space straight into a blob at 36 px
 		var here_pos = player.position + c_tangent * side * 300.0
 		var there_pos = player.position - c_tangent * side * 300.0
-		# Path-aware room: a probe only at 300 px is blind to a body sitting
-		# 120 px along the lane (observed live: dodges steering through
-		# enemies) — take the WORSE of mid-lane and full-lane room.
-		# Lap alignment: dodging WITH the lap keeps the swarm streaming behind
-		# us; a lap-breaking sidestep must earn it with real room
-		var here_mid = player.position + c_tangent * side * 140.0
-		var there_mid = player.position - c_tangent * side * 140.0
 		var score_here = min(_wall_room(here_pos, far_corner), DODGE_WALL_ROOM_CAP) \
-				+ min(_enemy_room(here_pos, close_enemy_positions), _enemy_room(here_mid, close_enemy_positions)) \
-				+ LAP_ALIGN_BONUS * (c_tangent * side).dot(lap_dir)
+				+ _enemy_room(here_pos, close_enemy_positions)
 		var score_there = min(_wall_room(there_pos, far_corner), DODGE_WALL_ROOM_CAP) \
-				+ min(_enemy_room(there_pos, close_enemy_positions), _enemy_room(there_mid, close_enemy_positions)) \
-				+ LAP_ALIGN_BONUS * (c_tangent * - side).dot(lap_dir)
+				+ _enemy_room(there_pos, close_enemy_positions)
 		if score_there > score_here + 50.0:
 			side = - side
 		var escape
@@ -640,17 +535,14 @@ func get_movement()->Vector2:
 					var clear = abs(rel.dot(c[1].tangent())) - c[2]
 					if clear < min_clear:
 						min_clear = clear
-				# Don't exit a dash straight into the swarm (28 HP lost that way
-				# once) — and check mid-lane too, not just the endpoint
-				var mid_future = player.position + cand * 100.0
+				# Don't exit a dash straight into the swarm (28 HP lost that way once)
 				var enemy_room = 300.0
 				for e_pos in close_enemy_positions:
-					var e_d = min(future.distance_to(e_pos), mid_future.distance_to(e_pos))
+					var e_d = future.distance_to(e_pos)
 					if e_d < enemy_room:
 						enemy_room = e_d
 				var score = min_clear + enemy_room / 3.0 + _wall_room(future, far_corner) / 6.0 \
-						- 100.0 * _proj_blocked_count(future, proj_corridors) \
-						+ LAP_ALIGN_BONUS_CF * cand.dot(lap_dir)
+						- 100.0 * _proj_blocked_count(future, proj_corridors)
 				# Hysteresis: near-tied exits must not flip-flop every re-pick
 				# (two winding bosses once netted 33 px/s of actual movement)
 				if cand.dot(_crossfire_dir) > 0.95:
@@ -734,10 +626,7 @@ func get_movement()->Vector2:
 				var cand = Vector2(cos(k * TAU / 8.0), sin(k * TAU / 8.0))
 				var future = player.position + cand * 150.0
 				var min_d = 1e9
-				# Score against ALL live pillars, not just the on-player
-				# cluster — in a saturated field (invoker: 30+) the cluster
-				# exit was routing straight through neighboring telegraphs
-				for p_pos in pillar_positions:
+				for p_pos in aoe_close:
 					var d = future.distance_to(p_pos)
 					if d < min_d:
 						min_d = d
@@ -748,35 +637,6 @@ func get_movement()->Vector2:
 			_aoe_flee_dir = af_best_dir
 			_aoe_flee_until_ms = af_now + AOE_FLEE_COMMIT_MS
 		move_vector = move_vector + _aoe_flee_dir * AOE_FLEE_STRENGTH
-
-	# Pillar saturation (invoker): 30+ live telegraphs collapse the per-pillar
-	# repulsion field into cancelling noise, and half the recorded pillar hits
-	# landed with NO escape behavior active. Navigate the field as a whole:
-	# committed max-min exit over every live pillar on the map
-	pillar_navigating = false
-	if pillar_positions.size() >= PILLAR_FIELD_MIN and not aoe_fleeing:
-		pillar_navigating = true
-		var pn_now = OS.get_ticks_msec()
-		if pn_now >= _pillar_nav_until_ms:
-			var pn_best_dir = Vector2.ZERO
-			var pn_best_score = - 1e9
-			for k in range(16):
-				var cand = Vector2(cos(k * TAU / 16.0), sin(k * TAU / 16.0))
-				var future = player.position + cand * 200.0
-				var pillar_room = 300.0
-				for p_pos in pillar_positions:
-					var d = future.distance_to(p_pos)
-					if d < pillar_room:
-						pillar_room = d
-				var score = pillar_room + _enemy_room(future, close_enemy_positions) / 3.0 \
-						+ _wall_room(future, far_corner) / 6.0 \
-						- 100.0 * _proj_blocked_count(future, proj_corridors)
-				if score > pn_best_score:
-					pn_best_score = score
-					pn_best_dir = cand
-			_pillar_nav_dir = pn_best_dir
-			_pillar_nav_until_ms = pn_now + PILLAR_NAV_COMMIT_MS
-		move_vector = move_vector + _pillar_nav_dir * PILLAR_NAV_STRENGTH
 
 	# Counter-steer expanding projectile rings: fleeing WITH the wave ends
 	# pinned at a wall; crossing upstream ends in the already-swept interior
@@ -850,70 +710,6 @@ func get_movement()->Vector2:
 		move_vector.y = 0.0
 	if far_corner.y - player.position.y < WALL_SLIDE_DISTANCE and move_vector.y > 0.0:
 		move_vector.y = 0.0
-
-	# Enemy bodies are not transparent either: a committed dodge or boss
-	# danger ramp (0.01-0.09) outweighs contact panic (~0.001) and plows
-	# straight through 23-dmg bodies (loud-w11: first pursuer hit of every
-	# run landed with ZERO corridors live — croc repulsion drove us through
-	# it). Strip the into-body component like the wall slide above, fading
-	# in toward contact. close_enemy_positions includes fast chasers'
-	# projected positions, so intercept courses shed too.
-	# NEVER while a dash corridor is live: the dodge needs its whole lateral
-	# budget (~330 px/s vs a ~190 px corridor in 0.6 s) and a dash WILL land
-	# where a body only might — croc hits tripled (1/run -> 3/run) when the
-	# slide/squeeze shipped without this guard, user-observed
-	# Bodies vs dash corridors is an ARBITRATION, not mutual exclusion:
-	# skipping the slide during corridors sent pursuer hits 9 -> 18 a batch;
-	# letting the slide+squeeze run free rotated dodges into the croc (hits
-	# 1/run -> 3/run, user-observed). The dodge's corridor-lateral component
-	# is the life-critical part: slide around bodies as usual, then restore
-	# that component to CORRIDOR_LAT_KEEP of what the dodge asked for
-	var guard_tangent = Vector2.ZERO
-	if not charge_corridors.empty():
-		var gc = charge_corridors[0]
-		for c in charge_corridors:
-			if c[6]:
-				gc = c # a boss corridor outranks the rest
-				break
-		guard_tangent = gc[1].tangent()
-	var pre_slide = move_vector
-	for e_pos in close_enemy_positions:
-		var to_body = e_pos - player.position
-		var body_d = to_body.length()
-		if body_d > BODY_SLIDE_RANGE or body_d < 1.0:
-			continue
-		var body_n = to_body / body_d
-		var into = move_vector.dot(body_n)
-		if into <= 0.0:
-			continue
-		var block = clamp(1.0 - (body_d - BODY_SLIDE_CONTACT) / (BODY_SLIDE_RANGE - BODY_SLIDE_CONTACT), 0.0, 1.0)
-		move_vector = move_vector - body_n * into * block
-	if guard_tangent != Vector2.ZERO:
-		var want_lat = pre_slide.dot(guard_tangent) * CORRIDOR_LAT_KEEP
-		var have_lat = move_vector.dot(guard_tangent)
-		if abs(have_lat) < abs(want_lat):
-			move_vector += guard_tangent * (want_lat - have_lat)
-	elif move_vector.length() < pre_slide.length() * BODY_SLIDE_MIN_KEEP:
-		# Reverting to the raw vector here meant plowing straight through
-		# the blob — the exact failure observed live while dodging elite
-		# dashes. Instead squeeze along the nearest blocker's open tangent.
-		# Corridor-free frames only: direction replacement is what rotated
-		# dodges into the croc
-		var blk_d = 1e9
-		var blk_n = Vector2.ZERO
-		for e_pos in close_enemy_positions:
-			var d = player.position.distance_to(e_pos)
-			if d < blk_d and d > 1.0:
-				blk_d = d
-				blk_n = (e_pos - player.position) / d
-		if blk_d < BODY_SLIDE_RANGE:
-			var t_a = blk_n.tangent()
-			var room_a = _enemy_room(player.position + t_a * 150.0, close_enemy_positions)
-			var room_b = _enemy_room(player.position - t_a * 150.0, close_enemy_positions)
-			var squeeze = t_a if room_a >= room_b else - t_a
-			move_vector = squeeze * pre_slide.length()
-		else:
-			move_vector = pre_slide
 
 	if (shooting_anyone and not must_run_away) and is_soldier:
 		return Vector2.ZERO

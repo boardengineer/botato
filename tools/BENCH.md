@@ -50,6 +50,18 @@ mode at once:
   lines; `esc=` bitmask: +1 gap +2 counter +4 crossfire +8 AoE +16 dodge
   +32 bullet +64/+80 composites).
 
+## Current state (post-A/B revert)
+
+The steering experiments were REVERTED after a 10-vs-10 A/B on this benchmark
+showed them to be marginal (4.08 vs 3.89 dmg/s, 0/10 both arms) with a hidden
+6x projectile-hit regression. The working tree carries the pre-experiment AI
+WIP (July 30–Aug 1 machinery) as the test bed's official start line. The full
+experimental code — lap kiting, lap-aligned dodges, body slide, fast-chaser
+corridors, arbitration variants — is preserved in commit 6dda860 for reuse;
+the lap-alignment insight (dodges must advance one held rotational direction;
+it produced both wins) is the strongest candidate to carry into the planned
+single-arbiter rework.
+
 ## History highlights (Aug 2–3, 2026 — the founding night)
 
 Chronology of steering iterations, all vs. this snapshot (details in
