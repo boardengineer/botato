@@ -32,3 +32,6 @@
 # (0.8 dmg/s but no margin). Screen 3/3 deaths at 33-43s. Contrast pair
 # with member 2 (same wave number, different threat mix).
 20260803-w8-king-d5-hp25.json
+# member 8 — lucky at wave 11, 26 HP: instant-burst deaths (one at t=6s,
+# 28 dmg). Screen 2/3 deaths.
+20260803-w11-lucky-d5-hp26.json
