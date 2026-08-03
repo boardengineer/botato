@@ -10,3 +10,9 @@
 # member 2 — early-wave weak build (29 max HP), screen 3/3 deaths at 34-45s:
 # late-wave grind-down profile, not the burst deaths of member 1.
 20260731-w8-gangster-d5-hp29.json
+# member 3 — ultra-fragile early wave (7 HP entering w5): tests near-perfect
+# avoidance; screen 2/3 deaths at 30-32s.
+20260803-w5-loud-d5-hp7.json
+# reserve (NOT a member): same run/build as member 3, adjacent wave —
+# redundant unless the bed comes up short. Screened 2/3 deaths.
+# 20260803-w4-loud-d5-hp1.json

@@ -1,0 +1,3148 @@
+{
+  "current_run_state": {
+    "bonus_gold": 35,
+    "bosses_killed_this_run": [
+
+    ],
+    "bosses_spawn": [
+      "boss_crab",
+      "boss_wizard"
+    ],
+    "challenges_completed_this_run": [
+
+    ],
+    "constant_projectile": 1,
+    "current_background": "bg_volcano",
+    "current_difficulty": 5,
+    "current_wave": 4,
+    "current_zone": 0,
+    "elites_killed_this_run": [
+
+    ],
+    "elites_spawn": [
+      [
+        11,
+        0,
+        513681604
+      ],
+      [
+        15,
+        0,
+        1458511319
+      ],
+      [
+        18,
+        0,
+        999154784
+      ]
+    ],
+    "enabled_dlcs": [
+      "abyssal_terrors"
+    ],
+    "enemy_scaling": {
+      "damage": 1,
+      "health": 1,
+      "speed": 1
+    },
+    "events_bullet_hell": [
+
+    ],
+    "events_fog_of_war": [
+
+    ],
+    "events_spawn": [
+
+    ],
+    "free_rerolls": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "has_run_state": true,
+    "initial_free_rerolls": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "is_coop_run": false,
+    "is_endless_run": false,
+    "is_streamplay_run": false,
+    "item_steals": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "locked_shop_items": [
+      [
+        [
+          {
+            "curse_factor": 0,
+            "effects": [
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_luck",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "20"
+              },
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_hp_regeneration",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "-2"
+              }
+            ],
+            "is_cursed": false,
+            "is_lockable": true,
+            "is_locked": false,
+            "item_appearances": [
+              {
+                "depth": 250,
+                "display_priority": 2,
+                "is_character_appearance": false,
+                "position": 8,
+                "sprite": "res://items/all/shady_potion/shady_potion.png"
+              }
+            ],
+            "max_nb": "-1",
+            "my_id": "item_shady_potion",
+            "name": "ITEM_SHADY_POTION",
+            "tags": [
+              "stat_luck"
+            ],
+            "tier": "1",
+            "tracking_text": "",
+            "value": "48"
+          },
+          4
+        ]
+      ],
+      [
+
+      ],
+      [
+
+      ],
+      [
+
+      ]
+    ],
+    "loot_aliens_killed_this_run": 0,
+    "max_endless_wave_record_beaten": -1,
+    "nb_of_waves": 20,
+    "paid_reroll_count": [
+      4,
+      0,
+      0,
+      0
+    ],
+    "play_mode": 0,
+    "players_data": [
+      {
+        "active_set_effects": [
+          [
+            385046921,
+            {
+              "base_value": 0,
+              "curse_factor": 0,
+              "custom_args": [
+
+              ],
+              "custom_key": "",
+              "effect_id": "effect",
+              "effect_sign": 3,
+              "key": "stat_max_hp",
+              "storage_method": 0,
+              "text_key": "",
+              "value": "6"
+            }
+          ],
+          [
+            3928742135,
+            {
+              "base_value": 0,
+              "curse_factor": 0,
+              "custom_args": [
+
+              ],
+              "custom_key": "",
+              "effect_id": "effect",
+              "effect_sign": 3,
+              "key": "stat_armor",
+              "storage_method": 0,
+              "text_key": "",
+              "value": "1"
+            }
+          ],
+          [
+            3928742135,
+            {
+              "base_value": 0,
+              "curse_factor": 0,
+              "custom_args": [
+
+              ],
+              "custom_key": "",
+              "effect_id": "effect",
+              "effect_sign": 3,
+              "key": "stat_dodge",
+              "storage_method": 0,
+              "text_key": "",
+              "value": "3"
+            }
+          ]
+        ],
+        "active_sets": {
+          "385046921": 3,
+          "3928742135": 3
+        },
+        "additional_weapon_effects": [
+
+        ],
+        "appearances": [
+          {
+            "depth": -100,
+            "display_priority": 0,
+            "is_character_appearance": false,
+            "position": 13,
+            "sprite": "res://items/all/coupon/coupon.png"
+          },
+          {
+            "depth": 250,
+            "display_priority": 3,
+            "is_character_appearance": true,
+            "position": 8,
+            "sprite": "res://items/characters/loud/loud_mouth.png"
+          },
+          {
+            "depth": 450,
+            "display_priority": 0,
+            "is_character_appearance": false,
+            "position": 12,
+            "sprite": "res://items/all/fertilizer/fertilizer.png"
+          },
+          {
+            "depth": 500,
+            "display_priority": 0,
+            "is_character_appearance": true,
+            "position": 6,
+            "sprite": "res://items/characters/loud/loud_eyes.png"
+          },
+          {
+            "depth": 1000,
+            "display_priority": 1,
+            "is_character_appearance": false,
+            "position": 4,
+            "sprite": "res://items/all/helmet/helmet.png"
+          },
+          {
+            "depth": 1300,
+            "display_priority": 0,
+            "is_character_appearance": false,
+            "position": 2,
+            "sprite": "res://items/all/gentle_alien/gentle_alien.png"
+          }
+        ],
+        "banned_items": [
+
+        ],
+        "chal_recycling_current": 0,
+        "consumables_picked_up_this_run": 7,
+        "current_character": "character_loud",
+        "current_health": 7,
+        "current_level": 6,
+        "current_xp": 43.54,
+        "curse_locked_shop_items_pity": 0,
+        "effects": {
+          "13206054": 0,
+          "43518128": 99999999,
+          "76737885": 0,
+          "92387786": [
+
+          ],
+          "115762243": 0,
+          "132425714": 0,
+          "136407683": [
+
+          ],
+          "152511466": 0,
+          "156323247": 1,
+          "170651987": [
+
+          ],
+          "208790508": 0,
+          "226211031": [
+
+          ],
+          "243980988": 100,
+          "258681753": [
+
+          ],
+          "261591673": [
+
+          ],
+          "262277232": [
+
+          ],
+          "272485207": 0,
+          "275929320": 1,
+          "276926213": [
+
+          ],
+          "280560970": 0,
+          "303550887": 0,
+          "320784633": 0,
+          "387653831": 0,
+          "409894602": 0,
+          "415158277": 0,
+          "433796225": 2,
+          "436281442": 0,
+          "437236099": 3,
+          "438188270": 0,
+          "442035632": 0,
+          "446518881": [
+
+          ],
+          "451465811": 0,
+          "453346765": 60,
+          "455061873": -2,
+          "458959875": [
+
+          ],
+          "475793415": 0,
+          "475911951": 35,
+          "511829261": 0,
+          "556019707": 0,
+          "568508777": [
+
+          ],
+          "576212300": 0,
+          "614207427": 0,
+          "624892875": 9,
+          "672594403": [
+
+          ],
+          "676983029": 0,
+          "700203904": 0,
+          "717293191": {
+            "1": 0,
+            "2": 0,
+            "3": 0,
+            "4": 0
+          },
+          "745838207": [
+
+          ],
+          "794038501": 0,
+          "795922723": [
+
+          ],
+          "817155015": 55,
+          "830296011": 0,
+          "835103401": [
+
+          ],
+          "837210544": [
+
+          ],
+          "843198806": 0,
+          "852967214": [
+
+          ],
+          "856239639": 0,
+          "857480423": -1,
+          "878337947": 0,
+          "886641117": [
+
+          ],
+          "902716539": [
+
+          ],
+          "976128870": 0,
+          "1018879422": [
+
+          ],
+          "1072698636": 0,
+          "1090022608": 0,
+          "1135362205": 0,
+          "1146269987": [
+
+          ],
+          "1155568032": [
+
+          ],
+          "1213240489": [
+
+          ],
+          "1213712015": 0,
+          "1223159574": [
+
+          ],
+          "1237258868": 0,
+          "1241806118": 0,
+          "1254469533": 0,
+          "1257842068": 0,
+          "1273314400": [
+
+          ],
+          "1283467994": 100,
+          "1290250822": 0,
+          "1300505883": [
+
+          ],
+          "1313385591": [
+
+          ],
+          "1320442196": 0,
+          "1332121877": 0,
+          "1350059256": [
+
+          ],
+          "1374148447": [
+
+          ],
+          "1382645584": [
+
+          ],
+          "1398557722": 0,
+          "1408933505": 0,
+          "1436680918": 0,
+          "1469049234": 0,
+          "1476502348": 0,
+          "1506054263": 999,
+          "1510053391": 0,
+          "1550178014": [
+
+          ],
+          "1559051984": [
+            [
+              4129018011,
+              -3
+            ]
+          ],
+          "1569799928": 0,
+          "1573373207": 0,
+          "1594056534": 0,
+          "1640897622": [
+
+          ],
+          "1642883352": [
+
+          ],
+          "1705501311": 0,
+          "1741321021": 0,
+          "1773210992": 6,
+          "1810140526": 0,
+          "1811482982": 0,
+          "1832704849": 0,
+          "1834000045": [
+
+          ],
+          "1841057158": [
+
+          ],
+          "1860163345": 0,
+          "1862836967": 99,
+          "1868145012": 0,
+          "1869126283": [
+
+          ],
+          "1877912058": -1,
+          "1880215261": 27,
+          "1907665369": 0,
+          "1963558445": 0,
+          "1973416332": 0,
+          "1986892333": [
+
+          ],
+          "1995299385": [
+
+          ],
+          "2009324142": 999,
+          "2025306046": [
+
+          ],
+          "2027483978": [
+
+          ],
+          "2037968160": 0,
+          "2045363341": 0,
+          "2055766425": -5,
+          "2073103786": [
+
+          ],
+          "2082306975": 0,
+          "2090612481": [
+
+          ],
+          "2117129885": 0,
+          "2122898003": 0,
+          "2133729154": [
+
+          ],
+          "2152487200": [
+
+          ],
+          "2207670907": [
+
+          ],
+          "2228245608": 0,
+          "2234799640": 0,
+          "2246398056": 0,
+          "2256731671": [
+
+          ],
+          "2264353920": [
+
+          ],
+          "2329009754": [
+
+          ],
+          "2334006828": 0,
+          "2340901880": 0,
+          "2384496787": [
+
+          ],
+          "2434399182": 0,
+          "2486403535": 40,
+          "2504658555": [
+
+          ],
+          "2522600892": [
+
+          ],
+          "2557359312": 0,
+          "2570311581": [
+
+          ],
+          "2584624710": 0,
+          "2619297789": 0,
+          "2623781147": 0,
+          "2628159445": 1,
+          "2635732062": [
+
+          ],
+          "2706364994": 0,
+          "2723333799": 0,
+          "2727338392": 0,
+          "2741652121": [
+
+          ],
+          "2783177375": [
+
+          ],
+          "2783186783": 0,
+          "2790981412": 0,
+          "2853053121": 0,
+          "2854939166": [
+
+          ],
+          "2862021112": 0,
+          "2927828556": 0,
+          "2948730581": 0,
+          "2961822712": [
+
+          ],
+          "2984918473": 0,
+          "2993307840": 0,
+          "3002416107": 0,
+          "3019640617": 0,
+          "3033240093": {
+            "chance": 0,
+            "damage": 0,
+            "duration": 0,
+            "is_global_burn": false,
+            "scaling_stats": [
+              [
+                1332121877,
+                1
+              ]
+            ],
+            "spread": 0
+          },
+          "3034482736": 0,
+          "3045234363": 0,
+          "3059339007": 0,
+          "3061824224": 0,
+          "3062778881": 0,
+          "3078889547": 0,
+          "3080604655": 0,
+          "3110195527": [
+
+          ],
+          "3134776479": 0,
+          "3183910596": 0,
+          "3184962247": [
+
+          ],
+          "3215617649": 40,
+          "3239847938": 0,
+          "3278552651": 99999999,
+          "3289403122": 0,
+          "3310656377": 0,
+          "3331456722": 0,
+          "3332643737": 0,
+          "3376484072": 40,
+          "3381139014": [
+
+          ],
+          "3384552406": [
+
+          ],
+          "3386669195": 0,
+          "3403571905": 0,
+          "3446181965": 0,
+          "3470278490": 5,
+          "3530041092": 0,
+          "3534313678": [
+
+          ],
+          "3537226328": 99999999,
+          "3538719077": 0,
+          "3546970666": 0,
+          "3547158591": [
+
+          ],
+          "3550360211": 0,
+          "3604101514": [
+
+          ],
+          "3617813201": [
+
+          ],
+          "3646538372": [
+
+          ],
+          "3678285444": 0,
+          "3680142205": [
+
+          ],
+          "3692917586": 1,
+          "3730967446": 1,
+          "3736436894": 0,
+          "3742949587": 0,
+          "3743797065": 0,
+          "3776328494": [
+
+          ],
+          "3796711361": [
+
+          ],
+          "3816702500": [
+
+          ],
+          "3838676844": [
+
+          ],
+          "3844183044": [
+
+          ],
+          "3862399491": 0,
+          "3864635494": 0,
+          "3865648854": [
+
+          ],
+          "3909565779": [
+
+          ],
+          "3923713498": [
+
+          ],
+          "3961429259": 0,
+          "3969942971": 60,
+          "3975496763": 0,
+          "3977017648": 0,
+          "3998321875": [
+
+          ],
+          "4032841946": 0,
+          "4033990219": 0,
+          "4058378584": 0,
+          "4100639913": 99999999,
+          "4101841430": 0,
+          "4103289793": 0,
+          "4107067463": [
+
+          ],
+          "4125022196": {
+
+          },
+          "4129018011": 8,
+          "4166780202": 0,
+          "4170350086": 1,
+          "4199865778": 0,
+          "4225224414": 0,
+          "4242160504": 0,
+          "4280098637": 0
+        },
+        "gold": 0,
+        "items": [
+          {
+            "curse_factor": 0,
+            "effects": [
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_percent_damage",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "30"
+              },
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 2,
+                "key": "number_of_enemies",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "50"
+              },
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "stats_end_of_wave",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_harvesting",
+                "storage_method": 1,
+                "text_key": "effect_gain_stat_end_of_wave",
+                "value": "-3"
+              }
+            ],
+            "is_cursed": false,
+            "is_lockable": true,
+            "is_locked": false,
+            "item_appearances": [
+              {
+                "depth": 500,
+                "display_priority": 0,
+                "is_character_appearance": true,
+                "position": 6,
+                "sprite": "res://items/characters/loud/loud_eyes.png"
+              },
+              {
+                "depth": 250,
+                "display_priority": 3,
+                "is_character_appearance": true,
+                "position": 8,
+                "sprite": "res://items/characters/loud/loud_mouth.png"
+              }
+            ],
+            "max_nb": "-1",
+            "my_id": "character_loud",
+            "name": "CHARACTER_LOUD",
+            "tags": [
+
+            ],
+            "tier": "0",
+            "tracking_text": "",
+            "value": "1"
+          },
+          {
+            "curse_factor": 0,
+            "effects": [
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 0,
+                "key": "items_price",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "-5"
+              }
+            ],
+            "is_cursed": false,
+            "is_lockable": true,
+            "is_locked": false,
+            "item_appearances": [
+              {
+                "depth": -100,
+                "display_priority": 0,
+                "is_character_appearance": false,
+                "position": 13,
+                "sprite": "res://items/all/coupon/coupon.png"
+              }
+            ],
+            "max_nb": "5",
+            "my_id": "item_coupon",
+            "name": "ITEM_COUPON",
+            "tags": [
+              "economy"
+            ],
+            "tier": "0",
+            "tracking_text": "MATERIALS_SAVED",
+            "value": "15"
+          },
+          {
+            "curse_factor": 0,
+            "effects": [
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_max_hp",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "3"
+              },
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_hp_regeneration",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "2"
+              },
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "consumable_heal",
+                "storage_method": 0,
+                "text_key": "effect_consumable_heal",
+                "value": "-1"
+              }
+            ],
+            "is_cursed": false,
+            "is_lockable": true,
+            "is_locked": false,
+            "item_appearances": [
+              {
+                "depth": 400,
+                "display_priority": 0,
+                "is_character_appearance": false,
+                "position": 12,
+                "sprite": "res://items/all/alien_worm/alien_worm.png"
+              }
+            ],
+            "max_nb": "-1",
+            "my_id": "item_alien_worm",
+            "name": "ITEM_ALIEN_WORM",
+            "tags": [
+              "stat_max_hp",
+              "stat_hp_regeneration"
+            ],
+            "tier": "0",
+            "tracking_text": "",
+            "value": "15"
+          },
+          {
+            "curse_factor": 0,
+            "effects": [
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_melee_damage",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "2"
+              },
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_ranged_damage",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "1"
+              },
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_hp_regeneration",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "-1"
+              }
+            ],
+            "is_cursed": false,
+            "is_lockable": true,
+            "is_locked": false,
+            "item_appearances": [
+              {
+                "depth": 1000,
+                "display_priority": 0,
+                "is_character_appearance": false,
+                "position": 4,
+                "sprite": "res://items/all/hedgehog/hedgehog.png"
+              }
+            ],
+            "max_nb": "-1",
+            "my_id": "item_hedgehog",
+            "name": "ITEM_HEDGEHOG",
+            "tags": [
+              "stat_melee_damage",
+              "stat_ranged_damage"
+            ],
+            "tier": "0",
+            "tracking_text": "",
+            "value": "30"
+          },
+          {
+            "curse_factor": 0,
+            "effects": [
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_harvesting",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "8"
+              },
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_melee_damage",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "-1"
+              }
+            ],
+            "is_cursed": false,
+            "is_lockable": true,
+            "is_locked": false,
+            "item_appearances": [
+              {
+                "depth": 450,
+                "display_priority": 0,
+                "is_character_appearance": false,
+                "position": 12,
+                "sprite": "res://items/all/fertilizer/fertilizer.png"
+              }
+            ],
+            "max_nb": "-1",
+            "my_id": "item_fertilizer",
+            "name": "ITEM_FERTILIZER",
+            "tags": [
+              "stat_harvesting"
+            ],
+            "tier": "0",
+            "tracking_text": "",
+            "value": "15"
+          },
+          {
+            "curse_factor": 0,
+            "effects": [
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_luck",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "20"
+              },
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_hp_regeneration",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "-2"
+              }
+            ],
+            "is_cursed": false,
+            "is_lockable": true,
+            "is_locked": false,
+            "item_appearances": [
+              {
+                "depth": 250,
+                "display_priority": 2,
+                "is_character_appearance": false,
+                "position": 8,
+                "sprite": "res://items/all/shady_potion/shady_potion.png"
+              }
+            ],
+            "max_nb": "-1",
+            "my_id": "item_shady_potion",
+            "name": "ITEM_SHADY_POTION",
+            "tags": [
+              "stat_luck"
+            ],
+            "tier": "1",
+            "tracking_text": "",
+            "value": "48"
+          },
+          {
+            "curse_factor": 0,
+            "effects": [
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "trees",
+                "storage_method": 0,
+                "text_key": "effect_trees",
+                "value": "1"
+              }
+            ],
+            "is_cursed": false,
+            "is_lockable": true,
+            "is_locked": false,
+            "item_appearances": [
+              {
+                "depth": 1001,
+                "display_priority": 0,
+                "is_character_appearance": false,
+                "position": 4,
+                "sprite": "res://items/all/tree/tree.png"
+              }
+            ],
+            "max_nb": "-1",
+            "my_id": "item_tree",
+            "name": "ITEM_TREE",
+            "tags": [
+              "exploration"
+            ],
+            "tier": "0",
+            "tracking_text": "",
+            "value": "15"
+          },
+          {
+            "curse_factor": 0,
+            "effects": [
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_max_hp",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "2"
+              },
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_percent_damage",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "5"
+              },
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 2,
+                "key": "number_of_enemies",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "5"
+              }
+            ],
+            "is_cursed": false,
+            "is_lockable": true,
+            "is_locked": false,
+            "item_appearances": [
+              {
+                "depth": 1300,
+                "display_priority": 0,
+                "is_character_appearance": false,
+                "position": 2,
+                "sprite": "res://items/all/gentle_alien/gentle_alien.png"
+              }
+            ],
+            "max_nb": "10",
+            "my_id": "item_gentle_alien",
+            "name": "ITEM_GENTLE_ALIEN",
+            "tags": [
+              "stat_max_hp",
+              "stat_percent_damage",
+              "more_enemies"
+            ],
+            "tier": "0",
+            "tracking_text": "",
+            "value": "30"
+          },
+          {
+            "curse_factor": 0,
+            "effects": [
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_armor",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "1"
+              },
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_speed",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "-2"
+              }
+            ],
+            "is_cursed": false,
+            "is_lockable": true,
+            "is_locked": false,
+            "item_appearances": [
+              {
+                "depth": 1000,
+                "display_priority": 1,
+                "is_character_appearance": false,
+                "position": 4,
+                "sprite": "res://items/all/helmet/helmet.png"
+              }
+            ],
+            "max_nb": "-1",
+            "my_id": "item_helmet",
+            "name": "ITEM_HELMET",
+            "tags": [
+              "stat_armor"
+            ],
+            "tier": "0",
+            "tracking_text": "",
+            "value": "15"
+          }
+        ],
+        "remaining_ban_token": 8,
+        "selected_item": null,
+        "selected_weapon": "weapon_fighting_stick_1",
+        "tier_i_weapon_effects": [
+
+        ],
+        "tier_iv_weapon_effects": [
+
+        ],
+        "unique_effects": [
+
+        ],
+        "uses_ban": true,
+        "weapons": [
+          {
+            "add_to_chars_as_starting": [
+
+            ],
+            "curse_factor": 0,
+            "dmg_dealt_last_wave": "702",
+            "effects": [
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "xp_gain",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "2"
+              }
+            ],
+            "is_cursed": false,
+            "is_lockable": true,
+            "is_locked": false,
+            "my_id": "weapon_fighting_stick_1",
+            "name": "WEAPON_FIGHTING_STICK",
+            "sets": [
+              {
+                "my_id": "set_primitive",
+                "name": "WEAPON_CLASS_PRIMITIVE",
+                "set_bonuses": [
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_max_hp",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_max_hp",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "6"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_max_hp",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "9"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_max_hp",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "12"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_max_hp",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "15"
+                    }
+                  ]
+                ]
+              },
+              {
+                "my_id": "set_medieval",
+                "name": "WEAPON_CLASS_MEDIEVAL",
+                "set_bonuses": [
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "1"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "1"
+                    },
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_dodge",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "2"
+                    },
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_dodge",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "2"
+                    },
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_dodge",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "6"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    },
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_dodge",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "6"
+                    }
+                  ]
+                ]
+              }
+            ],
+            "stats": {
+              "accuracy": 1,
+              "additional_cooldown_every_x_shots": -1,
+              "additional_cooldown_multiplier": -1,
+              "alternate_attack_type": true,
+              "attack_type": 0,
+              "can_have_negative_knockback": false,
+              "can_have_positive_knockback": true,
+              "cooldown": 50,
+              "crit_chance": 0.03,
+              "crit_damage": 1.5,
+              "damage": 10,
+              "deal_dmg_on_return": false,
+              "effect_scale": 1,
+              "is_healing": false,
+              "knockback": 0,
+              "knockback_piercing": 0,
+              "lifesteal": 0,
+              "max_range": 175,
+              "min_range": 0,
+              "recoil": 25,
+              "recoil_duration": 0.1,
+              "scaling_stats": [
+                [
+                  1845758347,
+                  0.75
+                ],
+                [
+                  4170350086,
+                  0.5
+                ]
+              ],
+              "shooting_sounds": [
+                "res://weapons/melee_sounds/whoosh_weapon_knife_swing_01.wav",
+                "res://weapons/melee_sounds/whoosh_weapon_knife_swing_02.wav",
+                "res://weapons/melee_sounds/whoosh_weapon_knife_swing_03.wav"
+              ],
+              "sound_db_mod": -5,
+              "type": "melee"
+            },
+            "tier": "0",
+            "tracked_value": "0",
+            "tracked_value_added_this_wave": "0",
+            "tracking_text": "",
+            "type": "0",
+            "value": "15",
+            "weapon_id": "weapon_fighting_stick"
+          },
+          {
+            "add_to_chars_as_starting": [
+
+            ],
+            "curse_factor": 0,
+            "dmg_dealt_last_wave": "889",
+            "effects": [
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "xp_gain",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "2"
+              }
+            ],
+            "is_cursed": false,
+            "is_lockable": true,
+            "is_locked": false,
+            "my_id": "weapon_fighting_stick_1",
+            "name": "WEAPON_FIGHTING_STICK",
+            "sets": [
+              {
+                "my_id": "set_primitive",
+                "name": "WEAPON_CLASS_PRIMITIVE",
+                "set_bonuses": [
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_max_hp",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_max_hp",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "6"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_max_hp",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "9"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_max_hp",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "12"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_max_hp",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "15"
+                    }
+                  ]
+                ]
+              },
+              {
+                "my_id": "set_medieval",
+                "name": "WEAPON_CLASS_MEDIEVAL",
+                "set_bonuses": [
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "1"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "1"
+                    },
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_dodge",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "2"
+                    },
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_dodge",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "2"
+                    },
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_dodge",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "6"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    },
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_dodge",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "6"
+                    }
+                  ]
+                ]
+              }
+            ],
+            "stats": {
+              "accuracy": 1,
+              "additional_cooldown_every_x_shots": -1,
+              "additional_cooldown_multiplier": -1,
+              "alternate_attack_type": true,
+              "attack_type": 0,
+              "can_have_negative_knockback": false,
+              "can_have_positive_knockback": true,
+              "cooldown": 50,
+              "crit_chance": 0.03,
+              "crit_damage": 1.5,
+              "damage": 10,
+              "deal_dmg_on_return": false,
+              "effect_scale": 1,
+              "is_healing": false,
+              "knockback": 0,
+              "knockback_piercing": 0,
+              "lifesteal": 0,
+              "max_range": 175,
+              "min_range": 0,
+              "recoil": 25,
+              "recoil_duration": 0.1,
+              "scaling_stats": [
+                [
+                  1845758347,
+                  0.75
+                ],
+                [
+                  4170350086,
+                  0.5
+                ]
+              ],
+              "shooting_sounds": [
+                "res://weapons/melee_sounds/whoosh_weapon_knife_swing_01.wav",
+                "res://weapons/melee_sounds/whoosh_weapon_knife_swing_02.wav",
+                "res://weapons/melee_sounds/whoosh_weapon_knife_swing_03.wav"
+              ],
+              "sound_db_mod": -5,
+              "type": "melee"
+            },
+            "tier": "0",
+            "tracked_value": "0",
+            "tracked_value_added_this_wave": "0",
+            "tracking_text": "",
+            "type": "0",
+            "value": "15",
+            "weapon_id": "weapon_fighting_stick"
+          },
+          {
+            "add_to_chars_as_starting": [
+
+            ],
+            "curse_factor": 0,
+            "dmg_dealt_last_wave": "1068",
+            "effects": [
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "xp_gain",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "5"
+              }
+            ],
+            "is_cursed": false,
+            "is_lockable": true,
+            "is_locked": false,
+            "my_id": "weapon_fighting_stick_2",
+            "name": "WEAPON_FIGHTING_STICK",
+            "sets": [
+              {
+                "my_id": "set_primitive",
+                "name": "WEAPON_CLASS_PRIMITIVE",
+                "set_bonuses": [
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_max_hp",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_max_hp",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "6"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_max_hp",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "9"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_max_hp",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "12"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_max_hp",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "15"
+                    }
+                  ]
+                ]
+              },
+              {
+                "my_id": "set_medieval",
+                "name": "WEAPON_CLASS_MEDIEVAL",
+                "set_bonuses": [
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "1"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "1"
+                    },
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_dodge",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "2"
+                    },
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_dodge",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "2"
+                    },
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_dodge",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "6"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    },
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_dodge",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "6"
+                    }
+                  ]
+                ]
+              }
+            ],
+            "stats": {
+              "accuracy": 1,
+              "additional_cooldown_every_x_shots": -1,
+              "additional_cooldown_multiplier": -1,
+              "alternate_attack_type": true,
+              "attack_type": 0,
+              "can_have_negative_knockback": false,
+              "can_have_positive_knockback": true,
+              "cooldown": 40,
+              "crit_chance": 0.03,
+              "crit_damage": 1.5,
+              "damage": 15,
+              "deal_dmg_on_return": false,
+              "effect_scale": 1,
+              "is_healing": false,
+              "knockback": 0,
+              "knockback_piercing": 0,
+              "lifesteal": 0,
+              "max_range": 175,
+              "min_range": 0,
+              "recoil": 25,
+              "recoil_duration": 0.1,
+              "scaling_stats": [
+                [
+                  1845758347,
+                  0.85
+                ],
+                [
+                  4170350086,
+                  0.65
+                ]
+              ],
+              "shooting_sounds": [
+                "res://weapons/melee_sounds/whoosh_weapon_knife_swing_01.wav",
+                "res://weapons/melee_sounds/whoosh_weapon_knife_swing_02.wav",
+                "res://weapons/melee_sounds/whoosh_weapon_knife_swing_03.wav"
+              ],
+              "sound_db_mod": -5,
+              "type": "melee"
+            },
+            "tier": "1",
+            "tracked_value": "0",
+            "tracked_value_added_this_wave": "0",
+            "tracking_text": "",
+            "type": "0",
+            "value": "31",
+            "weapon_id": "weapon_fighting_stick"
+          }
+        ]
+      }
+    ],
+    "reroll_count": [
+      4,
+      0,
+      0,
+      0
+    ],
+    "retries": 0,
+    "shop_effects_checked": true,
+    "shop_items": [
+      [
+        [
+          {
+            "curse_factor": 0,
+            "effects": [
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_luck",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "20"
+              },
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "effect",
+                "effect_sign": 3,
+                "key": "stat_hp_regeneration",
+                "storage_method": 0,
+                "text_key": "",
+                "value": "-2"
+              }
+            ],
+            "is_cursed": false,
+            "is_lockable": true,
+            "is_locked": false,
+            "item_appearances": [
+              {
+                "depth": 250,
+                "display_priority": 2,
+                "is_character_appearance": false,
+                "position": 8,
+                "sprite": "res://items/all/shady_potion/shady_potion.png"
+              }
+            ],
+            "max_nb": "-1",
+            "my_id": "item_shady_potion",
+            "name": "ITEM_SHADY_POTION",
+            "tags": [
+              "stat_luck"
+            ],
+            "tier": "1",
+            "tracking_text": "",
+            "value": "48"
+          },
+          4
+        ],
+        [
+          {
+            "add_to_chars_as_starting": [
+
+            ],
+            "curse_factor": 0,
+            "dmg_dealt_last_wave": "0",
+            "effects": [
+              {
+                "base_value": 0,
+                "curse_factor": 0,
+                "custom_args": [
+
+                ],
+                "custom_key": "",
+                "effect_id": "weapon_null",
+                "effect_sign": 3,
+                "key": "pierce_on_crit",
+                "storage_method": 0,
+                "text_key": "EFFECT_PIERCE_ON_CRIT_WEAPON",
+                "value": "1"
+              }
+            ],
+            "is_cursed": false,
+            "is_lockable": true,
+            "is_locked": false,
+            "my_id": "weapon_crossbow_1",
+            "name": "WEAPON_CROSSBOW",
+            "sets": [
+              {
+                "my_id": "set_precise",
+                "name": "WEAPON_CLASS_PRECISE",
+                "set_bonuses": [
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_crit_chance",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_crit_chance",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "6"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_crit_chance",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "9"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_crit_chance",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "12"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_crit_chance",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "15"
+                    }
+                  ]
+                ]
+              },
+              {
+                "my_id": "set_medieval",
+                "name": "WEAPON_CLASS_MEDIEVAL",
+                "set_bonuses": [
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "1"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "1"
+                    },
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_dodge",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "2"
+                    },
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_dodge",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "2"
+                    },
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_dodge",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "6"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_armor",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    },
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_dodge",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "6"
+                    }
+                  ]
+                ]
+              }
+            ],
+            "stats": {
+              "accuracy": 1,
+              "additional_cooldown_every_x_shots": -1,
+              "additional_cooldown_multiplier": -1,
+              "bounce": 0,
+              "bounce_dmg_reduction": 0.5,
+              "can_bounce": true,
+              "can_have_negative_knockback": false,
+              "can_have_positive_knockback": true,
+              "cooldown": 50,
+              "crit_chance": 0.3,
+              "crit_damage": 1.5,
+              "custom_on_cooldown_sprite": "res://weapons/ranged/crossbow/crossbow_empty.png",
+              "damage": 10,
+              "effect_scale": 1,
+              "increase_projectile_speed_with_range": false,
+              "is_healing": false,
+              "knockback": 8,
+              "knockback_piercing": 0,
+              "lifesteal": 0,
+              "max_range": 350,
+              "min_range": 0,
+              "nb_projectiles": 1,
+              "piercing": 0,
+              "piercing_dmg_reduction": 0,
+              "projectile_scene": "res://projectiles/bolt/bolt_projectile.tscn",
+              "projectile_speed": 3000,
+              "projectile_spread": 0,
+              "recoil": 30,
+              "recoil_duration": 0.15,
+              "scaling_stats": [
+                [
+                  156323247,
+                  0.5
+                ],
+                [
+                  453346765,
+                  0.1
+                ]
+              ],
+              "shooting_sounds": [
+                "res://weapons/ranged/crossbow/bow_crossbow_arrow_shoot_type1_01.wav",
+                "res://weapons/ranged/crossbow/bow_crossbow_arrow_shoot_type1_02.wav",
+                "res://weapons/ranged/crossbow/bow_crossbow_arrow_shoot_type1_03.wav",
+                "res://weapons/ranged/crossbow/bow_crossbow_arrow_shoot_type1_04.wav",
+                "res://weapons/ranged/crossbow/bow_crossbow_arrow_shoot_type1_05.wav"
+              ],
+              "sound_db_mod": -10,
+              "type": "ranged"
+            },
+            "tier": "0",
+            "tracked_value": "0",
+            "tracked_value_added_this_wave": "0",
+            "tracking_text": "",
+            "type": "1",
+            "value": "16",
+            "weapon_id": "weapon_crossbow"
+          },
+          4
+        ],
+        [
+          {
+            "add_to_chars_as_starting": [
+
+            ],
+            "curse_factor": 0,
+            "dmg_dealt_last_wave": "0",
+            "effects": [
+
+            ],
+            "is_cursed": false,
+            "is_lockable": true,
+            "is_locked": false,
+            "my_id": "weapon_icicle_1",
+            "name": "WEAPON_ICICLE",
+            "sets": [
+              {
+                "my_id": "set_precise",
+                "name": "WEAPON_CLASS_PRECISE",
+                "set_bonuses": [
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_crit_chance",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_crit_chance",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "6"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_crit_chance",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "9"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_crit_chance",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "12"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_crit_chance",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "15"
+                    }
+                  ]
+                ]
+              },
+              {
+                "my_id": "set_elemental",
+                "name": "WEAPON_CLASS_ELEMENTAL",
+                "set_bonuses": [
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_elemental_damage",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "1"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_elemental_damage",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "2"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_elemental_damage",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "3"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_elemental_damage",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "4"
+                    }
+                  ],
+                  [
+                    {
+                      "base_value": 0,
+                      "curse_factor": 0,
+                      "custom_args": [
+
+                      ],
+                      "custom_key": "",
+                      "effect_id": "effect",
+                      "effect_sign": 3,
+                      "key": "stat_elemental_damage",
+                      "storage_method": 0,
+                      "text_key": "",
+                      "value": "5"
+                    }
+                  ]
+                ]
+              }
+            ],
+            "stats": {
+              "accuracy": 0.85,
+              "additional_cooldown_every_x_shots": -1,
+              "additional_cooldown_multiplier": -1,
+              "bounce": 0,
+              "bounce_dmg_reduction": 0.5,
+              "can_bounce": true,
+              "can_have_negative_knockback": false,
+              "can_have_positive_knockback": true,
+              "cooldown": 50,
+              "crit_chance": 0.05,
+              "crit_damage": 2,
+              "custom_on_cooldown_sprite": "res://weapons/ranged/icicle/icicle_reloading.png",
+              "damage": 10,
+              "effect_scale": 1,
+              "increase_projectile_speed_with_range": false,
+              "is_healing": false,
+              "knockback": 5,
+              "knockback_piercing": 0,
+              "lifesteal": 0,
+              "max_range": 400,
+              "min_range": 0,
+              "nb_projectiles": 1,
+              "piercing": 1,
+              "piercing_dmg_reduction": 0.5,
+              "projectile_scene": "res://projectiles/icicle/icicle_projectile.tscn",
+              "projectile_speed": 2000,
+              "projectile_spread": 0,
+              "recoil": 25,
+              "recoil_duration": 0.1,
+              "scaling_stats": [
+                [
+                  1332121877,
+                  1
+                ]
+              ],
+              "shooting_sounds": [
+                "res://weapons/melee_sounds/whoosh_swish_high_fast_01.wav",
+                "res://weapons/melee_sounds/whoosh_swish_high_fast_02.wav",
+                "res://weapons/melee_sounds/whoosh_swish_high_fast_03.wav",
+                "res://weapons/melee_sounds/whoosh_swish_high_fast_04.wav"
+              ],
+              "sound_db_mod": -10,
+              "type": "ranged"
+            },
+            "tier": "0",
+            "tracked_value": "0",
+            "tracked_value_added_this_wave": "0",
+            "tracking_text": "",
+            "type": "1",
+            "value": "18",
+            "weapon_id": "weapon_icicle"
+          },
+          4
+        ]
+      ],
+      [
+
+      ],
+      [
+
+      ],
+      [
+
+      ]
+    ],
+    "total_bonus_gold": 57,
+    "tracked_item_effects": [
+      {
+        "43044955": 0,
+        "113867333": 0,
+        "134690238": 0,
+        "164825777": 0,
+        "182146537": 0,
+        "203339555": 0,
+        "263883808": 0,
+        "324235030": 0,
+        "514257597": 0,
+        "520997167": 0,
+        "620139526": 0,
+        "626496684": 0,
+        "688142636": 0,
+        "720389347": 0,
+        "739296971": 0,
+        "789424643": 0,
+        "823205206": 0,
+        "903955424": 0,
+        "903976967": 0,
+        "904301425": 0,
+        "904407550": 0,
+        "932863485": 0,
+        "1003447838": 0,
+        "1200305215": 0,
+        "1216742590": 0,
+        "1254422044": 0,
+        "1368965792": 0,
+        "1533085115": 0,
+        "1660874486": 0,
+        "1735118507": 0,
+        "1783178953": 0,
+        "2025306710": 0,
+        "2144697259": 0,
+        "2151682311": 10,
+        "2275354477": 0,
+        "2275518791": 0,
+        "2277862908": 0,
+        "2298271267": 0,
+        "2307536400": 0,
+        "2475630870": [
+          0,
+          0
+        ],
+        "2490150581": 0,
+        "2526615131": 0,
+        "2539781646": 0,
+        "2604967224": 0,
+        "2730991783": 0,
+        "2788674753": 0,
+        "2823993561": 0,
+        "2857366121": 0,
+        "2993575056": 0,
+        "3026699078": 0,
+        "3159173208": 0,
+        "3289627950": 0,
+        "3332567214": [
+          0,
+          0
+        ],
+        "3351245677": 0,
+        "3416663397": 0,
+        "3508981590": 0,
+        "3684738821": 0,
+        "3704157613": 0,
+        "3873089124": 0,
+        "3918735846": 0,
+        "3948715502": 0,
+        "3948715503": 0,
+        "3948715504": 0,
+        "3948715505": 0,
+        "3989734992": 0,
+        "4062999049": 0,
+        "4063157253": 0,
+        "4067408292": [
+          0,
+          0
+        ],
+        "4070681272": 0,
+        "4072574713": 0,
+        "4151588459": [
+          0,
+          0
+        ],
+        "4196658677": 0,
+        "4237416633": 0
+      },
+      {
+        "43044955": 0,
+        "113867333": 0,
+        "134690238": 0,
+        "164825777": 0,
+        "182146537": 0,
+        "203339555": 0,
+        "263883808": 0,
+        "324235030": 0,
+        "514257597": 0,
+        "520997167": 0,
+        "620139526": 0,
+        "626496684": 0,
+        "688142636": 0,
+        "720389347": 0,
+        "739296971": 0,
+        "789424643": 0,
+        "823205206": 0,
+        "903955424": 0,
+        "903976967": 0,
+        "904301425": 0,
+        "904407550": 0,
+        "932863485": 0,
+        "1003447838": 0,
+        "1200305215": 0,
+        "1216742590": 0,
+        "1254422044": 0,
+        "1368965792": 0,
+        "1533085115": 0,
+        "1660874486": 0,
+        "1735118507": 0,
+        "1783178953": 0,
+        "2025306710": 0,
+        "2144697259": 0,
+        "2151682311": 0,
+        "2275354477": 0,
+        "2275518791": 0,
+        "2277862908": 0,
+        "2298271267": 0,
+        "2307536400": 0,
+        "2475630870": [
+          0,
+          0
+        ],
+        "2490150581": 0,
+        "2526615131": 0,
+        "2539781646": 0,
+        "2604967224": 0,
+        "2730991783": 0,
+        "2788674753": 0,
+        "2823993561": 0,
+        "2857366121": 0,
+        "2993575056": 0,
+        "3026699078": 0,
+        "3159173208": 0,
+        "3289627950": 0,
+        "3332567214": [
+          0,
+          0
+        ],
+        "3351245677": 0,
+        "3416663397": 0,
+        "3508981590": 0,
+        "3684738821": 0,
+        "3704157613": 0,
+        "3873089124": 0,
+        "3918735846": 0,
+        "3948715502": 0,
+        "3948715503": 0,
+        "3948715504": 0,
+        "3948715505": 0,
+        "3989734992": 0,
+        "4062999049": 0,
+        "4063157253": 0,
+        "4067408292": [
+          0,
+          0
+        ],
+        "4070681272": 0,
+        "4072574713": 0,
+        "4151588459": [
+          0,
+          0
+        ],
+        "4196658677": 0,
+        "4237416633": 0
+      },
+      {
+        "43044955": 0,
+        "113867333": 0,
+        "134690238": 0,
+        "164825777": 0,
+        "182146537": 0,
+        "203339555": 0,
+        "263883808": 0,
+        "324235030": 0,
+        "514257597": 0,
+        "520997167": 0,
+        "620139526": 0,
+        "626496684": 0,
+        "688142636": 0,
+        "720389347": 0,
+        "739296971": 0,
+        "789424643": 0,
+        "823205206": 0,
+        "903955424": 0,
+        "903976967": 0,
+        "904301425": 0,
+        "904407550": 0,
+        "932863485": 0,
+        "1003447838": 0,
+        "1200305215": 0,
+        "1216742590": 0,
+        "1254422044": 0,
+        "1368965792": 0,
+        "1533085115": 0,
+        "1660874486": 0,
+        "1735118507": 0,
+        "1783178953": 0,
+        "2025306710": 0,
+        "2144697259": 0,
+        "2151682311": 0,
+        "2275354477": 0,
+        "2275518791": 0,
+        "2277862908": 0,
+        "2298271267": 0,
+        "2307536400": 0,
+        "2475630870": [
+          0,
+          0
+        ],
+        "2490150581": 0,
+        "2526615131": 0,
+        "2539781646": 0,
+        "2604967224": 0,
+        "2730991783": 0,
+        "2788674753": 0,
+        "2823993561": 0,
+        "2857366121": 0,
+        "2993575056": 0,
+        "3026699078": 0,
+        "3159173208": 0,
+        "3289627950": 0,
+        "3332567214": [
+          0,
+          0
+        ],
+        "3351245677": 0,
+        "3416663397": 0,
+        "3508981590": 0,
+        "3684738821": 0,
+        "3704157613": 0,
+        "3873089124": 0,
+        "3918735846": 0,
+        "3948715502": 0,
+        "3948715503": 0,
+        "3948715504": 0,
+        "3948715505": 0,
+        "3989734992": 0,
+        "4062999049": 0,
+        "4063157253": 0,
+        "4067408292": [
+          0,
+          0
+        ],
+        "4070681272": 0,
+        "4072574713": 0,
+        "4151588459": [
+          0,
+          0
+        ],
+        "4196658677": 0,
+        "4237416633": 0
+      },
+      {
+        "43044955": 0,
+        "113867333": 0,
+        "134690238": 0,
+        "164825777": 0,
+        "182146537": 0,
+        "203339555": 0,
+        "263883808": 0,
+        "324235030": 0,
+        "514257597": 0,
+        "520997167": 0,
+        "620139526": 0,
+        "626496684": 0,
+        "688142636": 0,
+        "720389347": 0,
+        "739296971": 0,
+        "789424643": 0,
+        "823205206": 0,
+        "903955424": 0,
+        "903976967": 0,
+        "904301425": 0,
+        "904407550": 0,
+        "932863485": 0,
+        "1003447838": 0,
+        "1200305215": 0,
+        "1216742590": 0,
+        "1254422044": 0,
+        "1368965792": 0,
+        "1533085115": 0,
+        "1660874486": 0,
+        "1735118507": 0,
+        "1783178953": 0,
+        "2025306710": 0,
+        "2144697259": 0,
+        "2151682311": 0,
+        "2275354477": 0,
+        "2275518791": 0,
+        "2277862908": 0,
+        "2298271267": 0,
+        "2307536400": 0,
+        "2475630870": [
+          0,
+          0
+        ],
+        "2490150581": 0,
+        "2526615131": 0,
+        "2539781646": 0,
+        "2604967224": 0,
+        "2730991783": 0,
+        "2788674753": 0,
+        "2823993561": 0,
+        "2857366121": 0,
+        "2993575056": 0,
+        "3026699078": 0,
+        "3159173208": 0,
+        "3289627950": 0,
+        "3332567214": [
+          0,
+          0
+        ],
+        "3351245677": 0,
+        "3416663397": 0,
+        "3508981590": 0,
+        "3684738821": 0,
+        "3704157613": 0,
+        "3873089124": 0,
+        "3918735846": 0,
+        "3948715502": 0,
+        "3948715503": 0,
+        "3948715504": 0,
+        "3948715505": 0,
+        "3989734992": 0,
+        "4062999049": 0,
+        "4063157253": 0,
+        "4067408292": [
+          0,
+          0
+        ],
+        "4070681272": 0,
+        "4072574713": 0,
+        "4151588459": [
+          0,
+          0
+        ],
+        "4196658677": 0,
+        "4237416633": 0
+      }
+    ]
+  }
+}
