@@ -19,3 +19,6 @@
 # member 4 — first non-loud/gangster character; wave-3 opening chaos on a
 # 12-HP renegade start. Screen 2/3 deaths at 14-28s.
 20260803-w3-renegade-d5-hp12.json
+# member 5 — fisherman wave-2 opener, heaviest early intake seen (22-26 dmg
+# in 11-16s). Screen 2/3 deaths.
+20260803-w2-fisherman-d5-hp12.json
