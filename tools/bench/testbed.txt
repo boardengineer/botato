@@ -1,0 +1,9 @@
+# WaveLab steering test bed manifest — one snapshot filename per line.
+# Members are waves where the current committed steering DIES (>=2/3 at
+# screening, wavelab.ps1 screen <snapshot>). Keep members DIVERSE: mix of
+# wave bands, characters, elite pressure, build strength. Each member's
+# .json is archived next to this file. See tools/BENCH.md.
+#
+# member 1 — the founding benchmark: croc chain-dasher + boosting pursuers
+# + Loud swarm density, fragile 59-HP build. Won 2/45 ever.
+20260802-w11-loud-d5-hp59.json

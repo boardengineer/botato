@@ -5,19 +5,25 @@
 #   wavelab.ps1 run <snapshot> [-Count 3] [-Seed 0] [-Speed 1]
 #                                        replay a snapshot; -Seed 0 = fresh seed per
 #                                        iteration, fixed seed = repeat circumstances
-#   wavelab.ps1 bench [-Count 6] [-Note "what changed"]
-#                                        run the STANDARD steering benchmark (loud-w11)
+#   wavelab.ps1 bench [<snapshot>] [-Count 6] [-Note "what changed"]
+#                                        run one steering benchmark (default loud-w11)
 #                                        and append the result to bench-history.csv
+#   wavelab.ps1 screen <snapshot>        run x3, verdict: does the current steering
+#                                        die often enough to join the test bed?
+#   wavelab.ps1 bed [-Count N] [-Note ..] [-Only filter]
+#                                        bench every member of tools\bench\testbed.txt
+#                                        (-Only runs a subset; use for chunked sweeps)
 #
 # Snapshots live in C:\brotato\wavelab\snapshots, results in C:\brotato\wavelab\results.
 
 param(
-    [Parameter(Position = 0, Mandatory = $true)][ValidateSet('capture', 'list', 'run', 'bench')][string]$Command,
+    [Parameter(Position = 0, Mandatory = $true)][ValidateSet('capture', 'list', 'run', 'bench', 'screen', 'bed')][string]$Command,
     [Parameter(Position = 1)][string]$Snapshot,
     [int]$Count = 3,
     [int]$Seed = 0,
     [double]$Speed = 1.0,
     [string]$Note = '',
+    [string]$Only = '',
     [switch]$All
 )
 
@@ -28,6 +34,8 @@ $SaveDir = "$env:APPDATA\BrotatoDecompiled\user"
 $RunFile = "$SaveDir\run_v3_0.json"
 $SnapDir = 'C:\brotato\wavelab\snapshots'
 $ResultDir = 'C:\brotato\wavelab\results'
+$Ledger = 'C:\brotato\wavelab\bench-history.csv'
+$Manifest = "$PSScriptRoot\bench\testbed.txt"
 $TimeoutSec = 300
 
 New-Item -ItemType Directory -Force $SnapDir, $ResultDir | Out-Null
@@ -125,13 +133,12 @@ switch ($Command) {
     }
 
     'bench' {
-        # The lasting steering test bed: loud d5 wave 11 (croc chain-dasher +
-        # boosting pursuers + Loud swarm density). Survival needs ~30% less
-        # damage intake than the wave deals a careless bot; every steering
-        # regression shows up in the hit-source split.
-        $benchSnap = '20260802-w11-loud-d5-hp59.json'
-        $ledger = "$ResultDir\..\bench-history.csv"
-        if ($Count -eq 3) { $Count = 6 } # bench default is 6, not run's 3
+        # One steering benchmark batch against a bed snapshot (default: the
+        # founding loud-w11 wave). Appends a commit-stamped row to the ledger;
+        # the hit-source split is where regressions the total hides show up.
+        $benchSnap = if ($Snapshot) { $Snapshot } else { '20260802-w11-loud-d5-hp59.json' }
+        $ledger = $Ledger
+        if (-not $PSBoundParameters.ContainsKey('Count')) { $Count = 6 } # bench default is 6, not run's 3
 
         $repo = 'C:\Brotato Mods\botato'
         $commit = (git -C $repo rev-parse --short HEAD 2>$null)
@@ -147,6 +154,7 @@ switch ($Command) {
         $entry = [pscustomobject]@{
             Date        = Get-Date -Format 'yyyy-MM-dd HH:mm'
             Commit      = "$commit$dirty"
+            Snapshot    = $benchSnap
             Note        = $Note
             Runs        = $rows.Count
             Survived    = @($rows | Where-Object Outcome -eq 'survived').Count
@@ -162,6 +170,44 @@ switch ($Command) {
         $entry | Export-Csv $ledger -NoTypeInformation -Append
         Write-Host ''
         Write-Host 'bench history (last 8):'
-        Import-Csv $ledger | Select-Object -Last 8 | Format-Table Date, Commit, Note, @{n = 'Surv'; e = { "$($_.Survived)/$($_.Runs)" } }, AvgDmg, AvgT, DmgPerSec, CrocHits, PursuerHits, ProjHits -AutoSize
+        Import-Csv $ledger | Select-Object -Last 8 | Format-Table Date, Commit, @{n = 'Snapshot'; e = { $_.Snapshot -replace '^\d{8}-', '' -replace '\.json$', '' } }, Note, @{n = 'Surv'; e = { "$($_.Survived)/$($_.Runs)" } }, AvgDmg, AvgT, DmgPerSec, CrocHits, PursuerHits, ProjHits -AutoSize
+    }
+
+    'screen' {
+        # Test-bed admission: does the CURRENT steering die often enough here
+        # for this snapshot to be a useful regression target?
+        if (-not $Snapshot) { throw 'usage: wavelab.ps1 screen <snapshot>' }
+        & $PSCommandPath bench $Snapshot -Count 3 -Note "screen: $Snapshot"
+        $row = Import-Csv $Ledger | Select-Object -Last 1
+        if ($row.Snapshot -ne $Snapshot) { throw "screen: last ledger row is for '$($row.Snapshot)', not '$Snapshot' — bench batch failed?" }
+        $died = [int]$row.Runs - [int]$row.Survived
+        Write-Host ''
+        if ([int]$row.Runs -ge 3 -and $died -ge 2) {
+            Write-Host ("BED CANDIDATE: {0} died {1}/{2} (add to tools\bench\testbed.txt + copy snapshot to tools\bench\)" -f $Snapshot, $died, $row.Runs) -ForegroundColor Green
+        } else {
+            Write-Host ("rejected: {0} died only {1}/{2} (needs >=2/3)" -f $Snapshot, $died, $row.Runs) -ForegroundColor Yellow
+        }
+    }
+
+    'bed' {
+        # Bench every member of the test bed. -Only <substring> restricts to
+        # matching members (chunked sweeps: the full bed at -Count 10 runs
+        # ~90-120 min, far past any single background-task window).
+        if (-not (Test-Path $Manifest)) { throw "no test bed manifest: $Manifest" }
+        $members = @(Get-Content $Manifest | ForEach-Object { ($_ -split '#')[0].Trim() } | Where-Object { $_ })
+        if ($Only) { $members = @($members | Where-Object { $_ -like "*$Only*" }) }
+        if (-not $members.Count) { throw 'bed: no members match' }
+        Write-Host ("bed sweep: {0} member(s) x{1}" -f $members.Count, $Count)
+        foreach ($m in $members) {
+            & $PSCommandPath bench $m -Count $Count -Note $Note
+        }
+        Write-Host ''
+        Write-Host '=== bed sweep results ==='
+        $rows = @(Import-Csv $Ledger | Select-Object -Last $members.Count)
+        $rows | Format-Table @{n = 'Snapshot'; e = { $_.Snapshot -replace '^\d{8}-', '' -replace '\.json$', '' } }, @{n = 'Surv'; e = { "$($_.Survived)/$($_.Runs)" } }, AvgDmg, AvgT, DmgPerSec, CrocHits, PursuerHits, ProjHits, OtherHits -AutoSize
+        $totRuns = ($rows | Measure-Object -Property Runs -Sum).Sum
+        $totSurv = ($rows | Measure-Object -Property Survived -Sum).Sum
+        $wDps = [math]::Round((($rows | ForEach-Object { [double]$_.DmgPerSec * [int]$_.Runs } | Measure-Object -Sum).Sum / [math]::Max($totRuns, 1)), 2)
+        Write-Host ("bed aggregate: {0}/{1} survived, run-weighted DmgPerSec {2}" -f $totSurv, $totRuns, $wDps)
     }
 }
