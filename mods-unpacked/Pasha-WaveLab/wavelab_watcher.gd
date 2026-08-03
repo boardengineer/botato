@@ -26,6 +26,10 @@ var _prev_time_left = 1e9
 
 
 func _ready():
+	# Won waves show the upgrade/level-up UI with the scene tree PAUSED —
+	# without this the watcher's _process freezes at exactly the moment it
+	# must detect the survival (observed: survived runs hanging forever)
+	pause_mode = Node.PAUSE_MODE_PROCESS
 	var args = Utils.get_startup_arguments()
 	active = args.has("wavelab")
 	if not active:
@@ -107,13 +111,16 @@ func _process(delta):
 			var tl = scene._wave_timer.time_left
 			if player.dead:
 				_finish("died")
-			elif tl > _prev_time_left + 1.0 and _elapsed > 5.0 \
-					and RunData.current_wave < RunData.nb_of_waves:
-				# The timer RESET upward = the wave was just won. The scene can
-				# stay "Main" indefinitely on end-of-wave screens waiting for
-				# input the bot doesn't provide (observed: two survived runs
-				# hung until killed by hand, losing their RESULT lines).
-				# Enrage only voids timer logic on the FINAL wave.
+			elif _elapsed > 5.0 and RunData.current_wave < RunData.nb_of_waves \
+					and (tl > _prev_time_left + 1.0 or scene._wave_timer.is_stopped() or get_tree().paused):
+				# The wave was just won: the timer resets upward or stops, and
+				# the upgrade/level-up UI pauses the tree. The scene can stay
+				# "Main" indefinitely on those screens waiting for input the
+				# bot doesn't provide (observed: survived runs hung until
+				# killed by hand). Any of the three signals ends the run here.
+				# Enrage only voids timer logic on the FINAL wave. In-wave
+				# false positives are not possible in wavelab runs: nothing
+				# opens the pause menu and the timer runs the whole wave.
 				_finish("survived")
 			_prev_time_left = tl
 			# NOTE: no plain timer-expiry survive check — on the final wave the
