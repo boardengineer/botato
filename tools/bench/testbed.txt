@@ -25,3 +25,7 @@
 # member 6 — mid-game melee wildling under pursuer pressure; hottest intake
 # on record (5.1 dmg/s). Screen 3/3 deaths at 22-44s.
 20260803-w12-wildling-d5-hp78.json
+# member 7 — king (elite every wave), 25-HP build: slow-attrition deaths
+# (0.8 dmg/s but no margin). Screen 3/3 deaths at 33-43s. Contrast pair
+# with member 2 (same wave number, different threat mix).
+20260803-w8-king-d5-hp25.json
