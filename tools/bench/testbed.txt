@@ -16,3 +16,6 @@
 # reserve (NOT a member): same run/build as member 3, adjacent wave —
 # redundant unless the bed comes up short. Screened 2/3 deaths.
 # 20260803-w4-loud-d5-hp1.json
+# member 4 — first non-loud/gangster character; wave-3 opening chaos on a
+# 12-HP renegade start. Screen 2/3 deaths at 14-28s.
+20260803-w3-renegade-d5-hp12.json
