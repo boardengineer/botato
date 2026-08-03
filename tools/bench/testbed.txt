@@ -22,3 +22,6 @@
 # member 5 — fisherman wave-2 opener, heaviest early intake seen (22-26 dmg
 # in 11-16s). Screen 2/3 deaths.
 20260803-w2-fisherman-d5-hp12.json
+# member 6 — mid-game melee wildling under pursuer pressure; hottest intake
+# on record (5.1 dmg/s). Screen 3/3 deaths at 22-44s.
+20260803-w12-wildling-d5-hp78.json
