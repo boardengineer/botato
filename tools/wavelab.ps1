@@ -14,7 +14,8 @@ param(
     [int]$Count = 3,
     [int]$Seed = 0,
     [double]$Speed = 1.0,
-    [string]$Note = ''
+    [string]$Note = '',
+    [switch]$All
 )
 
 $ErrorActionPreference = 'Stop'
@@ -42,19 +43,24 @@ function Read-SnapshotMeta([string]$path) {
 
 switch ($Command) {
     'capture' {
+        # Newest first: for duplicate wave/hp names (shop re-saves of the same
+        # wave) the most recent — the final post-shop state — claims the name
         $candidates = @(Get-Item $RunFile -ErrorAction SilentlyContinue) + @(Get-ChildItem "$SaveDir\run_v3_0_*.bak" -ErrorAction SilentlyContinue) |
             Where-Object { $_ } | Sort-Object LastWriteTime -Descending
+        $captured = 0
         foreach ($c in $candidates) {
             $meta = Read-SnapshotMeta $c.FullName
-            if ($meta) {
-                $tag = if ($Note) { "-$Note" } else { '' }
-                $name = '{0}-w{1}-{2}-d{3}-hp{4}{5}.json' -f (Get-Date -Format 'yyyyMMdd'), $meta.Wave, $meta.Character, $meta.Danger, $meta.HP, $tag
-                Copy-Item $c.FullName (Join-Path $SnapDir $name)
-                Write-Host "captured: $($c.Name) -> $name"
-                return
-            }
+            if (-not $meta) { continue }
+            $tag = if ($Note) { "-$Note" } else { '' }
+            $name = '{0}-w{1}-{2}-d{3}-hp{4}{5}.json' -f (Get-Date -Format 'yyyyMMdd'), $meta.Wave, $meta.Character, $meta.Danger, $meta.HP, $tag
+            $dest = Join-Path $SnapDir $name
+            if ($All -and (Test-Path $dest)) { Write-Host "skip (exists): $name"; continue }
+            Copy-Item $c.FullName $dest
+            Write-Host "captured: $($c.Name) -> $name"
+            $captured++
+            if (-not $All) { return }
         }
-        Write-Host 'no snapshot with run state found (play to a shop first, or check .bak files)'
+        if (-not $captured) { Write-Host 'no snapshot with run state found (play to a shop first, or check .bak files)' }
     }
 
     'list' {
