@@ -196,4 +196,4 @@ func reset_defaults() -> void:
 	boss_weight = 3.0
 	bumper_weight = 2.0
 	egg_weight = 5.0
-	bumper_distance = 50
+	bumper_distance = 300

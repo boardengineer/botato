@@ -5,11 +5,14 @@
 #   wavelab.ps1 run <snapshot> [-Count 3] [-Seed 0] [-Speed 1]
 #                                        replay a snapshot; -Seed 0 = fresh seed per
 #                                        iteration, fixed seed = repeat circumstances
+#   wavelab.ps1 bench [-Count 6] [-Note "what changed"]
+#                                        run the STANDARD steering benchmark (loud-w11)
+#                                        and append the result to bench-history.csv
 #
 # Snapshots live in C:\brotato\wavelab\snapshots, results in C:\brotato\wavelab\results.
 
 param(
-    [Parameter(Position = 0, Mandatory = $true)][ValidateSet('capture', 'list', 'run')][string]$Command,
+    [Parameter(Position = 0, Mandatory = $true)][ValidateSet('capture', 'list', 'run', 'bench')][string]$Command,
     [Parameter(Position = 1)][string]$Snapshot,
     [int]$Count = 3,
     [int]$Seed = 0,
@@ -119,5 +122,46 @@ switch ($Command) {
         }
         $results | Export-Csv "$ResultDir\$stamp-summary.csv" -NoTypeInformation
         Write-Host "results: $ResultDir\$stamp-summary.csv"
+    }
+
+    'bench' {
+        # The lasting steering test bed: loud d5 wave 11 (croc chain-dasher +
+        # boosting pursuers + Loud swarm density). Survival needs ~30% less
+        # damage intake than the wave deals a careless bot; every steering
+        # regression shows up in the hit-source split.
+        $benchSnap = '20260802-w11-loud-d5-hp59.json'
+        $ledger = "$ResultDir\..\bench-history.csv"
+        if ($Count -eq 3) { $Count = 6 } # bench default is 6, not run's 3
+
+        $repo = 'C:\Brotato Mods\botato'
+        $commit = (git -C $repo rev-parse --short HEAD 2>$null)
+        $dirty = if (git -C $repo status --porcelain 2>$null) { '+dirty' } else { '' }
+
+        & $PSCommandPath run $benchSnap -Count $Count -Speed $Speed
+
+        $sum = Get-ChildItem "$ResultDir\*-summary.csv" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        $rows = @(Import-Csv $sum.FullName | Where-Object Outcome -in 'survived', 'died')
+        if (-not $rows.Count) { Write-Host 'bench: no scored iterations, nothing recorded'; break }
+        $batchStamp = $sum.Name -replace '-summary\.csv$', ''
+        $hits = Get-ChildItem "$ResultDir\$batchStamp-i*.log" | Select-String -Pattern 'BOTLOG HIT.*src=(\S+)' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+        $entry = [pscustomobject]@{
+            Date        = Get-Date -Format 'yyyy-MM-dd HH:mm'
+            Commit      = "$commit$dirty"
+            Note        = $Note
+            Runs        = $rows.Count
+            Survived    = @($rows | Where-Object Outcome -eq 'survived').Count
+            AvgDmg      = [math]::Round(($rows | Measure-Object Dmg -Average).Average, 0)
+            AvgT        = [math]::Round(($rows | Measure-Object T -Average).Average, 0)
+            DmgPerSec   = [math]::Round((($rows | Measure-Object Dmg -Sum).Sum / [math]::Max(($rows | Measure-Object T -Sum).Sum, 1)), 2)
+            CrocHits    = @($hits | Where-Object { $_ -eq 'croc' }).Count
+            PursuerHits = @($hits | Where-Object { $_ -eq 'pursuer' }).Count
+            ProjHits    = @($hits | Where-Object { $_ -like 'proj*' }).Count
+            OtherHits   = @($hits | Where-Object { $_ -ne 'croc' -and $_ -ne 'pursuer' -and $_ -notlike 'proj*' }).Count
+            Batch       = $batchStamp
+        }
+        $entry | Export-Csv $ledger -NoTypeInformation -Append
+        Write-Host ''
+        Write-Host 'bench history (last 8):'
+        Import-Csv $ledger | Select-Object -Last 8 | Format-Table Date, Commit, Note, @{n = 'Surv'; e = { "$($_.Survived)/$($_.Runs)" } }, AvgDmg, AvgT, DmgPerSec, CrocHits, PursuerHits, ProjHits -AutoSize
     }
 }

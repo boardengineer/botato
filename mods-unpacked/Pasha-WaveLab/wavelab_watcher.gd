@@ -22,6 +22,7 @@ var _hooked_player = null
 var _dmg = 0.0
 var _elapsed = 0.0
 var _last_hp = 0
+var _prev_time_left = 1e9
 
 
 func _ready():
@@ -103,11 +104,22 @@ func _process(delta):
 			# plain sample would report t=0 at the finish
 			_elapsed = max(_elapsed, scene._wave_timer.wait_time - scene._wave_timer.time_left)
 			_last_hp = int(player.current_stats.health)
+			var tl = scene._wave_timer.time_left
 			if player.dead:
 				_finish("died")
-			# NOTE: no timer-based survive check — on the final wave the timer
-			# ends while the boss fight continues (enrage). The wave is over
-			# only when the game leaves Main: shop (normal), end screens (won).
+			elif tl > _prev_time_left + 1.0 and _elapsed > 5.0 \
+					and RunData.current_wave < RunData.nb_of_waves:
+				# The timer RESET upward = the wave was just won. The scene can
+				# stay "Main" indefinitely on end-of-wave screens waiting for
+				# input the bot doesn't provide (observed: two survived runs
+				# hung until killed by hand, losing their RESULT lines).
+				# Enrage only voids timer logic on the FINAL wave.
+				_finish("survived")
+			_prev_time_left = tl
+			# NOTE: no plain timer-expiry survive check — on the final wave the
+			# timer ends while the boss fight continues (enrage). Below the
+			# final wave the upward-reset check above is safe; scene-leave
+			# detection below stays as the fallback.
 		elif _hooked_player != null:
 			var outcome = "survived"
 			if is_instance_valid(_hooked_player) and _hooked_player.dead:

@@ -1,5 +1,8 @@
 extends Node2D
 
+# NOTE: the weights below approximate player_movement_behavior.gd and may lag
+# behind it; this overlay is debug-only.
+
 func _draw():
 	if $"/root/Main"._wave_timer.time_left < .05:
 		return
@@ -40,6 +43,16 @@ func _draw():
 	var preferred_distance_squared = weapon_range * weapon_range
 	
 	draw_arc(player.position, weapon_range, 0, 6.28, 100, Color.red)
+
+	var move_behavior = player._movement_behavior
+	if move_behavior and ("escaping" in move_behavior) and move_behavior.escaping:
+		draw_line(player.position, player.position + move_behavior._escape_dir * 200.0, Color.orange, 6.0)
+	if move_behavior and ("countering" in move_behavior) and move_behavior.countering:
+		draw_line(player.position, player.position + move_behavior._counter_dir * 200.0, Color.cyan, 6.0)
+	if move_behavior and ("crossfiring" in move_behavior) and move_behavior.crossfiring:
+		draw_line(player.position, player.position + move_behavior._crossfire_dir * 200.0, Color.magenta, 6.0)
+	if move_behavior and ("aoe_fleeing" in move_behavior) and move_behavior.aoe_fleeing:
+		draw_line(player.position, player.position + move_behavior._aoe_flee_dir * 200.0, Color.yellow, 6.0)
 	
 	# Eat consumables, weighted by missing hp
 	var max_health = float(player.max_stats.health)
@@ -108,6 +121,8 @@ func _draw():
 	var projectiles_container = $"/root/Main/EnemyProjectiles"
 	var projectile_weight_squared = projectile_weight * projectile_weight
 	for projectile in projectiles_container.get_children():
+		if not (projectile is Projectile):
+			continue # BulletHell wave containers live here too
 		if not projectile._hitbox or not projectile._hitbox.active:
 			continue
 		var projectile_shape = projectile._hitbox._collision.shape
@@ -143,6 +158,9 @@ func _draw():
 	var egg_weight_squared = egg_weight * egg_weight
 	
 	for enemy in _entity_spawner.enemies:
+		var enemy_behavior = enemy._current_attack_behavior
+		if enemy_behavior is ChargingAttackBehavior and not enemy.dead and (not enemy._can_move or enemy._move_locked):
+			draw_line(enemy.position, enemy.position + enemy_behavior._charge_direction, Color.orange, 4.0)
 		var color = Color.blue
 		var is_egg = enemy._attack_behavior is SpawningAttackBehavior
 		var enemy_to_player = enemy.position - player.position
@@ -170,6 +188,9 @@ func _draw():
 	# Move towards distant enemies, away from nearby ones.  Determined by weapons range.
 	var boss_weight_squared = boss_weight * boss_weight
 	for boss in _entity_spawner.bosses:
+		var boss_behavior = boss._current_attack_behavior
+		if boss_behavior is ChargingAttackBehavior and not boss.dead and (not boss._can_move or boss._move_locked):
+			draw_line(boss.position, boss.position + boss_behavior._charge_direction, Color.orange, 4.0)
 		var boss_to_player = boss.position - player.position
 		var squared_distance_to_boss = (boss_to_player).length_squared()
 		
