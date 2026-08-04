@@ -55,6 +55,14 @@ const PROJ_LANE_REACH_T = 0.9            # s; a lane matters if its shot can swe
 const PROJ_LANE_MARGIN = 2.0             # lane influence width = hitbox half-width x this (near-misses steer too)
 const PROJ_FIELD_WEIGHT = 90.0           # 16-dir exit scoring: penalty for one dead-center imminent lane
 const PROJ_FIELD_WEIGHT_SIDE = 70.0      # single-shot sidestep must not step into ANOTHER lane
+# -- F6: slow-bullet distance floor (danger-6 environmental fields) --
+# Time-based gates make slow shots near-invisible: a 204 px/s event bullet
+# got a 143 px corridor vs a spitter's 420 px, so the bot idled through
+# bullet streams taking free drip damage. Distance also satisfies the gate
+const PROJ_IMMINENT_MIN_DIST = 220.0     # a shot this close is imminent no matter how slow
+const PROJ_LANE_MIN_REACH = 300.0        # a lane sweeps probe points this far out no matter how slow
+const PROJ_SLIDE_BODY = 30.0             # lane slide: our body radius + bullet radius, roughly
+const PROJ_SLIDE_INFLUENCE = 1.8         # lane slide influence = (bullet half + body) x this
 # -- Loot / eggs --
 const LOOT_CHASE_MULT = 50.0             # attraction multiplier for loot aliens
 # -- Map edges --
@@ -226,17 +234,25 @@ func get_movement()->Vector2:
 			var p_speed = sqrt(proj_speed_sq)
 			var p_dir = projectile.velocity / p_speed
 			var p_along = (-proj_off).dot(p_dir)
-			if p_along > 0.0 and p_along / p_speed < PROJ_IMMINENT_TTI:
+			# F6: effective reach = time gate OR distance floor, so slow shots
+			# get the same warning geometry as fast ones
+			var p_reach = max(p_speed * PROJ_IMMINENT_TTI, PROJ_IMMINENT_MIN_DIST)
+			if p_along > 0.0 and p_along < p_reach:
 				var p_lateral = (-proj_off).dot(p_dir.tangent())
 				var p_half = _proj_half_width(projectile)
 				if abs(p_lateral) < p_half:
 					proj_corridors.push_back([projectile.position, p_dir, p_half, p_lateral,
-							1.0 - (p_along / p_speed) / PROJ_IMMINENT_TTI])
+							1.0 - p_along / p_reach])
 			# F3: under volume fire (fisherman-w2: 15-46 shots airborne) the
 			# corridor model collapses — dodging one lane steps into another.
-			# Track every airborne shot in range as a lane for field scoring
+			# Track every airborne shot in range as a lane for field scoring.
+			# F6d: snake-motion bullets (danger-6 event generators) weave
+			# around a straight-line lane — widen theirs by the sine amplitude
 			if proj_off.length_squared() < PROJECTILE_RANGE_SQ:
-				proj_lanes.push_back([projectile.position, p_dir, _proj_half_width(projectile), p_speed])
+				var lane_half = _proj_half_width(projectile)
+				if "sinusoidal_motion" in projectile and projectile.sinusoidal_motion is Vector2:
+					lane_half += projectile.sinusoidal_motion.length()
+				proj_lanes.push_back([projectile.position, p_dir, lane_half, p_speed])
 		if proj_speed_sq < STATIONARY_SPEED_SQ:
 			var spent = projectile._hitbox.is_disabled() and projectile._animation_player.is_playing() \
 					and projectile._animation_player.current_animation_position > AOE_HARMLESS_ANIM_POS
@@ -731,6 +747,42 @@ func get_movement()->Vector2:
 	if far_corner.y - player.position.y < WALL_SLIDE_DISTANCE and move_vector.y > 0.0:
 		move_vector.y = 0.0
 
+	# F6b lane slide: bullets are not transparent — after all forces resolve,
+	# shed any movement component that CLOSES the lateral gap to a tracked
+	# shot's swept lane (the wall-slide idea applied to bullets: the dodge
+	# scorers suggest, this vetoes). Guards learned from the A/B campaign:
+	# never active while a charge dodge owns the vector, and keep a squeeze
+	# vector when lanes fence us in completely
+	if charge_corridors.empty():
+		var pre_lane = move_vector
+		var worst_exit = Vector2.ZERO
+		var worst_closeness = 0.0
+		for lane in proj_lanes:
+			var l_rel = player.position - lane[0]
+			var l_along = l_rel.dot(lane[1])
+			var l_reach = max(lane[3] * PROJ_IMMINENT_TTI, PROJ_IMMINENT_MIN_DIST)
+			if l_along < - 20.0 or l_along > l_reach:
+				continue # already passed us, or too far upstream to arrive in time
+			var t_dir = lane[1].tangent()
+			var l_lat = l_rel.dot(t_dir)
+			var influence = (lane[2] + PROJ_SLIDE_BODY) * PROJ_SLIDE_INFLUENCE
+			if abs(l_lat) > influence or abs(l_lat) < 8.0:
+				continue # clear of the lane, or dead-center (the dodges own the exit)
+			var closeness = 1.0 - abs(l_lat) / influence
+			if closeness > worst_closeness:
+				worst_closeness = closeness
+				worst_exit = t_dir * sign(l_lat) # away from this lane's center
+			var to_center = t_dir * - sign(l_lat)
+			var closing = move_vector.dot(to_center)
+			if closing <= 0.0:
+				continue
+			move_vector = move_vector - to_center * closing * closeness
+		if move_vector.length() < pre_lane.length() * 0.3 and worst_exit != Vector2.ZERO:
+			# A near-perpendicular approach sheds almost everything — that is
+			# NOT "fenced in", it is one lane in the way. Exit sideways at
+			# full speed instead of restoring the plow-through vector
+			move_vector = worst_exit * pre_lane.length()
+
 	if (shooting_anyone and not must_run_away) and is_soldier:
 		return Vector2.ZERO
 
@@ -784,9 +836,12 @@ func _proj_lane_penalty(point:Vector2, proj_lanes:Array)->float:
 		var along = rel.dot(lane[1])
 		if along < 0.0:
 			continue # behind the shot; it flies away from there
-		var reach_t = along / max(lane[3], 1.0)
-		if reach_t > PROJ_LANE_REACH_T:
+		# F6: effective reach floors at PROJ_LANE_MIN_REACH so slow streams
+		# still grade the field instead of decaying to noise
+		var reach = max(lane[3] * PROJ_LANE_REACH_T, PROJ_LANE_MIN_REACH)
+		if along > reach:
 			continue
+		var reach_t = along / reach * PROJ_LANE_REACH_T
 		var margin = lane[2] * PROJ_LANE_MARGIN
 		var lat = abs(rel.dot(lane[1].tangent()))
 		if lat < margin:
