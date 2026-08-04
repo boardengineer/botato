@@ -1,7 +1,30 @@
-# WaveLab Steering Benchmark — loud-w11
+# WaveLab Steering Benchmark
 
 The lasting test bed for bot steering corrections: every steering change gets
 measured here before it counts as an improvement.
+
+## The 10-member bed (Aug 3, 2026)
+
+`tools/bench/testbed.txt` lists 10 snapshots where the committed steering
+(`aeba9ab`) dies ≥2/3 at screening — six characters, waves 2-12, five death
+profiles. Sweep it with `wavelab.ps1 bed -Count N -Note "..."`; screen new
+candidates with `wavelab.ps1 screen <snapshot>`.
+
+**Baseline (100 runs @ aeba9ab): 19/100 survived.** Per member (Surv,
+AvgDmg, Dmg/s, dominant killers): w2-fisherman 1/10, 22, 1.83, projectiles;
+w3-renegade 4/10, 12, 0.52, contact; w3-sailor 2/10, 13, 0.62, contact;
+w4-loud 1/10, 24, 0.92, contact; w5-loud 2/10, 32, 0.97, contact;
+w8-gangster 1/10, 50, 1.19, mixed; w8-king 1/10, 30, 0.77, proj+contact;
+w11-loud 0/10, 102, 4.10, pursuer+croc; w11-lucky 5/10, 31, 0.76, mixed
+(noise-floor member — treat small shifts as noise); w12-wildling 2/10, 212,
+5.04, pursuer+proj+swarm.
+
+Death-population analysis (81 deaths, features and evidence):
+`tools/STEERING-FEATURES.md`; raw per-death rows:
+`C:\brotato\wavelab\bed-baseline-deaths.csv`. Headline: 85% burst deaths,
+77% during committed escapes, esc=16 dodge commits alone 41%.
+
+## The founding member — loud-w11
 
 ## Protocol
 
