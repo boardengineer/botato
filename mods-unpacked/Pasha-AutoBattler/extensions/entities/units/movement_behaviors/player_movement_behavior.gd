@@ -98,6 +98,7 @@ var last_corridor_count = 0              # actual corridors this frame; read by 
 var _proj_dodge_dir = Vector2.ZERO
 var _proj_dodge_until_ms = 0
 var proj_dodging = false                 # imminent-bullet dodge active; read by ai_telemetry
+var last_move_dir = Vector2.ZERO         # final vector last frame; read by ai_telemetry
 
 
 func get_movement()->Vector2:
@@ -784,9 +785,11 @@ func get_movement()->Vector2:
 			move_vector = worst_exit * pre_lane.length()
 
 	if (shooting_anyone and not must_run_away) and is_soldier:
+		last_move_dir = Vector2.ZERO
 		return Vector2.ZERO
 
-	return move_vector.normalized()
+	last_move_dir = move_vector.normalized()
+	return last_move_dir
 
 
 func _wall_room(pos:Vector2, far:Vector2)->float:
