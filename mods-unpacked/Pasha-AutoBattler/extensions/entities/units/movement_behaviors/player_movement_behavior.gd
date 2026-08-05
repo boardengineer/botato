@@ -19,6 +19,8 @@ const CROSSFIRE_STICK_BONUS = 40.0       # 300 ms re-picks between near-tied exi
 const CHARGE_ATTRACT_DAMP = 0.1          # loot isn't going anywhere during a 1 s dash; don't let it rotate the dodge
 const CHAIN_DASH_COOLDOWN = 60.0         # frames; quicker charge behaviors re-aim constantly (croc 15/45, rhino 100)
 const CHAIN_DASH_RANGE_MARGIN = 1.1      # stay outside a chain-dasher's launch range with a little slack
+const BOSS_DASH_STANDOFF = 400.0         # slow-cycling dash elites (mantis 80f, rhino 100f) fall through the
+                                         # chain-dash rule; a 231 px launch gap is a free kill at 800 px/s
 const BOSS_FLEE_PROBE = 300.0            # look this far along the flee heading for wall room
 const BOSS_FLEE_ROOM_MIN = 340.0         # less room than this ahead: orbit instead of backing into the corner
                                          # (260 fired ~1.5 s pre-death in the mantis corner; turn earlier)
@@ -32,6 +34,9 @@ const DANGER_RAMP_MAX = 8.0              # cap on inside-danger-zone repulsion r
 const DAMAGE_CAUTION_MAX = 4.0           # cap on contact-damage / current-HP scaling
 # -- HP-aware kiting --
 const KITE_HP_FACTOR = 0.4               # kite radius grows to weapon_range*1.4 at 0 HP
+const KITE_REPEL_MULT = 3.0              # repulsion inside kite range out-votes swarm attraction (parity
+                                         # with ELITE_REPEL_MULT; at x1 the equilibrium settled at nearE
+                                         # 99-190 on ranged builds — user: "why so close with all ranged?")
 const IN_RANGE_ATTRACT_DAMP = 0.35       # damp gold/food/distant-enemy pull while already in weapon range
 const ENEMY_PANIC_RADIUS = 120.0         # inside this, contact repulsion ramps ~1/d^4
 const ENEMY_PANIC_RAMP_MAX = 6.0         # cap on that ramp
@@ -229,7 +234,14 @@ func get_movement()->Vector2:
 		var to_add = _get_projectile_term(projectile, player.position, projectile_weight_squared)
 		if not is_nan(to_add.x) and not is_nan(to_add.y):
 			move_vector = move_vector + to_add
-		var proj_off = projectile.position - player.position
+		# The danger is where the HITBOX is, not the node: a mantis/slasher
+		# slash carries its blade at a rotated ~(-112,15) offset, so lanes and
+		# AoE entries centered on projectile.position miss by a body width
+		var proj_center = projectile.position
+		if projectile._hitbox and projectile._hitbox._collision:
+			proj_center = projectile.position \
+					+ (projectile._hitbox.position + projectile._hitbox._collision.position).rotated(projectile.rotation)
+		var proj_off = proj_center - player.position
 		var proj_speed_sq = projectile.velocity.length_squared()
 		if proj_speed_sq >= STATIONARY_SPEED_SQ:
 			# Line-of-fire + time-to-impact: only imminent shots earn a real dodge
@@ -243,7 +255,7 @@ func get_movement()->Vector2:
 				var p_lateral = (-proj_off).dot(p_dir.tangent())
 				var p_half = _proj_half_width(projectile)
 				if abs(p_lateral) < p_half:
-					proj_corridors.push_back([projectile.position, p_dir, p_half, p_lateral,
+					proj_corridors.push_back([proj_center, p_dir, p_half, p_lateral,
 							1.0 - p_along / p_reach])
 			# F3: under volume fire (fisherman-w2: 15-46 shots airborne) the
 			# corridor model collapses — dodging one lane steps into another.
@@ -254,13 +266,13 @@ func get_movement()->Vector2:
 				var lane_half = _proj_half_width(projectile)
 				if "sinusoidal_motion" in projectile and projectile.sinusoidal_motion is Vector2:
 					lane_half += projectile.sinusoidal_motion.length()
-				proj_lanes.push_back([projectile.position, p_dir, lane_half, p_speed])
+				proj_lanes.push_back([proj_center, p_dir, lane_half, p_speed])
 		if proj_speed_sq < STATIONARY_SPEED_SQ:
 			var spent = projectile._hitbox.is_disabled() and projectile._animation_player.is_playing() \
 					and projectile._animation_player.current_animation_position > AOE_HARMLESS_ANIM_POS
 			if not spent and proj_off.length_squared() < ENCIRCLE_AOE_RADIUS * ENCIRCLE_AOE_RADIUS:
 				threat_angles.push_back(proj_off.angle())
-				aoe_close.push_back(projectile.position)
+				aoe_close.push_back(proj_center)
 		elif proj_speed_sq < WAVE_SPEED_SQ and proj_off.length_squared() < PROJECTILE_RANGE_SQ \
 				and (-proj_off).dot(projectile.velocity) > 0.0:
 			# Slow shot drifting toward us: part of an expanding ring/barrage
@@ -316,7 +328,7 @@ func get_movement()->Vector2:
 		if not corridor.empty():
 			pass # dodge owns this enemy's vector for the frame (see above)
 		elif squared_distance_to_enemy < kite_distance_squared:
-			to_add = to_add * -1 * repel_caution
+			to_add = to_add * -1 * repel_caution * KITE_REPEL_MULT
 			# Point-blank contact outranks loot attraction and swarm noise.
 			# Idle chargers get a wider bubble: staying at knife range of a
 			# bruiser feeds a dash cascade — one hit guts move speed and the
@@ -403,6 +415,10 @@ func get_movement()->Vector2:
 		var ab = boss._current_attack_behavior
 		if ab is ChargingAttackBehavior and ab.cooldown < CHAIN_DASH_COOLDOWN:
 			danger_radius = max(danger_radius, ab.max_range * CHAIN_DASH_RANGE_MARGIN)
+		elif ab is ChargingAttackBehavior:
+			# Slow-cycling dashers can't be outranged (mantis launches from
+			# 2000 px) — but the gap must buy the corridor dodge a window
+			danger_radius = max(danger_radius, BOSS_DASH_STANDOFF)
 		var danger_sq = danger_radius * danger_radius
 		if squared_distance_to_boss < danger_sq:
 			must_run_away = true
