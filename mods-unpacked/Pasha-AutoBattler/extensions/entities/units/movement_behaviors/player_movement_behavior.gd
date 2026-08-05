@@ -70,6 +70,31 @@ const PROJ_FIELD_WEIGHT_SIDE = 70.0      # single-shot sidestep must not step in
 # bullet streams taking free drip damage. Distance also satisfies the gate
 const PROJ_IMMINENT_MIN_DIST = 220.0     # a shot this close is imminent no matter how slow
 const PROJ_LANE_MIN_REACH = 300.0        # a lane sweeps probe points this far out no matter how slow
+# -- Rear-aligned fire (w8-gangster: spitters run the dodge down from behind) --
+# Fleeing collinear with a faster aimed shot is a lost race (PHIT dots
+# +0.8..0.98 at the moment of impact, with the dodge committed). Lateral
+# probes cannot see this — the lane must be checked against the ESCAPE dir
+const REAR_LANE_ALIGN = 0.7              # escape.dot(shot dir) above this = fleeing along the lane
+const REAR_LANE_DEFLECT = 0.8            # tangential blend mixed into the committed escape (~39 deg)
+const REAR_LANE_WEIGHT = 120.0           # 16-dir exits: penalty for candidates a rear shot chases down
+# -- F4: burst-interrupt caution (archived f4-burst-caution; +7 solo on the bed) --
+# w8-gangster deaths are bruiser-contact CHAINS: the 2nd and 3rd 13-dmg hits
+# land while a committed behavior keeps driving through the same cluster
+const BURST_HITS_TRIGGER = 2             # this many hits inside BURST_WINDOW_MS arms caution
+const BURST_WINDOW_MS = 2000
+const BURST_HP_FRACTION = 0.4            # or this share of max HP lost inside 3 s
+const CAUTION_MS = 2500                  # how long the caution state holds
+const CAUTION_REPEL_MULT = 1.5           # repel gain boost while cautious
+const CAUTION_ATTRACT_DAMP = 0.1         # loot/gold pull while cautious
+const CAUTION_PANIC_MULT = 1.5           # contact panic radius widening while cautious
+const CAUTION_COMMIT_SCALE = 0.5         # commitment timers halve: escapes re-evaluate sooner
+# -- Dash-cascade breaker --
+# w8-gangster v4 deaths: 13+13 double hits ~1-2 s apart — after a dash lands
+# the bruiser sits at knife range and its 1 s-cooldown re-dash from 40-90 px
+# is unavoidable. Its cooldown window is FREE: sprint the gap open so the
+# next launch comes from dodgeable range. Only while no dash is in flight
+const CASCADE_FLEE_RADIUS_SQ = 90_000.0  # charger within 300 px while cautious = cascade risk
+const CASCADE_FLEE_STRENGTH = 0.05       # dominates the field during the free window; corridors gate it off
 const PROJ_SLIDE_BODY = 30.0             # lane slide: our body radius + bullet radius, roughly
 const PROJ_SLIDE_INFLUENCE = 1.8         # lane slide influence = (bullet half + body) x this
 # -- Loot / eggs --
@@ -108,6 +133,10 @@ var _proj_dodge_dir = Vector2.ZERO
 var _proj_dodge_until_ms = 0
 var proj_dodging = false                 # imminent-bullet dodge active; read by ai_telemetry
 var last_move_dir = Vector2.ZERO         # final vector last frame; read by ai_telemetry
+var _dmg_events = []                     # [ms, amount], last 3 s of damage taken
+var _hp_seen = - 1.0
+var _caution_until_ms = 0
+var cautious = false                     # F4 burst caution active; read by ai_telemetry
 
 
 func get_movement()->Vector2:
@@ -170,6 +199,31 @@ func get_movement()->Vector2:
 	var kite_distance = weapon_range * (1.0 + KITE_HP_FACTOR * (1.0 - hp_fraction))
 	var kite_distance_squared = kite_distance * kite_distance
 	var repel_caution = 1.0 + (1.0 - hp_fraction)
+
+	# F4: burst-interrupt caution — two hits in 2 s (or 40% max HP in 3 s)
+	# arms a short maximum-caution state: harder repel, wider panic, no loot
+	# pull, half-length commitments so escapes re-evaluate immediately
+	var now_ms = OS.get_ticks_msec()
+	if _hp_seen > current_health:
+		_dmg_events.push_back([now_ms, _hp_seen - current_health])
+	_hp_seen = current_health
+	while _dmg_events.size() and now_ms - _dmg_events[0][0] > 3000:
+		_dmg_events.pop_front()
+	var recent_hits = 0
+	var recent_dmg = 0.0
+	for ev in _dmg_events:
+		recent_dmg += ev[1]
+		if now_ms - ev[0] <= BURST_WINDOW_MS:
+			recent_hits += 1
+	if recent_hits >= BURST_HITS_TRIGGER or recent_dmg >= max_health * BURST_HP_FRACTION:
+		_caution_until_ms = now_ms + CAUTION_MS
+	# Low HP is a standing burst: at 3/30 any chip kills, but caution lapsed
+	# between chips and full-length commits drove through crowds (v5 deaths
+	# all ground at <35% HP for many seconds before a 7-dmg touch ended it)
+	cautious = now_ms < _caution_until_ms or hp_fraction < 0.35
+	if cautious:
+		repel_caution *= CAUTION_REPEL_MULT
+	var commit_scale = CAUTION_COMMIT_SCALE if cautious else 1.0
 
 	var move_vector = Vector2.ZERO
 	# Attraction terms are damped later when something is already in weapon range
@@ -287,6 +341,8 @@ func get_movement()->Vector2:
 	var egg_weight_squared = egg_weight * egg_weight
 	# Active dash corridors threatening us: [origin, dir, half_width, lateral, urgency, strength_mult, is_boss, length, in_flight]
 	var charge_corridors = []
+	var nearest_charger_sq = 1e12
+	var nearest_charger_pos = Vector2.ZERO
 	# Nearby enemy positions, for crossfire exit scoring
 	var close_enemy_positions = []
 
@@ -339,6 +395,11 @@ func get_movement()->Vector2:
 			var panic_radius = ENEMY_PANIC_RADIUS
 			if enemy._current_attack_behavior is ChargingAttackBehavior:
 				panic_radius = CHARGER_PANIC_RADIUS
+				if squared_distance_to_enemy < nearest_charger_sq:
+					nearest_charger_sq = squared_distance_to_enemy
+					nearest_charger_pos = enemy.position
+			if cautious:
+				panic_radius *= CAUTION_PANIC_MULT
 			if squared_distance_to_enemy < panic_radius * panic_radius:
 				var panic = min((panic_radius * panic_radius) / max(squared_distance_to_enemy, 1.0), ENEMY_PANIC_RAMP_MAX)
 				to_add = to_add * panic
@@ -445,6 +506,11 @@ func get_movement()->Vector2:
 		attract_vec = attract_vec * CHARGE_ATTRACT_DAMP
 	elif shooting_anyone:
 		attract_vec = attract_vec * IN_RANGE_ATTRACT_DAMP
+	if now_ms < _caution_until_ms:
+		# Burst-only: standing low-HP caution must NOT damp attraction —
+		# that starves consumable (healing) pickup exactly when it matters
+		# (v6: 2/10 with the damp tied to the low-HP flag, vs 6/10 without)
+		attract_vec = attract_vec * CAUTION_ATTRACT_DAMP
 	move_vector = move_vector + attract_vec
 
 
@@ -532,6 +598,12 @@ func get_movement()->Vector2:
 		edge_push.y -= 1.0 - (far_corner.y - player.position.y) / EDGE_GUARD_DISTANCE
 	move_vector = move_vector + edge_push * EDGE_GUARD_STRENGTH
 
+	# Dash-cascade breaker: freshly hit (cautious) with a charger at knife
+	# range and no dash in flight — its cooldown window is free movement;
+	# sprint the gap open so the re-launch comes from dodgeable range
+	if cautious and charge_corridors.empty() and nearest_charger_sq < CASCADE_FLEE_RADIUS_SQ:
+		move_vector = move_vector + (player.position - nearest_charger_pos).normalized() * CASCADE_FLEE_STRENGTH
+
 	# Charge dodging: a single corridor gets the perpendicular sidestep; crossing
 	# corridors get a max-min exit (dodging one dash must not step into another).
 	# Both scale with repel_caution: at low HP any clip is lethal while loot pull
@@ -539,7 +611,12 @@ func get_movement()->Vector2:
 	crossfiring = false
 	dodging = false
 	last_corridor_count = charge_corridors.size()
-	if charge_corridors.size() == 1:
+	# A single NON-boss corridor with bullets airborne goes to the 16-dir
+	# scored exit below: the two-lateral fast path cannot represent "both
+	# sides are covered by spitter lanes" (w8-gangster: deflecting off one
+	# rear lane aligned the escape with ANOTHER — dot=1.00 impacts persisted).
+	# Boss corridors keep the tuned pure-lateral dodge (croc / loud-w11)
+	if charge_corridors.size() == 1 and (charge_corridors[0][6] or proj_lanes.size() < 2):
 		dodging = true
 		var c = charge_corridors[0]
 		var c_dir = c[1]
@@ -549,10 +626,16 @@ func get_movement()->Vector2:
 		# bot from 456 px of open space straight into a blob at 36 px
 		var here_pos = player.position + c_tangent * side * 300.0
 		var there_pos = player.position - c_tangent * side * 300.0
+		# Lane term: this side pick was bullet-blind while crossfire/sidestep
+		# weren't — w8-gangster deaths were spitter shots (600 px/s) running
+		# the bot down COLLINEAR with its own dodge escape (PHIT dot +0.90..0.98
+		# with esc=16). The dodge must not flee along an aimed line of fire
 		var score_here = min(_wall_room(here_pos, far_corner), DODGE_WALL_ROOM_CAP) \
-				+ _enemy_room(here_pos, close_enemy_positions)
+				+ _enemy_room(here_pos, close_enemy_positions) \
+				- PROJ_FIELD_WEIGHT_SIDE * _proj_lane_penalty(here_pos, proj_lanes)
 		var score_there = min(_wall_room(there_pos, far_corner), DODGE_WALL_ROOM_CAP) \
-				+ _enemy_room(there_pos, close_enemy_positions)
+				+ _enemy_room(there_pos, close_enemy_positions) \
+				- PROJ_FIELD_WEIGHT_SIDE * _proj_lane_penalty(there_pos, proj_lanes)
 		if score_there > score_here + 50.0:
 			side = - side
 		var escape
@@ -569,8 +652,20 @@ func get_movement()->Vector2:
 		else:
 			var away = (player.position - c[0]).normalized()
 			escape = (c_tangent * side + away * CHARGE_RADIAL_BIAS).normalized()
+		# Rear-aligned fire: don't flee down a chasing shot's lane — deflect
+		# the committed escape laterally off it (away from the lane center)
+		for rl in proj_lanes:
+			if rl[3] <= player.get_move_speed():
+				continue # we outrun this shot
+			if (rl[0] - player.position).dot(escape) > 0.0:
+				continue # shot is ahead of us, not chasing
+			if escape.dot(rl[1]) > REAR_LANE_ALIGN:
+				var rl_tangent = rl[1].tangent()
+				var rl_sign = 1.0 if (player.position - rl[0]).dot(rl_tangent) >= 0.0 else - 1.0
+				escape = (escape + rl_tangent * rl_sign * REAR_LANE_DEFLECT).normalized()
+				break
 		move_vector = move_vector + escape * CHARGE_DODGE_STRENGTH * (0.5 + c[4]) * c[5] * repel_caution
-	elif charge_corridors.size() >= 2:
+	elif charge_corridors.size() >= 1:
 		crossfiring = true
 		var cf_now = OS.get_ticks_msec()
 		if cf_now >= _crossfire_until_ms:
@@ -596,8 +691,16 @@ func get_movement()->Vector2:
 					var e_d = future.distance_to(e_pos)
 					if e_d < enemy_room:
 						enemy_room = e_d
+				# Rear-aligned fire: a candidate that flees along a faster
+				# chasing shot's lane is a lost race the lateral probes miss
+				var rear_pen = 0.0
+				for rl in proj_lanes:
+					if rl[3] > player.get_move_speed() and (rl[0] - player.position).dot(cand) < 0.0 \
+							and cand.dot(rl[1]) > REAR_LANE_ALIGN:
+						rear_pen = max(rear_pen, cand.dot(rl[1]))
 				var score = min_clear + enemy_room / 3.0 + _wall_room(future, far_corner) / 6.0 \
-						- 100.0 * _proj_lane_penalty(future, proj_lanes)
+						- 100.0 * _proj_lane_penalty(future, proj_lanes) \
+						- REAR_LANE_WEIGHT * rear_pen
 				# Hysteresis: near-tied exits must not flip-flop every re-pick
 				# (two winding bosses once netted 33 px/s of actual movement)
 				if cand.dot(_crossfire_dir) > 0.95:
@@ -606,7 +709,7 @@ func get_movement()->Vector2:
 					best_clear = score
 					best_dir = cand
 			_crossfire_dir = best_dir
-			_crossfire_until_ms = cf_now + CROSSFIRE_COMMIT_MS
+			_crossfire_until_ms = cf_now + int(CROSSFIRE_COMMIT_MS * commit_scale)
 		# A boss corridor in the mix: the exit push must not come out WEAKER
 		# than the single-boss dodge peak it replaces
 		var cf_strength = CROSSFIRE_STRENGTH
@@ -670,13 +773,29 @@ func get_movement()->Vector2:
 				# edge 513->206 over 4 s) dropped w4 3/8 -> 1/8 — the exits start
 				# fighting the lane field and eat drip hits instead. The pocket
 				# failure mode needs the arbiter's unified score, not this knob
+				# Collinear motion maximizes exposure in BOTH directions: fleeing
+				# along a faster chasing shot is a lost race, and running INTO an
+				# oncoming lane closes at bullet+player speed (w4-d6: 9 of 12
+				# impact PHITs at |dot| >= 0.74 with THIS exit committed — the
+				# static lane penalty loses to room-term deltas at these stakes)
+				var col_pen = 0.0
+				for rl in proj_lanes:
+					var rl_a = cand.dot(rl[1])
+					if abs(rl_a) < REAR_LANE_ALIGN:
+						continue
+					var rl_rel = rl[0] - player.position
+					if rl_a > 0.0 and rl_rel.dot(cand) < 0.0 and rl[3] > player.get_move_speed():
+						col_pen = max(col_pen, rl_a)   # chased from behind, can't outrun
+					elif rl_a < 0.0 and rl_rel.dot(cand) > 0.0:
+						col_pen = max(col_pen, - rl_a) # charging head-on into the shot
 				var score = min_clear + enemy_room / 3.0 + _wall_room(future, far_corner) / 6.0 \
-						- PROJ_FIELD_WEIGHT * _proj_lane_penalty(future, proj_lanes)
+						- PROJ_FIELD_WEIGHT * _proj_lane_penalty(future, proj_lanes) \
+						- REAR_LANE_WEIGHT * col_pen
 				if score > pd_best_score:
 					pd_best_score = score
 					pd_best_dir = cand
 			_proj_dodge_dir = pd_best_dir
-			_proj_dodge_until_ms = pd_now + PROJ_DODGE_COMMIT_MS
+			_proj_dodge_until_ms = pd_now + int(PROJ_DODGE_COMMIT_MS * commit_scale)
 		move_vector = move_vector + _proj_dodge_dir * PROJ_DODGE_STRENGTH * 1.5 * repel_caution
 
 	# Cluster of pillars dropped ON us (mom/butcher): their repulsions cancel at
@@ -702,7 +821,7 @@ func get_movement()->Vector2:
 					af_best_score = score
 					af_best_dir = cand
 			_aoe_flee_dir = af_best_dir
-			_aoe_flee_until_ms = af_now + AOE_FLEE_COMMIT_MS
+			_aoe_flee_until_ms = af_now + int(AOE_FLEE_COMMIT_MS * commit_scale)
 		move_vector = move_vector + _aoe_flee_dir * AOE_FLEE_STRENGTH
 
 	# Counter-steer expanding projectile rings: fleeing WITH the wave ends
@@ -764,7 +883,7 @@ func get_movement()->Vector2:
 			var now = OS.get_ticks_msec()
 			if now >= _escape_until_ms:
 				_escape_dir = Vector2(cos(best_angle), sin(best_angle))
-				_escape_until_ms = now + ESCAPE_COMMIT_MS
+				_escape_until_ms = now + int(ESCAPE_COMMIT_MS * commit_scale)
 			move_vector = move_vector + _escape_dir * ESCAPE_STRENGTH
 
 	# Never press INTO a nearby wall — keep only the along-wall component, so
