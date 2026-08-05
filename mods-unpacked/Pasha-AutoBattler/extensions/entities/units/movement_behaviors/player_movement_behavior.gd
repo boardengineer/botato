@@ -20,7 +20,8 @@ const CHARGE_ATTRACT_DAMP = 0.1          # loot isn't going anywhere during a 1 
 const CHAIN_DASH_COOLDOWN = 60.0         # frames; quicker charge behaviors re-aim constantly (croc 15/45, rhino 100)
 const CHAIN_DASH_RANGE_MARGIN = 1.1      # stay outside a chain-dasher's launch range with a little slack
 const BOSS_FLEE_PROBE = 300.0            # look this far along the flee heading for wall room
-const BOSS_FLEE_ROOM_MIN = 260.0         # less room than this ahead: orbit instead of backing into the corner
+const BOSS_FLEE_ROOM_MIN = 340.0         # less room than this ahead: orbit instead of backing into the corner
+                                         # (260 fired ~1.5 s pre-death in the mantis corner; turn earlier)
 const WINDUP_RADIAL_BIAS = 0.35          # boss windup: blend retreat into the sidestep (in-flight stays pure lateral)
 # -- Elite & boss caution --
 const BODY_RADIUS_FALLBACK = 40.0        # when hurtbox shape isn't a CircleShape2D
@@ -366,17 +367,22 @@ func get_movement()->Vector2:
 		# the elite was still comfortably outside its danger zone
 		var flee_dir = boss_to_player.normalized() * -1
 		if _wall_room(player.position + flee_dir * BOSS_FLEE_PROBE, far_corner) < BOSS_FLEE_ROOM_MIN:
+			# Corner recovery: a walking elite sits at our kite equilibrium, so
+			# radial retreat NEVER gains ground — and a ±45° deflection cannot
+			# exit a true corner (mantis death at (127,1409): both 45° options
+			# still pointed at walls). Widen the cone to pure tangent (±90°,
+			# perimeter orbit) and take whichever heading has the most room
 			var t_dir = flee_dir.tangent()
-			var left_probe = player.position + (flee_dir + t_dir).normalized() * BOSS_FLEE_PROBE
-			var right_probe = player.position + (flee_dir - t_dir).normalized() * BOSS_FLEE_PROBE
-			var left_score = min(_wall_room(left_probe, far_corner), DODGE_WALL_ROOM_CAP) \
-					+ _enemy_room(left_probe, close_enemy_positions)
-			var right_score = min(_wall_room(right_probe, far_corner), DODGE_WALL_ROOM_CAP) \
-					+ _enemy_room(right_probe, close_enemy_positions)
-			if left_score > right_score:
-				flee_dir = (flee_dir + t_dir).normalized()
-			else:
-				flee_dir = (flee_dir - t_dir).normalized()
+			var best_flee = flee_dir
+			var best_flee_score = - 1e9
+			for cand in [(flee_dir + t_dir).normalized(), (flee_dir - t_dir).normalized(), t_dir, - t_dir]:
+				var fc_probe = player.position + cand * BOSS_FLEE_PROBE
+				var fc_score = min(_wall_room(fc_probe, far_corner), DODGE_WALL_ROOM_CAP) \
+						+ _enemy_room(fc_probe, close_enemy_positions)
+				if fc_score > best_flee_score:
+					best_flee_score = fc_score
+					best_flee = cand
+			flee_dir = best_flee
 
 		var to_add = (boss_to_player.normalized() / gap_sq) * boss_weight_squared
 
@@ -640,6 +646,11 @@ func get_movement()->Vector2:
 					var e_d = future.distance_to(e_pos)
 					if e_d < enemy_room:
 						enemy_room = e_d
+				# NOTE the weak /3 + /6 room weights are load-bearing: raising them
+				# to /2 + /3 (to stop pocket-marches like the helmet-alien death,
+				# edge 513->206 over 4 s) dropped w4 3/8 -> 1/8 — the exits start
+				# fighting the lane field and eat drip hits instead. The pocket
+				# failure mode needs the arbiter's unified score, not this knob
 				var score = min_clear + enemy_room / 3.0 + _wall_room(future, far_corner) / 6.0 \
 						- PROJ_FIELD_WEIGHT * _proj_lane_penalty(future, proj_lanes)
 				if score > pd_best_score:
@@ -781,7 +792,18 @@ func get_movement()->Vector2:
 		if move_vector.length() < pre_lane.length() * 0.3 and worst_exit != Vector2.ZERO:
 			# A near-perpendicular approach sheds almost everything — that is
 			# NOT "fenced in", it is one lane in the way. Exit sideways at
-			# full speed instead of restoring the plow-through vector
+			# full speed instead of restoring the plow-through vector.
+			# Wall-aware: the pure lane-geometry sign can point INTO a wall
+			# (bot pinned at edge=120 while dodging under swarm pressure) —
+			# take the opposite tangent when it has clearly more room, even
+			# though that means crossing the worst lane once
+			# Crossing the worst lane is only worth it when the lane-preferred
+			# side is genuinely wall-starved — an open-field flip trades a
+			# known-clear exit for a lane crossing and buys nothing (w4 0/5)
+			var exit_room = _wall_room(player.position + worst_exit * 200.0, far_corner)
+			var flip_room = _wall_room(player.position - worst_exit * 200.0, far_corner)
+			if exit_room < 200.0 and flip_room > exit_room + 80.0:
+				worst_exit = - worst_exit
 			move_vector = worst_exit * pre_lane.length()
 
 	if (shooting_anyone and not must_run_away) and is_soldier:
