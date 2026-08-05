@@ -39,7 +39,8 @@ const KITE_REPEL_MULT = 3.0              # repulsion inside kite range out-votes
                                          # 99-190 on ranged builds — user: "why so close with all ranged?")
 const IN_RANGE_ATTRACT_DAMP = 0.35       # damp gold/food/distant-enemy pull while already in weapon range
 const ENEMY_PANIC_RADIUS = 120.0         # inside this, contact repulsion ramps ~1/d^4
-const ENEMY_PANIC_RAMP_MAX = 6.0         # cap on that ramp
+const ENEMY_PANIC_RAMP_MAX = 10.0        # cap on that ramp (was 6; close-range contact still
+                                         # out-damaged everything — user asked for harder shove)
 # -- Projectiles --
 const PROJECTILE_RANGE_SQ = 250_000.0    # 500 px cutoff
 const STATIONARY_SPEED_SQ = 100.0        # velocity < 10 px/s => ground AoE (pillar)
@@ -51,6 +52,8 @@ const AOE_FLEE_MIN = 2                   # this many pillars within ENCIRCLE_AOE
 const AOE_FLEE_STRENGTH = 0.05           # a centered cluster cancels its own repulsion; commit and sprint
 const AOE_FLEE_COMMIT_MS = 400           # hold the exit until (nearly) clear of the telegraph
 const PROJ_CLOSE_ALWAYS_SQ = 10_000.0    # within 100 px repel regardless of heading
+const PROJ_PANIC_RAMP_MAX = 8.0          # point-blank shots ramp like AoE/danger zones do
+                                         # (was flat weight/d^2 — the only close threat without a ramp)
 const PROJ_CORRIDOR_MARGIN = 60.0        # player half-size + margin for line-of-fire test
 const PROJ_IMMINENT_TTI = 0.7            # seconds to impact that makes a shot "imminent"
 const PROJ_DODGE_STRENGTH = 0.025        # beats swarm/attraction noise, stays under gap escape
@@ -993,4 +996,6 @@ func _get_projectile_term(projectile, player_position:Vector2, weight:float)->Ve
 		var side = 1.0 if lateral >= 0.0 else - 1.0
 		return dir.tangent() * side * weight / gap_sq
 
-	return to_player.normalized() * weight / gap_sq # point-blank: radial panic
+	# Point-blank: radial panic, ramped like every other close threat
+	var close_ramp = min(PROJ_CLOSE_ALWAYS_SQ / gap_sq, PROJ_PANIC_RAMP_MAX)
+	return to_player.normalized() * weight * close_ramp / gap_sq
