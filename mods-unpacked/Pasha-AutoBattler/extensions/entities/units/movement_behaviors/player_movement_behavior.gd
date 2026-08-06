@@ -451,7 +451,11 @@ func get_movement()->Vector2:
 			var t_dir = flee_dir.tangent()
 			var best_flee = flee_dir
 			var best_flee_score = - 1e9
-			for cand in [(flee_dir + t_dir).normalized(), (flee_dir - t_dir).normalized(), t_dir, - t_dir]:
+			# Every candidate keeps a radial-out share: pure tangents orbit at
+			# CONSTANT radius, and a chasing elite closes the gap under them
+			# (mantis held at 141-279 px for 5 s, then dashed from 181)
+			for cand in [(flee_dir + t_dir).normalized(), (flee_dir - t_dir).normalized(),
+					(flee_dir * 0.45 + t_dir).normalized(), (flee_dir * 0.45 - t_dir).normalized()]:
 				var fc_probe = player.position + cand * BOSS_FLEE_PROBE
 				var fc_score = min(_wall_room(fc_probe, far_corner), DODGE_WALL_ROOM_CAP) \
 						+ _enemy_room(fc_probe, close_enemy_positions)
