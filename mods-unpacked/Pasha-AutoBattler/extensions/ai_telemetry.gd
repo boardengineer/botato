@@ -255,9 +255,15 @@ func _on_player_took_damage(_unit, value, _kb, _is_crit, is_dodge, is_protected,
 	if args and args.hitbox:
 		var hb_parent = args.hitbox.get_parent()
 		if hb_parent is Projectile:
+			# A Pivot-mounted orbiter never sets `velocity`, so it logs as
+			# proj(v=0) -- indistinguishable from an invoker pillar, which makes
+			# the two impossible to separate in a sweep. Label it by its parent.
+			if hb_parent.get_parent() is Pivot:
+				src = "orbiter"
 			# v~0 = pillar/AoE; a just-stopped bullet may also read 0, so print
 			# the number instead of guessing a label
-			src = "proj(v=%d)" % int(hb_parent.velocity.length())
+			else:
+				src = "proj(v=%d)" % int(hb_parent.velocity.length())
 			# Frame-accurate impact geometry: the 1 Hz tick misses sub-second
 			# dodge commits, so record what the bot was DOING at this instant
 			if _hooked_player and is_instance_valid(_hooked_player) and not _hooked_player.dead:

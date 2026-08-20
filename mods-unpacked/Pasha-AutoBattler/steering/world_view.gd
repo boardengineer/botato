@@ -105,6 +105,25 @@ const SIN_DRIFT_HORIZON = 0.8    # must match Arbiter.HORIZON: how far a weaving
 # So sample the sine instead of smearing it: integrate the bullet's real path
 # over the scan window and emit a few small circles where it WILL be. Same
 # threat model, same scorer, correct geometry.
+# -- Orbiting projectiles --
+#
+# Some bosses carry their projectiles as their OWN children instead of handing
+# them to the EnemyProjectiles container. The predator spins nine of them on a
+# Pivot (corrupted_tree/pivot.gd) at radii 250-600, rotation_speed 1.2 rad/s,
+# destroy_on_hit = false, damage scaling to ~23 by wave 20.
+#
+# gather() only scanned main's EnemyProjectiles children, so these never entered
+# the threat list at all. Not mispriced -- ABSENT. No amount of scoring helps
+# against a hazard that is not in the model, and this one is a permanent
+# 420 px/s flail wrapped around a 15000 HP boss on the final wave.
+#
+# They are sampled along their ARC rather than given a straight-line velocity:
+# at 1.2 rad/s the pivot turns 0.96 rad across one horizon, so a tangent would
+# put a 350 px orbiter hundreds of px from where it really goes. Same treatment
+# the weaving bullets get, and for the same reason.
+const ORBIT_SAMPLES = 4
+const ORBIT_SMEAR_MAX = 60.0     # px of residual widening per sample
+
 const SIN_SAMPLES = 4            # circles per weaving bullet
 const SIN_SMEAR_MAX = 60.0       # px of residual widening we still allow per sample,
                                  # covering the phase drift between samples
@@ -178,6 +197,10 @@ var aoe_clock = 1.0
 # validated) in place. Without this, the control arm would revert two changes at
 # once and could not attribute either.
 var moving_clock = 1.0
+
+# Sweepable: --arb-orbit=0 stops scanning boss subtrees for attached
+# projectiles, restoring the previous behaviour where they were invisible.
+var orbit_scan = 1.0
 
 # Sweepable: --arb-blade=0 reverts to one inflated circle per stationary hitbox,
 # which is exactly how blades were priced before, so the comparison is exact.
@@ -304,6 +327,9 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("movingclock"):
 		moving_clock = float(d["movingclock"])
 		print("WORLDVIEW moving_clock=%.0f" % moving_clock)
+	if d.has("orbit"):
+		orbit_scan = float(d["orbit"])
+		print("WORLDVIEW orbit_scan=%.0f" % orbit_scan)
 
 
 # Expected damage applications from a body over one horizon: how often it hits
@@ -348,6 +374,13 @@ func gather(main, player) -> void:
 			if not p._hitbox or not p._hitbox.active:
 				continue
 			_add_projectile(p, pos, range_sq)
+
+	# Projectiles a boss keeps as its own children never reach that container.
+	# Bosses only: they are few, so walking their subtrees is cheap, and every
+	# attached-projectile design in this game is a boss mechanic.
+	if orbit_scan != 0.0:
+		for boss in spawner.bosses:
+			_add_attached(boss, pos, range_sq)
 
 	current_hp = float(player.current_stats.health)
 	var missing_hp = float(player.max_stats.health) - current_hp
@@ -466,6 +499,50 @@ func _windup_remaining(unit) -> float:
 		return 0.0
 	var speed = max(anim.playback_speed, 0.01)
 	return max(WINDUP_ANIM_LENGTH - anim.current_animation_position, 0.0) / speed
+
+
+# Projectiles parented to a boss rather than to EnemyProjectiles. Currently that
+# means Pivot-mounted orbiters; the Pivot carries the angular rate we need.
+func _add_attached(unit, pos: Vector2, range_sq: float) -> void:
+	if unit.dead or unit._pending_die:
+		return
+	for child in unit.get_children():
+		if not (child is Pivot):
+			continue
+		# pivot.gd: rotation += direction * rotation_speed * accessibility * delta
+		var omega = child.direction * child.rotation_speed \
+				* RunData.current_run_accessibility_settings.speed
+		for orb in child.get_children():
+			if not (orb is Projectile):
+				continue
+			if not orb._hitbox or not orb._hitbox.active or orb._hitbox.is_disabled():
+				continue
+			_add_orbiter(orb, child, omega, pos, range_sq)
+
+
+func _add_orbiter(p, pivot, omega: float, pos: Vector2, range_sq: float) -> void:
+	# global_*, not position/rotation: these are nested two levels under the
+	# boss, so the local transform is meaningless in world terms.
+	var center = p.global_position
+	if p._hitbox and p._hitbox._collision:
+		center = p.global_position \
+				+ (p._hitbox.position + p._hitbox._collision.position).rotated(p.global_rotation)
+	if center.distance_squared_to(pos) > range_sq:
+		return
+
+	var radius = _projectile_radius(p)
+	var damage = _projectile_damage(p)
+	var arm = center - pivot.global_position
+	var step = SIN_DRIFT_HORIZON / float(ORBIT_SAMPLES)
+	# Widen by how far along the arc it travels inside one sample window.
+	var drift = min(abs(omega) * arm.length() * step * 0.5, ORBIT_SMEAR_MAX)
+	for i in range(ORBIT_SAMPLES):
+		var t0 = float(i) * step
+		var t1 = t0 + step
+		var mid = (t0 + t1) * 0.5
+		var at = pivot.global_position + arm.rotated(omega * mid)
+		threats.push_back([at, Vector2.ZERO, radius + drift, damage, KIND_PROJ,
+				t0, TICKS_ONCE, t1])
 
 
 func _add_projectile(p, pos: Vector2, range_sq: float) -> void:
