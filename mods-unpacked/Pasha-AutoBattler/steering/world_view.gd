@@ -173,6 +173,12 @@ var _aoe_window_cache = {}
 # That makes the pre-fix behaviour an exact control arm rather than a guess at one.
 var aoe_clock = 1.0
 
+# Separate from aoe_clock on purpose: --arb-movingclock=0 reverts ONLY the
+# in-flight telegraph timing, leaving the stationary pillar clock (committed and
+# validated) in place. Without this, the control arm would revert two changes at
+# once and could not attribute either.
+var moving_clock = 1.0
+
 # Sweepable: --arb-blade=0 reverts to one inflated circle per stationary hitbox,
 # which is exactly how blades were priced before, so the comparison is exact.
 var blade_split = 1.0
@@ -234,10 +240,17 @@ func _aoe_profile(anim) -> Dictionary:
 				for ki in range(track.track_get_key_count(ti)):
 					ext_keys.push_back([track.track_get_key_time(ti, ki), track.track_get_key_value(ti, ki)])
 
-	var profile = {"arm": AOE_ARM_FALLBACK, "disarm": AOE_DISARM_FALLBACK, "swept": false}
+	# `windowed` says a REAL enable_hitbox/disable_hitbox pair was found, as
+	# opposed to the fallback guess. Only a real window may be applied to a
+	# MOVING projectile: ordinary enemy bullets have no method track at all, and
+	# applying the pillar's 0.54 s fallback to them would tell the bot a live
+	# bullet is harmless for half a second.
+	var profile = {"arm": AOE_ARM_FALLBACK, "disarm": AOE_DISARM_FALLBACK,
+			"swept": false, "windowed": false}
 	if arm >= 0.0:
 		profile["arm"] = arm
 		profile["disarm"] = disarm if disarm >= 0.0 else track.length
+		profile["windowed"] = true
 
 	# Union of every pose the collision box holds WHILE ARMED.
 	#
@@ -288,6 +301,9 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("sine"):
 		sine_sample = float(d["sine"])
 		print("WORLDVIEW sine_sample=%.0f" % sine_sample)
+	if d.has("movingclock"):
+		moving_clock = float(d["movingclock"])
+		print("WORLDVIEW moving_clock=%.0f" % moving_clock)
 
 
 # Expected damage applications from a body over one horizon: how often it hits
@@ -488,6 +504,36 @@ func _add_projectile(p, pos: Vector2, range_sq: float) -> void:
 			threats.push_back([seg[0], Vector2.ZERO, seg[1], dmg, KIND_AOE,
 					arm_in, TICKS_ONCE, disarm_in])
 		return
+
+	# A MOVING telegraphed projectile -- a colossus pillar, fired at 150 or 300
+	# rather than parked -- is armed for the same 0.14 s slice as a stationary
+	# one, but it used to fall straight through to the always-live branch below.
+	# So an 18-pillar ring spawned around the player at 400 px read as an
+	# impassable wall, when in truth every pillar in it is inert for its first
+	# 0.54 s: over half a second in which the bot can simply walk out between
+	# them. That is the colossus encircling attack, and this is why it could not
+	# be answered.
+	#
+	# Gated on `windowed`, so it applies ONLY where a genuine
+	# enable_hitbox/disable_hitbox pair exists. Ordinary bullets have no method
+	# track and are untouched.
+	var m_anim = p._animation_player
+	if aoe_clock != 0.0 and moving_clock != 0.0 and m_anim and m_anim.is_playing():
+		var m_prof = _aoe_profile(m_anim)
+		if m_prof["windowed"]:
+			var m_speed = max(m_anim.playback_speed, 0.01)
+			var m_pos = m_anim.current_animation_position
+			if m_pos >= m_prof["disarm"]:
+				return    # already spent; its hitbox will never come back
+			var m_arm = max(m_prof["arm"] - m_pos, 0.0) / m_speed
+			var m_off = (m_prof["disarm"] - m_pos) / m_speed
+			# Carry the threat forward to where it will be when it goes live --
+			# the scorer defers a threat's MOTION until T_START (that is what
+			# makes a dash wind-up tractable), which is wrong for something
+			# already in flight.
+			threats.push_back([center + p.velocity * m_arm, p.velocity, radius,
+					damage, KIND_PROJ, m_arm, TICKS_ONCE, m_off])
+			return
 
 	# Weaving bullets: sample the sine rather than smearing it. See the
 	# SIN_SAMPLES block above for why a fat radius fails on the +-600 variants.
