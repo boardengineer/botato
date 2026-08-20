@@ -1,5 +1,28 @@
 extends "res://entities/units/movement_behaviors/player_movement_behavior.gd"
 
+# Two steering controllers live behind this one entry point so they can be
+# A/B'd on identical seeds: the potential field below, and the candidate-action
+# arbiter in steering/. AutobattlerOptions.use_arbiter selects between them.
+const Arbiter = preload("res://mods-unpacked/Pasha-AutoBattler/steering/arbiter.gd")
+const WorldView = preload("res://mods-unpacked/Pasha-AutoBattler/steering/world_view.gd")
+
+var _arbiter = null
+var _world = null
+var arbiter_active = false               # read by ai_telemetry / ai_canvas
+
+# Per-frame heading statistics, drained once a second by ai_telemetry.
+# The player moves at constant speed along the chosen heading every physics
+# frame, so over a window: path length = speed*dt*n and net displacement =
+# speed*dt*|sum of headings|. Their ratio, |sum|/n, IS path efficiency --
+# 1.0 for a straight line, 0 for perfect oscillation. That measures directly
+# what a 1 Hz sample of the decision can only hint at.
+var _hdg_sum = Vector2.ZERO
+var _hdg_count = 0
+var _hdg_turn_sum = 0.0
+var _hdg_flips = 0
+var _hdg_prev = Vector2.ZERO
+var _hdg_still = 0
+
 # -- Charge dodging --
 const CHARGE_DODGE_STRENGTH = 0.01       # strong but must not erase swarm/bullet terms (~0.001)
 const CHARGE_BOSS_DODGE_MULT = 3.0       # boss dashes one-shot; their dodge overrides bullet noise
@@ -157,6 +180,10 @@ func get_movement()->Vector2:
 	if not enabled and not CoopService.is_bot_by_index[player.player_index]:
 		$"/root/Main/Camera".smoothing_enabled = false
 		return .get_movement()
+
+	arbiter_active = options_node.use_arbiter
+	if arbiter_active:
+		return _arbiter_move(player)
 
 	var _entity_spawner = $"/root/Main/EntitySpawner"
 	var _consumables_container = $"/root/Main/"._consumables
@@ -954,6 +981,55 @@ func get_movement()->Vector2:
 
 	last_move_dir = move_vector.normalized()
 	return last_move_dir
+
+
+func _arbiter_move(player)->Vector2:
+	if _arbiter == null:
+		_arbiter = Arbiter.new()
+		_world = WorldView.new()
+		# Both halves read the same --arb-* dict; each picks out the keys it
+		# owns and ignores the rest, so a sweep passes one flag set regardless
+		# of which side the knob lives on.
+		var overrides = $"/root/AutobattlerOptions".arb_overrides
+		_arbiter.apply_overrides(overrides)
+		_world.apply_overrides(overrides)
+	_world.gather($"/root/Main", player)
+	last_move_dir = _arbiter.choose(player.position, player.get_move_speed(),
+			_world.body_radius, _world.far_corner,
+			_world.threats, _world.rewards, _world.targets, _world.chargers,
+			_world.weapon_range, _world.prefers_still, _world.current_hp,
+			_world.mitigation)
+
+	if last_move_dir == Vector2.ZERO:
+		_hdg_still += 1
+	else:
+		_hdg_sum = _hdg_sum + last_move_dir
+		_hdg_count += 1
+		if _hdg_prev != Vector2.ZERO:
+			_hdg_turn_sum += rad2deg(acos(clamp(last_move_dir.dot(_hdg_prev), -1.0, 1.0)))
+			if last_move_dir.dot(_hdg_prev) < 0.0:
+				_hdg_flips += 1
+		_hdg_prev = last_move_dir
+
+	return last_move_dir
+
+
+# Returns [path_efficiency, mean_turn_deg, reversals, moving_frames, still_frames]
+# and resets the window.
+func take_heading_stats()->Array:
+	var coh = 0.0
+	var turn = 0.0
+	if _hdg_count > 0:
+		coh = _hdg_sum.length() / _hdg_count
+		turn = _hdg_turn_sum / max(_hdg_count - 1, 1)
+	var out = [coh, turn, _hdg_flips, _hdg_count, _hdg_still]
+	_hdg_sum = Vector2.ZERO
+	_hdg_count = 0
+	_hdg_turn_sum = 0.0
+	_hdg_flips = 0
+	_hdg_still = 0
+	_hdg_prev = Vector2.ZERO
+	return out
 
 
 func _wall_room(pos:Vector2, far:Vector2)->float:

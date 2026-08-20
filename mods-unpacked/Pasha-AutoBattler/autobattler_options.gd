@@ -9,6 +9,21 @@ const ENABLE_AUTOBATTLER_OPTION_NAME = "ENABLE_AUTOBATTLER"
 var enable_ai_visuals : bool = false
 const ENABLE_AI_VISUALS_OPTION_NAME = "ENABLE_AI_VISUALS"
 
+# Steering controller select: false = potential field, true = candidate-action
+# arbiter. Benchmarks set it with --arbiter=1 so both run identical seeds;
+# Shift+A toggles it live for side-by-side eyeballing.
+#
+# Defaults ON: the arbiter is the controller under development, so a hand-played
+# session should exercise it without needing a keypress. Benchmarks are
+# unaffected -- wavelab always passes --arbiter=0/1 explicitly and startup args
+# are applied after reset_defaults(), so they override this either way.
+var use_arbiter : bool = true
+
+# Arbiter weight overrides harvested from --arb-<name>=<value> startup args,
+# e.g. --arb-dps=9 --arb-enclose=0. Lets a sweep vary one weight per run
+# without a code edit, which is what ablation and weight search both need.
+var arb_overrides : Dictionary = {}
+
 var enable_ai_marker : bool = true
 const ENABLE_AI_MARKER_OPTION_NAME = "ENABLE_AI_MARKER"
 
@@ -50,6 +65,16 @@ const CONFIG_SECTION = "options"
 func _ready():
 	reset_defaults()
 	load_mod_options()
+
+	# Benchmarks pick the controller on the command line; it must win over the
+	# saved config so a bench run never inherits whatever was toggled by hand.
+	var startup_args = Utils.get_startup_arguments()
+	if startup_args.has("arbiter"):
+		use_arbiter = int(startup_args["arbiter"]) != 0
+		print("ARBITER %s (startup arg)" % ("on" if use_arbiter else "off"))
+	for key in startup_args.keys():
+		if key.begins_with("arb-"):
+			arb_overrides[key.substr(4)] = float(startup_args[key])
 	
 	if not get_node("/root/ModLoader").has_node("dami-ModOptions"):
 		return
@@ -61,7 +86,17 @@ func _ready():
 
 
 func _input(event):
-	if event is InputEventKey:
+	# `pressed` is the fix for a toggle that used to fire TWICE per press: an
+	# InputEventKey arrives for both the press and the release, and the 0.2 s
+	# cooldown only swallows the second one if you let go inside 0.2 s. So a
+	# quick tap worked and a normal press was a silent no-op -- which is how a
+	# play session ended up with 6 on/off pairs and a net zero change.
+	# `echo` guards the same way against key auto-repeat while held.
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.shift and event.scancode == KEY_A and option_cooldown < 0.0:
+			option_cooldown = DEFAULT_COOLDOWN
+			use_arbiter = not use_arbiter
+			print("ARBITER %s" % ("on" if use_arbiter else "off"))
 		if event.shift and event.scancode == KEY_SPACE and option_cooldown < 0.0:
 			option_cooldown = DEFAULT_COOLDOWN
 			enable_autobattler = not enable_autobattler
@@ -188,6 +223,7 @@ func reset_defaults() -> void:
 	enable_ai_marker = true
 	enable_ai_visuals = false
 	enable_smoothing = true
+	use_arbiter = true
 
 	smoothing_speed = 1
 	item_weight = 0.5
@@ -196,4 +232,4 @@ func reset_defaults() -> void:
 	boss_weight = 3.0
 	bumper_weight = 2.0
 	egg_weight = 5.0
-	bumper_distance = 50
+	bumper_distance = 300
