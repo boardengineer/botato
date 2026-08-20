@@ -78,6 +78,39 @@ const EGG_VALUE = 60.0           # a spawner is worth far more dead than its own
 const WINDUP_ANIM_LENGTH = 0.4   # enemy_charge_prep_animation.tres: start_shoot at 0, shoot at 0.4
 const SIN_DRIFT_HORIZON = 0.8    # must match Arbiter.HORIZON: how far a weaving bullet strays
 
+# -- Weaving bullets --
+#
+# Projectile._physics_process moves a bullet by (velocity + sinusoidal_offset),
+# where sinusoidal_offset = sin(sinusoidal_time) * sinusoidal_motion * 0.5. So
+# the sine is a VELOCITY perturbation, and every input to it is readable: phase,
+# amplitude and rate all live on the projectile.
+#
+# The old model ignored that and smeared the bullet instead, widening its radius
+# by half-amplitude x horizon. That is a defensible bound for a gentle weave and
+# catastrophic for a violent one. Bullet-hell variants differ 12x in amplitude:
+#
+#   BulletHell_*_3      50-75   ->  +20-30 px      (fine)
+#   BulletHell_Top etc.   100   ->  +40 px         (fine)
+#   BulletHell_0      250,250   ->  +141 px
+#   BulletHell_2          400   ->  +160 px
+#   BulletHell_*_2       +-600  ->  +240 px        (a 257 px BLOB per bullet)
+#
+# With 14-21 bullets up, the +-600 variants blanket the arena: every candidate
+# direction sits inside something, the term goes flat across the compass and
+# stops discriminating. That is the same saturation that made room18 score 0/10
+# and made a butcher blade undodgeable as a 320 px disc -- and it matches the
+# observed failure exactly, where the bot does NOT thrash but calmly walks into
+# a wall while nothing is chasing it, because nothing pulls it anywhere better.
+#
+# So sample the sine instead of smearing it: integrate the bullet's real path
+# over the scan window and emit a few small circles where it WILL be. Same
+# threat model, same scorer, correct geometry.
+const SIN_SAMPLES = 4            # circles per weaving bullet
+const SIN_SMEAR_MAX = 60.0       # px of residual widening we still allow per sample,
+                                 # covering the phase drift between samples
+const SIN_SIGNIFICANT = 60.0     # amplitude below this, one straight-line threat with
+                                 # the old cheap widening is already accurate enough
+
 # -- Contact persistence --
 #
 # Every threat tuple carries the expected number of damage applications it
@@ -148,6 +181,10 @@ var blade_split = 1.0
 # union of everything it covers while armed, so the previous behaviour stays an
 # exact control arm.
 var sweep_union = 1.0
+
+# Sweepable: --arb-sine=0 restores the single smeared circle, so the previous
+# behaviour is an exact control arm.
+var sine_sample = 1.0
 
 
 # Value of a keyed track at or before `at`, held (not extrapolated) outside the
@@ -248,6 +285,9 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("sweep"):
 		sweep_union = float(d["sweep"])
 		print("WORLDVIEW sweep_union=%.0f" % sweep_union)
+	if d.has("sine"):
+		sine_sample = float(d["sine"])
+		print("WORLDVIEW sine_sample=%.0f" % sine_sample)
 
 
 # Expected damage applications from a body over one horizon: how often it hits
@@ -449,14 +489,44 @@ func _add_projectile(p, pos: Vector2, range_sq: float) -> void:
 					arm_in, TICKS_ONCE, disarm_in])
 		return
 
-	# Snake-motion bullets weave around their straight-line path. The sine is a
-	# perturbation of velocity capped at half the amplitude, so over the horizon
-	# it displaces the bullet by at most half-amplitude x horizon; widen the
-	# threat by that instead of modelling the weave.
+	# Weaving bullets: sample the sine rather than smearing it. See the
+	# SIN_SAMPLES block above for why a fat radius fails on the +-600 variants.
+	var amp = 0.0
 	if "sinusoidal_motion" in p and p.sinusoidal_motion is Vector2:
-		radius += p.sinusoidal_motion.length() * 0.5 * SIN_DRIFT_HORIZON
-	threats.push_back([center, p.velocity, radius, damage, KIND_PROJ, 0.0, TICKS_ONCE,
-			INF_TIME])
+		amp = p.sinusoidal_motion.length()
+	if amp <= SIN_SIGNIFICANT or sine_sample == 0.0:
+		# Gentle weave (or feature disabled): the old bound is cheap and tight.
+		threats.push_back([center, p.velocity, radius + amp * 0.5 * SIN_DRIFT_HORIZON,
+				damage, KIND_PROJ, 0.0, TICKS_ONCE, INF_TIME])
+		return
+
+	# Integrate position along the real path. Each sample becomes its own threat,
+	# live only for the slice of time the bullet actually occupies it -- so a
+	# bullet that will be somewhere in 0.6 s does not deny that ground now.
+	var span = SIN_DRIFT_HORIZON
+	var step = span / float(SIN_SAMPLES)
+	var t_now = p.sinusoidal_time
+	var rate = p.sinusoidal_motion_speed
+	var amp_v = p.sinusoidal_motion * 0.5
+	# NOT named `pos`: that is already a parameter of this function, and
+	# redeclaring it is a GDScript parse error -- which fails world_view, fails
+	# player_movement_behavior's preload of it, and drops the whole movement
+	# extension with no error logged. Symptom is 7 extensions instead of 8 and a
+	# bot that never steers.
+	var sim_pos = center
+	var sub = step / 4.0                     # integrate finer than we emit
+	var elapsed = 0.0
+	for _i in range(SIN_SAMPLES):
+		var seg_start = elapsed
+		for _s in range(4):
+			t_now += Vector2(sub * rate.x, sub * rate.y)
+			var off = Vector2(sin(t_now.x), sin(t_now.y)) * amp_v
+			sim_pos += (p.velocity + off) * sub
+			elapsed += sub
+		# Radius covers the bullet plus how far it can stray between samples.
+		var drift = min(amp * 0.5 * step, SIN_SMEAR_MAX)
+		threats.push_back([sim_pos, Vector2.ZERO, radius + drift, damage, KIND_PROJ,
+				seg_start, TICKS_ONCE, elapsed])
 
 
 # Pillar damage is stamped on the hitbox at spawn like every other projectile's,

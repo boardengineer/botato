@@ -54,6 +54,20 @@ func _track_boss_dashes():
 				_fmt_pos(player.position)])
 
 
+# Largest weave amplitude among a bullet hell's generators. That is the number
+# that drives threat geometry: 50 is a wobble, 600 is a bullet that crosses the
+# arena sideways while travelling.
+func _bh_amplitude(bh) -> float:
+	var best = 0.0
+	for gen in bh.get_children():
+		if not ("sinusoidal_motion" in gen):
+			continue
+		var a = gen.sinusoidal_motion.length()
+		if a > best:
+			best = a
+	return best
+
+
 func _bot_active() -> bool:
 	var options = get_node_or_null("/root/AutobattlerOptions")
 	if options == null:
@@ -78,6 +92,19 @@ func _tick():
 		_damage_taken_this_wave = 0.0
 		_death_logged = false
 		_boss_state_cache.clear()
+		# Which bullet-hell variant this wave rolled. main.gd picks it with
+		# pick_random(), so it is not recorded in the snapshot -- but the
+		# variants differ 12x in weave amplitude (50 to +-600), which changes
+		# the threat geometry enormously. Without this line a sweep cannot say
+		# whether it actually covered the violent variants or only the mild ones.
+		var projectiles = main.get_node_or_null("EnemyProjectiles")
+		if projectiles:
+			for child in projectiles.get_children():
+				if child is BulletHell:
+					print("BOTLOG BULLETHELL wave=%d variant=%s amp=%.0f speed=%.0f" % [
+						RunData.current_wave, child.name, _bh_amplitude(child),
+						child.projectile_speed])
+					break
 
 	if player.dead:
 		if not _death_logged:
