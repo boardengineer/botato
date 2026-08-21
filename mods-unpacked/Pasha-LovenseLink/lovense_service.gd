@@ -167,15 +167,16 @@ func _target_level():
 	var raw = MAX_LEVEL * (1.0 - exp(-float(count) / max(horde_size / 3.0, 1.0)))
 	# Bosses and elites raise the stakes beyond what their headcount says:
 	# each adds 20% OF TOTAL POTENTIAL POWER (+4 on the 0..20 scale), flat,
-	# so a lone elite in an empty arena is clearly felt. Both flags live on
-	# the base enemy class (ItemEnemy), and the shared boss class carries
-	# is_elite, so this covers wave bosses and elites alike. Compared with
-	# == true on purpose: get() returns null for units lacking the property.
-	var special = 0
-	for e in spawner.enemies:
-		if is_instance_valid(e) and (e.get("is_elite") == true or e.get("is_boss") == true):
-			special += 1
-	raw += SPECIAL_BONUS * MAX_LEVEL * special
+	# so a lone elite in an empty arena is clearly felt. They are counted
+	# from the spawner's separate `bosses` array -- NOT from `enemies`,
+	# which does not contain them, and NOT by flag-sniffing units: an
+	# earlier version checked is_elite/is_boss and silently missed every
+	# true boss (is_elite is false on bosses; is_boss does not exist on
+	# units). This is the same array vanilla trusts for
+	# get_nb_bosses_and_elites_alive().
+	var boss_list = spawner.get("bosses")
+	if boss_list != null:
+		raw += SPECIAL_BONUS * MAX_LEVEL * boss_list.size()
 	if raw >= MAX_LEVEL - 1.0:
 		return MAX_LEVEL
 	return int(round(raw))
