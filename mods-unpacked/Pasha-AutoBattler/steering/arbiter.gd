@@ -115,6 +115,29 @@ const KILL_SOFT = 40.0           # soft-saturation scale; value beyond this has
 const ACQUIRE_BAND = 220.0       # targets this far OUTSIDE weapon range still pull,
                                  # which is the only thing making the bot close in
 
+# -- Pin escape --
+# Four attempts to solve pinning by WEIGHT failed: wall28 flat, peril regressed
+# five snapshots, trap null on w7 (t=0.49 vs noise 1.65) and null on w11. They
+# shared one defect -- each made a pin expensive INSIDE the same sum, so the way
+# out still had to outvote every threat term, and in a corner every exit points
+# through something. This is a MODE instead: once the bot is confirmed stuck it
+# stops optimising the blend, discounts damage on purpose, and commits to
+# leaving for a fixed spell.
+const PIN_EDGE = 150.0           # closer than this to a wall to count as pinned
+const PIN_CLEAR = 260.0          # far enough out to call the escape finished
+const PIN_WINDOW = 24            # frames of position history (~0.4 s)
+const PIN_TRAVEL_FRAC = 0.35     # stuck if net travel is under this share of what
+                                 # our speed could have covered over the window
+const PIN_CONFIRM = 8            # consecutive stuck frames before the mode fires
+const PIN_TICKS = 36             # frames of COMMITTED escape (~0.6 s). Commitment is
+                                 # the point: a pin is a local minimum, so leaving
+                                 # MUST look worse for several frames. Re-deciding
+                                 # every frame is what leaves the bot dithering.
+const PIN_THREAT = 0.25          # damage discount while escaping -- the "through some
+                                 # damage" knob. 0 ignores threats entirely, 1 is
+                                 # normal caution and so is an exact no-op control.
+const PIN_WALL_BOOST = 2.5       # pull much harder toward open floor while escaping
+
 # -- Threat kinds --
 const KIND_PROJ = 0
 const KIND_CONTACT = 1
@@ -176,10 +199,18 @@ var room_cap = ROOM_CAP
 # exact control arm rather than an approximation of one.
 var scan_distance = SCAN_DISTANCE
 
+var pin_enable = 0.0             # --arb-pin=1 turns the escape mode on; default OFF
+var pin_threat = PIN_THREAT      # --arb-pinthreat
+
 var last_dir = Vector2.ZERO      # read for hysteresis and by telemetry
 var last_scores = []             # per-candidate cost, for the debug overlay
 var last_dirs = []               # candidate directions matching last_scores
 var last_best_index = -1
+var last_escaping = false        # did the escape mode fire this frame (telemetry)
+var pin_fires = 0                # escape activations this run, for the sweep
+var _pin_hist = []               # recent positions, newest last
+var _pin_frames = 0              # consecutive confirmed-stuck frames
+var _pin_ticks = 0               # frames of escape left to run
 
 # Per-frame prepared threat data. Everything here is candidate-independent, so
 # it is computed once instead of once per candidate -- with 29 candidates that
@@ -212,10 +243,12 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("horizon"): horizon = float(d["horizon"])
 	if d.has("roomcap"): room_cap = float(d["roomcap"])
 	if d.has("scandist"): scan_distance = max(float(d["scandist"]), 0.0)
+	if d.has("pin"): pin_enable = float(d["pin"])
+	if d.has("pinthreat"): pin_threat = float(d["pinthreat"])
 	if not d.empty():
-		print("ARBITER weights: proj=%.2f contact=%.2f dash=%.2f aoe=%.2f latent=%.2f room=%.2f roomcap=%.0f wall=%.2f enclose=%.2f dps=%.2f pickup=%.2f hyst=%.2f lethality=%.2f horizon=%.2f" % [
+		print("ARBITER weights: proj=%.2f contact=%.2f dash=%.2f aoe=%.2f latent=%.2f room=%.2f roomcap=%.0f wall=%.2f enclose=%.2f dps=%.2f pickup=%.2f hyst=%.2f lethality=%.2f horizon=%.2f pin=%.2f pinthreat=%.2f" % [
 			w_proj, w_contact, w_dash, w_aoe, w_latent, w_room, room_cap, w_wall,
-			w_enclose, w_dps, w_pickup, w_hyst, lethality, horizon])
+			w_enclose, w_dps, w_pickup, w_hyst, lethality, horizon, pin_enable, pin_threat])
 
 
 # Returns the chosen unit direction, or ZERO to stand still.
@@ -228,6 +261,29 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 		threats: Array, rewards: Array, targets: Array, chargers: Array,
 		weapon_range: float, prefers_still: bool, current_hp: float,
 		mitigation: float) -> Vector2:
+
+	var edge = min(min(p0.x, far.x - p0.x), min(p0.y, far.y - p0.y))
+	var escaping = false
+	if pin_enable != 0.0:
+		escaping = _update_pin(p0, speed, edge)
+	last_escaping = escaping
+
+	# Scaled BEFORE _prepare, deliberately: the per-kind weight is baked into
+	# _p_coef in there (see the kw assignment), so discounting these afterwards
+	# would compile cleanly, change nothing, and hand back a convincing null.
+	var saved = []
+	if escaping:
+		saved = [w_proj, w_contact, w_dash, w_aoe, w_latent, w_dps, w_room, w_wall]
+		w_proj *= pin_threat
+		w_contact *= pin_threat
+		w_dash *= pin_threat
+		w_aoe *= pin_threat
+		w_latent *= pin_threat
+		w_dps = 0.0        # the kill reward must not anchor us in the corner
+		w_room = 0.0       # crowding is WHY we are here; it cannot also be the exit test
+		w_wall *= PIN_WALL_BOOST
+		# w_enclose is left alone on purpose: "which headings are blocked" is
+		# exactly the right question to be asking while escaping.
 
 	_prepare(p0, speed, body_radius, threats, current_hp, mitigation)
 
@@ -273,7 +329,57 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 	last_dirs = cands
 	last_best_index = best_i
 	last_dir = best_dir
+
+	if escaping:
+		w_proj = saved[0]
+		w_contact = saved[1]
+		w_dash = saved[2]
+		w_aoe = saved[3]
+		w_latent = saved[4]
+		w_dps = saved[5]
+		w_room = saved[6]
+		w_wall = saved[7]
 	return best_dir
+
+
+# Is the bot actually STUCK, as opposed to merely near a wall? Skimming an edge at
+# full speed is ordinary play and must not trigger this. What matters is failing to
+# convert speed into DISPLACEMENT while cornered, so the test is net travel across a
+# window. That also catches oscillation -- a bot flipping between two headings moves
+# every frame but goes nowhere, which any per-frame speed check reads as healthy.
+# Not being able to see that state is likely why four weight-based attempts could
+# not move it: they could only see wall distance.
+func _update_pin(p0: Vector2, speed: float, edge: float) -> bool:
+	_pin_hist.push_back(p0)
+	if _pin_hist.size() > PIN_WINDOW:
+		_pin_hist.pop_front()
+
+	if _pin_ticks > 0:
+		_pin_ticks -= 1
+		# End early once genuinely clear, so we spend no more of the damage
+		# budget than getting out actually cost.
+		if edge >= PIN_CLEAR:
+			_pin_ticks = 0
+			_pin_frames = 0
+			return false
+		return true
+
+	var stuck = false
+	if edge < PIN_EDGE and _pin_hist.size() >= PIN_WINDOW:
+		var travelled = p0.distance_to(_pin_hist[0])
+		var could = speed * float(PIN_WINDOW) / 60.0
+		stuck = travelled < could * PIN_TRAVEL_FRAC
+	if stuck:
+		_pin_frames += 1
+	else:
+		_pin_frames = 0
+
+	if _pin_frames >= PIN_CONFIRM:
+		_pin_frames = 0
+		_pin_ticks = PIN_TICKS
+		pin_fires += 1
+		return true
+	return false
 
 
 # Hoist every candidate-independent quantity out of the scoring loop.
