@@ -23,6 +23,12 @@ const MODE_WS = 1
 const POLL_SECS = 0.25           # enemy-count sampling and send cadence
 const SPECIAL_BONUS = 0.2        # +20% intensity per boss or elite on the map
 const KEEPALIVE_SECS = 4.0       # re-assert the level: survives app restarts
+const HOLD_SECS = 6              # DEAD-MAN'S SWITCH: every vibrate is a finite
+                                 # hold, refreshed by the keepalive. If the game
+                                 # closes in ANY way -- quit, crash, kill -- the
+                                 # device self-stops within this many seconds
+                                 # because nothing re-asserts it. Must exceed
+                                 # KEEPALIVE_SECS or the device stutters.
 const RECONNECT_SECS = 5.0       # websocket retry cadence
 const MAX_LEVEL = 20             # Lovense strength scale; ws scales to 0..1
 
@@ -81,8 +87,9 @@ func _ready():
 	_hud_label.visible = false
 	hud.add_child(_hud_label)
 
-	# A previous session that crashed mid-wave leaves the device running
-	# (timeSec 0 holds until countermanded). Clear it on startup.
+	# Belt and suspenders: finite holds (HOLD_SECS) mean a dead session
+	# cannot leave the device running more than a few seconds, but a clean
+	# zero on startup costs nothing and covers any state we did not model.
 	if enabled and address != "":
 		if mode == MODE_HTTP:
 			_send_vibrate(0)
@@ -176,8 +183,12 @@ func _target_level():
 
 func _send_vibrate(level):
 	if mode == MODE_HTTP:
+		# timeSec is FINITE on purpose (see HOLD_SECS): an indefinite hold
+		# (timeSec 0) would keep running after a crash. A zero still goes out
+		# as an immediate stop rather than waiting for a hold to lapse.
+		var hold = 0 if level == 0 else HOLD_SECS
 		_http_command({"command": "Function", "action": "Vibrate:%d" % level,
-				"timeSec": 0, "apiVer": 1}, level)
+				"timeSec": hold, "apiVer": 1}, level)
 	else:
 		_ws_vibrate(level)
 
@@ -356,6 +367,10 @@ func _ws_track_device(d):
 
 
 func _ws_vibrate(level):
+	# No duration parameter exists in buttplug, and none is needed: Intiface
+	# stops all devices itself when the client socket drops, and the OS
+	# closes the socket however the process dies. The websocket path gets
+	# its dead-man's switch from the server.
 	if not _ws_up:
 		return
 	var scalar = clamp(float(level) / float(MAX_LEVEL), 0.0, 1.0)
