@@ -202,6 +202,11 @@ var moving_clock = 1.0
 # projectiles, restoring the previous behaviour where they were invisible.
 var orbit_scan = 1.0
 
+# Sweepable: --arb-mblade=0 puts flying blades back on the single fat circle,
+# leaving the stationary decomposition untouched, so the control arm isolates
+# exactly this change.
+var moving_blade = 1.0
+
 # Sweepable: --arb-blade=0 reverts to one inflated circle per stationary hitbox,
 # which is exactly how blades were priced before, so the comparison is exact.
 var blade_split = 1.0
@@ -330,6 +335,9 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("orbit"):
 		orbit_scan = float(d["orbit"])
 		print("WORLDVIEW orbit_scan=%.0f" % orbit_scan)
+	if d.has("mblade"):
+		moving_blade = float(d["mblade"])
+		print("WORLDVIEW moving_blade=%.0f" % moving_blade)
 
 
 # Expected damage applications from a body over one horizon: how often it hits
@@ -608,8 +616,31 @@ func _add_projectile(p, pos: Vector2, range_sq: float) -> void:
 			# the scorer defers a threat's MOTION until T_START (that is what
 			# makes a dash wind-up tractable), which is wrong for something
 			# already in flight.
-			threats.push_back([center + p.velocity * m_arm, p.velocity, radius,
-					damage, KIND_PROJ, m_arm, TICKS_ONCE, m_off])
+			var carry = p.velocity * m_arm
+
+			# A FLYING blade is still a blade. mom throws slash_projectile_2 at
+			# 650: geometrically identical to the butcher's -- sweeps -122..143,
+			# peaks at 273x28, armed 0.48-0.60 -- but the decomposition lived
+			# only in the stationary branch, so in flight it was priced as a
+			# CIRCLE of radius max(extents) = 136 against a blade 14 px thin.
+			# That is the same ~10x perpendicular over-estimate that made the
+			# butcher undodgeable as a 320 px disc, and mom's slashes are the
+			# single largest killer on w11-dwarf at 2.0 hits/run.
+			#
+			# Circles are deliberately left on the old single-radius path: a
+			# moving pillar (colossus) is already validated at 29/30, and
+			# routing it through _stationary_segments would apply the pillar
+			# footprint inflation it does not currently get.
+			var m_shape = null
+			if p._hitbox and p._hitbox._collision:
+				m_shape = p._hitbox._collision.shape
+			if moving_blade != 0.0 and blade_split != 0.0 and m_shape is RectangleShape2D:
+				for seg in _stationary_segments(p, m_prof):
+					threats.push_back([seg[0] + carry, p.velocity, seg[1],
+							damage, KIND_PROJ, m_arm, TICKS_ONCE, m_off])
+			else:
+				threats.push_back([center + carry, p.velocity, radius,
+						damage, KIND_PROJ, m_arm, TICKS_ONCE, m_off])
 			return
 
 	# Weaving bullets: sample the sine rather than smearing it. See the
