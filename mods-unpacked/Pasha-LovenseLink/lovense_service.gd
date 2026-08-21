@@ -21,6 +21,7 @@ const MODE_HTTP = 0
 const MODE_WS = 1
 
 const POLL_SECS = 0.25           # enemy-count sampling and send cadence
+const SPECIAL_BONUS = 0.2        # +20% intensity per boss or elite on the map
 const KEEPALIVE_SECS = 4.0       # re-assert the level: survives app restarts
 const RECONNECT_SECS = 5.0       # websocket retry cadence
 const MAX_LEVEL = 20             # Lovense strength scale; ws scales to 0..1
@@ -157,6 +158,16 @@ func _target_level():
 	# horde at raw >= 19, promoted to a clean 20 below. Defaults: 10 enemies
 	# = 5, 50 = 16, 100+ = flat out.
 	var raw = MAX_LEVEL * (1.0 - exp(-float(count) / max(horde_size / 3.0, 1.0)))
+	# Bosses and elites raise the stakes beyond what their headcount says:
+	# +20% each, multiplicative on the crowd level. Both flags live on the
+	# base enemy class (ItemEnemy), and the shared boss class carries
+	# is_elite, so this covers wave bosses and elites alike. Compared with
+	# == true on purpose: get() returns null for units lacking the property.
+	var special = 0
+	for e in spawner.enemies:
+		if is_instance_valid(e) and (e.get("is_elite") == true or e.get("is_boss") == true):
+			special += 1
+	raw *= 1.0 + SPECIAL_BONUS * special
 	if raw >= MAX_LEVEL - 1.0:
 		return MAX_LEVEL
 	return int(round(raw))
