@@ -1,0 +1,16 @@
+{
+	"name": "LovenseLink",
+	"namespace": "Pasha",
+	"version_number": "0.1.0",
+	"description": "Drives a Lovense device from the enemy count. Configure from the Lovense button on the main menu; needs Game Mode enabled in the Lovense Remote app on the same network.",
+	"website_url": "",
+	"dependencies": [],
+	"extra": {
+		"godot": {
+			"incompatibilities": [],
+			"authors": ["Pasha"],
+			"compatible_mod_loader_version": ["6.0.0"],
+			"compatible_game_version": ["0.8.0.3"]
+		}
+	}
+}
