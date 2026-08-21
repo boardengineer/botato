@@ -46,6 +46,8 @@ var _since_reconnect = 0.0
 var _last_sent = -1
 var _since_send = 0.0
 var _timer = null
+var _in_wave = false             # wave timer running; gates both output and HUD
+var _hud_label = null            # on-screen relative-power readout
 
 
 func _init():
@@ -66,6 +68,17 @@ func _ready():
 	_timer.autostart = true
 	_timer.connect("timeout", self, "_on_tick")
 	add_child(_timer)
+
+	# Small corner readout of the current power, only shown mid-wave. ASCII
+	# bar on purpose: the game font is not guaranteed to carry block glyphs.
+	var hud = CanvasLayer.new()
+	hud.layer = 90
+	add_child(hud)
+	_hud_label = Label.new()
+	_hud_label.rect_position = Vector2(12, 64)
+	_hud_label.modulate = Color(1.0, 1.0, 1.0, 0.75)
+	_hud_label.visible = false
+	hud.add_child(_hud_label)
 
 	# A previous session that crashed mid-wave leaves the device running
 	# (timeSec 0 holds until countermanded). Clear it on startup.
@@ -96,9 +109,26 @@ func _on_tick():
 		level = _target_level()
 	if level != _last_sent or (_since_send >= KEEPALIVE_SECS and level > 0):
 		_send_vibrate(level)
+	_update_hud(level)
+
+
+func _update_hud(level):
+	if _hud_label == null:
+		return
+	var show = enabled and address != "" and _in_wave
+	_hud_label.visible = show
+	if not show:
+		return
+	var pct = int(round(100.0 * level / MAX_LEVEL))
+	var filled = int(round(10.0 * level / MAX_LEVEL))
+	var bar = ""
+	for i in range(10):
+		bar += ("#" if i < filled else "-")
+	_hud_label.text = "Lovense [%s] %d%%" % [bar, pct]
 
 
 func _target_level():
+	_in_wave = false
 	var tree = get_tree()
 	if tree.paused:
 		return 0
@@ -110,6 +140,14 @@ func _target_level():
 	var spawner = scene.get("_entity_spawner")
 	if spawner == null or not is_instance_valid(spawner):
 		return 0
+	# HARD STOP AT WAVE END. Enemy count alone is not enough: stragglers can
+	# linger on screen through the end-of-wave sequence and would keep the
+	# device running into the upgrade screen. The wave Timer expires the
+	# moment the wave is over, whatever is still standing.
+	var wt = scene.get("_wave_timer")
+	if wt == null or not is_instance_valid(wt) or wt.is_stopped():
+		return 0
+	_in_wave = true
 	var count = spawner.enemies.size()
 	if count <= 0:
 		return 0
