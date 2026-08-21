@@ -1,5 +1,5 @@
-# Persistent /root service: reads the enemy count, maps it to a vibration
-# level, and drives the device over one of two transports:
+# Persistent /root service: reads the game state, maps it to vibration
+# levels, and drives Lovense devices over one of two transports:
 #
 #   MODE_HTTP  Lovense Remote's Game Mode local API (phone on the same LAN),
 #              or the Lovense Connect desktop app + Lovense USB dongle at
@@ -9,9 +9,17 @@
 #              ws://127.0.0.1:12345. GDScript has no BLE access, so "direct
 #              Bluetooth" is Intiface doing the radio and us doing websocket.
 #
-# The enemy count comes from the current scene's _entity_spawner, polled at
-# 4 Hz -- the same source ai_telemetry reads. No gameplay scripts are
-# extended: if this mod breaks, the game and the AutoBattler are untouched.
+# TWO SIGNALS, ROUTED BY DEVICE:
+#   crowd  enemy count on a saturating curve, plus a flat bonus per boss or
+#          elite -- sent to every device EXCEPT a Gemini.
+#   death  how close the player is to dying (1 - hp_frac, superlinear) --
+#          sent to any device whose name matches "gemini".
+# With no Gemini paired, behaviour is exactly the old single-signal mod.
+#
+# Game state comes from the current scene's _entity_spawner / _players,
+# polled at 4 Hz -- the same sources ai_telemetry reads. No gameplay scripts
+# are extended: if this mod breaks, the game and the AutoBattler are
+# untouched.
 extends Node
 
 const CONFIG_PATH = "user://pasha-lovense.cfg"
@@ -20,8 +28,8 @@ const CONFIG_SECTION = "lovense"
 const MODE_HTTP = 0
 const MODE_WS = 1
 
-const POLL_SECS = 0.25           # enemy-count sampling and send cadence
-const SPECIAL_BONUS = 0.2        # +20% intensity per boss or elite on the map
+const POLL_SECS = 0.25           # game-state sampling and send cadence
+const SPECIAL_BONUS = 0.2        # +20% of total power per boss or elite on the map
 const KEEPALIVE_SECS = 4.0       # re-assert the level: survives app restarts
 const HOLD_SECS = 6              # DEAD-MAN'S SWITCH: every vibrate is a finite
                                  # hold, refreshed by the keepalive. If the game
@@ -30,7 +38,11 @@ const HOLD_SECS = 6              # DEAD-MAN'S SWITCH: every vibrate is a finite
                                  # because nothing re-asserts it. Must exceed
                                  # KEEPALIVE_SECS or the device stutters.
 const RECONNECT_SECS = 5.0       # websocket retry cadence
+const TOYS_REFRESH_SECS = 30.0   # HTTP: re-enumerate toys, catches (dis)connects
 const MAX_LEVEL = 20             # Lovense strength scale; ws scales to 0..1
+const GEMINI_MATCH = "gemini"    # device-name substring that routes the death signal
+const DEATH_GAMMA = 1.5          # superlinear: full HP is silent, 50% HP ~7/20,
+                                 # 25% ~13/20, near death pegs at 20
 
 signal status_changed(text)
 
@@ -44,16 +56,21 @@ var status = "idle"
 
 var _http = null                 # HTTPRequest (MODE_HTTP)
 var _http_busy = false
-var _http_pending = -1           # level queued while a request is in flight
+var _http_pending = {}           # target-key -> payload queued while in flight;
+                                 # latest per target wins, stale levels drop
+var _http_awaiting_toys = false  # the in-flight request is a GetToys
+var _toys = []                   # HTTP: [{id, name}] from GetToys
+var _since_toys = 999.0
 var _ws = null                   # WebSocketClient (MODE_WS)
 var _ws_up = false
 var _ws_msg_id = 0
-var _ws_devices = []             # [{index, vibes}] from Intiface
+var _ws_devices = []             # [{index, vibes, name}] from Intiface
 var _since_reconnect = 0.0
-var _last_sent = -1
+var _last_crowd = -1
+var _last_hp = -1
 var _since_send = 0.0
 var _timer = null
-var _in_wave = false             # wave timer running; gates both output and HUD
+var _in_wave = false             # wave timer running; gates both signals and HUD
 var _hud_label = null            # on-screen relative-power readout
 
 
@@ -92,7 +109,8 @@ func _ready():
 	# zero on startup costs nothing and covers any state we did not model.
 	if enabled and address != "":
 		if mode == MODE_HTTP:
-			_send_vibrate(0)
+			stop_all()
+			probe()          # enumerate toys so Gemini routing works
 		else:
 			_ws_connect()
 
@@ -102,37 +120,31 @@ func _process(_delta):
 		_ws.poll()
 
 
-# ---------------------------------------------------------------- level --
+# ---------------------------------------------------------------- levels --
 
 func _on_tick():
 	_since_send += POLL_SECS
-	if mode == MODE_WS and enabled and address != "" and not _ws_up:
-		_since_reconnect += POLL_SECS
-		if _since_reconnect >= RECONNECT_SECS:
-			_since_reconnect = 0.0
-			_ws_connect()
-
-	var level = 0
 	if enabled and address != "":
-		level = _target_level()
-	if level != _last_sent or (_since_send >= KEEPALIVE_SECS and level > 0):
-		_send_vibrate(level)
-	_update_hud(level)
+		if mode == MODE_HTTP:
+			_since_toys += POLL_SECS
+			if _since_toys >= TOYS_REFRESH_SECS:
+				_since_toys = 0.0
+				probe()
+		elif not _ws_up:
+			_since_reconnect += POLL_SECS
+			if _since_reconnect >= RECONNECT_SECS:
+				_since_reconnect = 0.0
+				_ws_connect()
 
-
-func _update_hud(level):
-	if _hud_label == null:
-		return
-	var show = enabled and address != "" and _in_wave
-	_hud_label.visible = show
-	if not show:
-		return
-	var pct = int(round(100.0 * level / MAX_LEVEL))
-	var filled = int(round(10.0 * level / MAX_LEVEL))
-	var bar = ""
-	for i in range(10):
-		bar += ("#" if i < filled else "-")
-	_hud_label.text = "Lovense [%s] %d%%" % [bar, pct]
+	var crowd = 0
+	var hp = 0
+	if enabled and address != "":
+		crowd = _target_level()      # also refreshes _in_wave
+		hp = _death_level()
+	var stale = _since_send >= KEEPALIVE_SECS and (crowd > 0 or hp > 0)
+	if crowd != _last_crowd or hp != _last_hp or stale:
+		_send_levels(crowd, hp)
+	_update_hud(crowd, hp)
 
 
 func _target_level():
@@ -157,41 +169,87 @@ func _target_level():
 		return 0
 	_in_wave = true
 	var count = spawner.enemies.size()
-	if count <= 0:
-		return 0
-	# Saturating curve, not linear: early enemies each matter, late ones
-	# barely add -- which is what makes the difference FELT between a trickle
-	# and a swarm. 1 - e^-3 = 0.95, so scaling by horde_size / 3 puts a full
-	# horde at raw >= 19, promoted to a clean 20 below. Defaults: 10 enemies
-	# = 5, 50 = 16, 100+ = flat out.
-	var raw = MAX_LEVEL * (1.0 - exp(-float(count) / max(horde_size / 3.0, 1.0)))
+	var raw = 0.0
+	if count > 0:
+		# Saturating curve, not linear: early enemies each matter, late ones
+		# barely add -- which is what makes the difference FELT between a
+		# trickle and a swarm. 1 - e^-3 = 0.95, so scaling by horde_size / 3
+		# puts a full horde at raw >= 19, promoted to a clean 20 below.
+		raw = MAX_LEVEL * (1.0 - exp(-float(count) / max(horde_size / 3.0, 1.0)))
 	# Bosses and elites raise the stakes beyond what their headcount says:
-	# each adds 20% OF TOTAL POTENTIAL POWER (+4 on the 0..20 scale), flat,
-	# so a lone elite in an empty arena is clearly felt. They are counted
-	# from the spawner's separate `bosses` array -- NOT from `enemies`,
-	# which does not contain them, and NOT by flag-sniffing units: an
-	# earlier version checked is_elite/is_boss and silently missed every
-	# true boss (is_elite is false on bosses; is_boss does not exist on
-	# units). This is the same array vanilla trusts for
-	# get_nb_bosses_and_elites_alive().
+	# each adds 20% OF TOTAL POTENTIAL POWER (+4 on the 0..20 scale), flat.
+	# Counted from the spawner's separate `bosses` array -- NOT `enemies`,
+	# which does not contain them (and unit flags are a trap: is_elite is
+	# false on true bosses, is_boss does not exist on units). Same source
+	# vanilla trusts for get_nb_bosses_and_elites_alive().
 	var boss_list = spawner.get("bosses")
 	if boss_list != null:
 		raw += SPECIAL_BONUS * MAX_LEVEL * boss_list.size()
+	if raw <= 0.0:
+		return 0
 	if raw >= MAX_LEVEL - 1.0:
 		return MAX_LEVEL
 	return int(round(raw))
 
 
-func _send_vibrate(level):
+func _death_level():
+	# Gemini signal: how close the player is to dying. Shares every gate the
+	# crowd signal has (_in_wave covers pause/menu/shop/wave end), so it
+	# stops in all the same places.
+	if not _in_wave:
+		return 0
+	var scene = get_tree().current_scene
+	var players = scene.get("_players")
+	if players == null or players.empty():
+		return 0
+	var p = players[0]
+	if not is_instance_valid(p):
+		return 0
+	var mx = max(float(p.max_stats.health), 1.0)
+	var frac = clamp(float(p.current_stats.health) / mx, 0.0, 1.0)
+	var raw = MAX_LEVEL * pow(1.0 - frac, DEATH_GAMMA)
+	if raw >= MAX_LEVEL - 1.0:
+		return MAX_LEVEL
+	return int(round(raw))
+
+
+# ---------------------------------------------------------------- sending --
+
+func _send_levels(crowd, hp):
+	_last_crowd = crowd
+	_last_hp = hp
+	_since_send = 0.0
 	if mode == MODE_HTTP:
-		# timeSec is FINITE on purpose (see HOLD_SECS): an indefinite hold
-		# (timeSec 0) would keep running after a crash. A zero still goes out
-		# as an immediate stop rather than waiting for a hold to lapse.
-		var hold = 0 if level == 0 else HOLD_SECS
-		_http_command({"command": "Function", "action": "Vibrate:%d" % level,
-				"timeSec": hold, "apiVer": 1}, level)
+		var geminis = []
+		var others = []
+		for t in _toys:
+			if GEMINI_MATCH in t["name"].to_lower():
+				geminis.push_back(t)
+			else:
+				others.push_back(t)
+		if geminis.empty():
+			# No Gemini known (or toys not enumerated yet): broadcast the
+			# crowd signal to everything -- the old behaviour, exactly.
+			_http_vibrate(crowd, "")
+		else:
+			for t in geminis:
+				_http_vibrate(hp, t["id"])
+			for t in others:
+				_http_vibrate(crowd, t["id"])
 	else:
-		_ws_vibrate(level)
+		for d in _ws_devices:
+			var lvl = hp if (GEMINI_MATCH in d["name"].to_lower()) else crowd
+			_ws_vibrate_device(d, lvl)
+
+
+func stop_all():
+	_last_crowd = -1
+	_last_hp = -1
+	if mode == MODE_HTTP:
+		_http_vibrate(0, "")
+	else:
+		for d in _ws_devices:
+			_ws_vibrate_device(d, 0)
 
 
 # -------------------------------------------------- public, for the menu --
@@ -199,17 +257,19 @@ func _send_vibrate(level):
 func test_pulse():
 	if mode == MODE_HTTP:
 		_http_command({"command": "Function", "action": "Vibrate:12",
-				"timeSec": 1, "apiVer": 1}, -1)
+				"timeSec": 1, "apiVer": 1}, "")
 	else:
-		_ws_vibrate(12)
-		# One-shot: the next tick restores whatever the game state implies,
-		# which outside a wave is 0.
-		_last_sent = -1
+		for d in _ws_devices:
+			_ws_vibrate_device(d, 12)
+	# One-shot: force the next tick to re-assert whatever the game state
+	# implies, which outside a wave is 0.
+	_last_crowd = -1
+	_last_hp = -1
 
 
 func probe():
 	if mode == MODE_HTTP:
-		_http_command({"command": "GetToys"}, -1)
+		_http_command({"command": "GetToys"}, null)
 	else:
 		_ws_connect()
 
@@ -217,9 +277,11 @@ func probe():
 func set_mode(m):
 	if m == mode:
 		return
-	_send_vibrate(0)             # stop on the OLD transport before switching
+	stop_all()                   # stop on the OLD transport before switching
 	mode = m
-	_last_sent = -1
+	_last_crowd = -1
+	_last_hp = -1
+	_toys = []
 	if mode == MODE_WS:
 		if address == "" or address.begins_with("192.") or address.begins_with("10."):
 			address = "127.0.0.1:12345"
@@ -228,15 +290,31 @@ func set_mode(m):
 		_ws_teardown()
 		if address == "127.0.0.1:12345":
 			address = ""
+		_since_toys = 999.0      # enumerate toys promptly on the new address
 	save_config()
 
 
 func set_address(a):
 	address = a.strip_edges()
-	_last_sent = -1
+	_last_crowd = -1
+	_last_hp = -1
+	_toys = []
+	_since_toys = 999.0
 	if mode == MODE_WS:
 		_ws_teardown()
 	save_config()
+
+
+func has_gemini():
+	if mode == MODE_HTTP:
+		for t in _toys:
+			if GEMINI_MATCH in t["name"].to_lower():
+				return true
+		return false
+	for d in _ws_devices:
+		if GEMINI_MATCH in d["name"].to_lower():
+			return true
+	return false
 
 
 # ----------------------------------------------------------- HTTP (Lovense) --
@@ -251,13 +329,27 @@ func _split_address(default_port):
 	return [host, port]
 
 
-func _http_command(payload, level):
+func _http_vibrate(level, toy_id):
+	# timeSec is FINITE on purpose (see HOLD_SECS): an indefinite hold
+	# (timeSec 0) would keep running after a crash. A zero still goes out
+	# as an immediate stop rather than waiting for a hold to lapse.
+	var hold = 0 if level == 0 else HOLD_SECS
+	var payload = {"command": "Function", "action": "Vibrate:%d" % level,
+			"timeSec": hold, "apiVer": 1}
+	if toy_id != "":
+		payload["toy"] = toy_id
+	_http_command(payload, toy_id)
+
+
+# key: "" = broadcast slot, a toy id = that toy's slot, null = unqueued
+# (a dropped GetToys is retried by the periodic refresh anyway).
+func _http_command(payload, key):
 	if address == "":
 		_set_status("no address set")
 		return
 	if _http_busy:
-		if level >= 0:
-			_http_pending = level
+		if key != null:
+			_http_pending[key] = payload
 		return
 	var hp = _split_address(30010)
 	var url = "http://%s:%d/command" % [hp[0], hp[1]]
@@ -267,24 +359,54 @@ func _http_command(payload, level):
 		_set_status("request failed (err %d)" % err)
 		return
 	_http_busy = true
-	if level >= 0:
-		_last_sent = level
-		_since_send = 0.0
+	_http_awaiting_toys = payload.get("command", "") == "GetToys"
 
 
-func _on_http_done(result, code, _headers, _body):
+func _on_http_done(result, code, _headers, body):
 	_http_busy = false
 	if result != HTTPRequest.RESULT_SUCCESS:
 		_set_status("app unreachable -- Game Mode on? same network?")
-	elif code == 200:
-		_set_status("connected (level %d)" % max(_last_sent, 0))
-	else:
+	elif code != 200:
 		_set_status("app answered HTTP %d" % code)
-	if _http_pending >= 0:
-		var lv = _http_pending
-		_http_pending = -1
-		if lv != _last_sent:
-			_send_vibrate(lv)
+	elif _http_awaiting_toys:
+		_parse_toys(body)
+	else:
+		_set_status("connected (crowd %d, death %d)" % [max(_last_crowd, 0), max(_last_hp, 0)])
+	_http_awaiting_toys = false
+	if not _http_pending.empty():
+		var k = _http_pending.keys()[0]
+		var pl = _http_pending[k]
+		_http_pending.erase(k)
+		_http_command(pl, k)
+
+
+func _parse_toys(body):
+	# GetToys nests a JSON-encoded STRING of toys inside the JSON response
+	# on most app versions; some return it as an object. Handle both.
+	var parsed = JSON.parse(body.get_string_from_utf8())
+	if parsed.error != OK or not parsed.result is Dictionary:
+		return
+	var data = parsed.result.get("data", {})
+	if not data is Dictionary:
+		return
+	var toys_raw = data.get("toys", {})
+	if toys_raw is String:
+		var inner = JSON.parse(toys_raw)
+		toys_raw = (inner.result if inner.error == OK else {})
+	if not toys_raw is Dictionary:
+		return
+	_toys = []
+	for id in toys_raw.keys():
+		var info = toys_raw[id]
+		var toy_name = ""
+		if info is Dictionary:
+			toy_name = str(info.get("name", ""))
+		_toys.push_back({"id": str(id), "name": toy_name})
+	var g = 0
+	for t in _toys:
+		if GEMINI_MATCH in t["name"].to_lower():
+			g += 1
+	_set_status("connected: %d toy(s), %d gemini" % [_toys.size(), g])
 
 
 # ------------------------------------------------------ websocket (Intiface) --
@@ -363,11 +485,12 @@ func _ws_track_device(d):
 	for known in _ws_devices:
 		if known["index"] == idx:
 			return
-	_ws_devices.push_back({"index": idx, "vibes": vibes})
+	_ws_devices.push_back({"index": idx, "vibes": vibes,
+			"name": str(d.get("DeviceName", ""))})
 	_set_status("Intiface: %d device(s)" % _ws_devices.size())
 
 
-func _ws_vibrate(level):
+func _ws_vibrate_device(d, level):
 	# No duration parameter exists in buttplug, and none is needed: Intiface
 	# stops all devices itself when the client socket drops, and the OS
 	# closes the socket however the process dies. The websocket path gets
@@ -375,14 +498,11 @@ func _ws_vibrate(level):
 	if not _ws_up:
 		return
 	var scalar = clamp(float(level) / float(MAX_LEVEL), 0.0, 1.0)
-	for d in _ws_devices:
-		var scalars = []
-		for i in range(d["vibes"]):
-			scalars.push_back({"Index": i, "Scalar": scalar, "ActuatorType": "Vibrate"})
-		_ws_send([{"ScalarCmd": {"Id": _next_id(),
-				"DeviceIndex": d["index"], "Scalars": scalars}}])
-	_last_sent = level
-	_since_send = 0.0
+	var scalars = []
+	for i in range(d["vibes"]):
+		scalars.push_back({"Index": i, "Scalar": scalar, "ActuatorType": "Vibrate"})
+	_ws_send([{"ScalarCmd": {"Id": _next_id(),
+			"DeviceIndex": d["index"], "Scalars": scalars}}])
 
 
 func _ws_send(msgs):
@@ -398,16 +518,37 @@ func _next_id():
 
 # ---------------------------------------------------------------- plumbing --
 
+func _bar(level):
+	var filled = int(round(10.0 * level / MAX_LEVEL))
+	var s = ""
+	for i in range(10):
+		s += ("#" if i < filled else "-")
+	return s
+
+
+func _update_hud(crowd, hp):
+	if _hud_label == null:
+		return
+	var show = enabled and address != "" and _in_wave
+	_hud_label.visible = show
+	if not show:
+		return
+	var txt = "Lovense [%s] %d%%" % [_bar(crowd), int(round(100.0 * crowd / MAX_LEVEL))]
+	if has_gemini():
+		txt += "\nGemini  [%s] %d%%" % [_bar(hp), int(round(100.0 * hp / MAX_LEVEL))]
+	_hud_label.text = txt
+
+
 func _set_status(s):
 	status = s
 	emit_signal("status_changed", s)
 
 
 func _notification(what):
-	# Best effort: a quitting process may not flush the request, which is why
-	# _ready also clears on the NEXT launch.
-	if what == NOTIFICATION_WM_QUIT_REQUEST and _last_sent > 0:
-		_send_vibrate(0)
+	# Best effort: a quitting process may not flush the request. HOLD_SECS
+	# bounds the damage regardless, and _ready clears on the next launch.
+	if what == NOTIFICATION_WM_QUIT_REQUEST and (_last_crowd > 0 or _last_hp > 0):
+		stop_all()
 
 
 func load_config():
