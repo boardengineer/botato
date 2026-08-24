@@ -6,6 +6,17 @@ extends "res://entities/units/movement_behaviors/player_movement_behavior.gd"
 const Arbiter = preload("res://mods-unpacked/Pasha-AutoBattler/steering/arbiter.gd")
 const WorldView = preload("res://mods-unpacked/Pasha-AutoBattler/steering/world_view.gd")
 
+# -- Tap-move tuning (fire_still characters; see the interleave in _arbiter_move) --
+const TAP_MOVE = 2               # frames of travel per tap cycle (4 -> 2: half the
+                                 # travel per volley -- the aggressive stutter; net
+                                 # speed 50% instead of 67%, fire uptime up)
+const TAP_STOP = 2               # frames of stand-and-volley per cycle (0 disables)
+const TAP_SAFE_GAP = 35.0        # only tap while standing scores within this of the
+                                 # chosen move; beyond it the move is a dodge.
+                                 # 25 -> 35: keep stuttering under moderate threat
+                                 # pressure; real dodge gaps run far past this
+var _tap_phase = 0
+
 var _arbiter = null
 var _world = null
 var arbiter_active = false               # read by ai_telemetry / ai_canvas
@@ -998,7 +1009,34 @@ func _arbiter_move(player)->Vector2:
 			_world.body_radius, _world.far_corner,
 			_world.threats, _world.rewards, _world.targets, _world.chargers,
 			_world.weapon_range, _world.prefers_still, _world.current_hp,
-			_world.mitigation)
+			_world.mitigation, _world.profile)
+
+	# -- Tap-move interleave (fire_still characters) --
+	# The game fires every cooldown-ready weapon on the FIRST frame movement
+	# input is exactly zero (weapon.gd should_shoot: _current_movement ==
+	# Vector2.ZERO), and the +50%/+50% standing stats apply that same frame
+	# (player.gd check_not_moving_stats has no delay -- only Streamer's
+	# material tick uses the timer). Movement is instant-velocity, so a stop
+	# costs nothing but the frames spent stopped. That makes "attack while
+	# moving" nearly real: move TAP_MOVE frames, stop TAP_STOP frames, and the
+	# potato travels at ~2/3 speed while volleying at full standing bonuses.
+	# Gated on the arbiter's STUTTER gap -- the chosen heading re-scored at the
+	# tap cycle's net speed, minus its full-speed score. That is the true
+	# price of firing while running, and it is small far more often than the
+	# old stand-gap admitted: fleeing a swarm 300 px out costs almost nothing
+	# to stutter through, so the bot fires the whole way; a pursuer about to
+	# connect prices the slowdown as lethal, so that stretch runs at full
+	# speed. Pin escape stays full speed unconditionally: a corner exit is
+	# the one flight where every frame of travel is the point.
+	if TAP_STOP > 0 and last_move_dir != Vector2.ZERO \
+			and _world.profile.get("fire_still", false) \
+			and not _arbiter.last_escaping \
+			and _arbiter.last_stutter_gap < TAP_SAFE_GAP:
+		_tap_phase = (_tap_phase + 1) % (TAP_MOVE + TAP_STOP)
+		if _tap_phase < TAP_STOP:
+			return Vector2.ZERO    # let the volley off; heading stats keep the tap
+	else:
+		_tap_phase = TAP_STOP    # re-enter cycles on the moving side
 
 	if last_move_dir == Vector2.ZERO:
 		_hdg_still += 1

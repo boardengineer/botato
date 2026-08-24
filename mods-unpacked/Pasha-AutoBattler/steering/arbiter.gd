@@ -115,6 +115,138 @@ const KILL_SOFT = 40.0           # soft-saturation scale; value beyond this has
 const ACQUIRE_BAND = 220.0       # targets this far OUTSIDE weapon range still pull,
                                  # which is the only thing making the bot close in
 
+# -- Character anchor --
+# Some characters have a point on the map worth fighting near -- the Builder's
+# turret is the first (world_view decides WHO anchors and WHERE; the scorer
+# only prices distance). A LEASH, not a magnet: zero cost anywhere inside the
+# radius so dodging stays free, linear pull beyond it so the pull GROWS the
+# further the bot strays, capped so a spawn across the arena cannot flatten
+# the compass. Linear matters: the differential between a candidate walking
+# home and one walking away is constant (~w_anchor * 670/ANCHOR_NORM ~ 27)
+# wherever the bot is below the cap, which is enough to win every tie and
+# lose every argument with a live corridor.
+const W_ANCHOR = 12.0            # sweep via --arb-anchor; 0 is the exact control arm
+const ANCHOR_NORM = 300.0        # px beyond the leash that cost one w_anchor
+const ANCHOR_CAP = 8.0           # ~2400 px out the ramp stops growing; differentials
+                                 # between candidates survive until then
+# The same term read from the other side is a KEEP-OUT ring: cost for being
+# CLOSER than an inner radius. That one shape covers three behaviours the
+# research asked for -- a leash (inner 0), a perimeter orbit (inner large,
+# anchored on the arena middle, so the cheapest floor is the rim and the bot
+# laps it rather than parking against one wall), and Mage's stay-away-from-your
+# own-turret spacing -- without the scorer knowing which is which.
+
+# -- Contact seeking --
+# The inverse of kiting, for characters whose damage or healing is paid in hits
+# TAKEN or in one swing landing across a crowd. Deliberately NOT a threat-weight
+# change: dropping the threat terms would make the bot ignore corridors and
+# dashes too, which kills these characters just as dead as it kills the others.
+# Instead it is a separate pull toward the nearest thing worth touching, so a
+# live dash still outscores it and the bot walks into BODIES, not into bullets.
+const ENGAGE_NORM = 260.0        # distance to the nearest target that costs one
+                                 # engage unit; ~a body length past contact
+const ENGAGE_CAP = 2.2           # beyond ~570 px the pull stops growing, so a
+                                 # far-off straggler cannot drag the bot across
+                                 # the arena through everything in between
+const NEVER_STILL_COST = 6.0     # Speedy loses 100 armour while stationary and
+                                 # Hiker's income IS distance covered: standing
+                                 # is a mechanical penalty, so price it as one
+const FIRE_STILL_STAND = 2.0     # fire_still: standing collects the kit's +50%
+                                 # dmg / +50% AS as a doubled kill payout
+const FIRE_STILL_MOVE = 0.4      # ...moving keeps only the approach gradient;
+                                 # weapons that fire while standing earn nothing
+                                 # on the run, and the scorer must know it
+const FIRE_STILL_FLOOR = 16.0    # minimum stand-and-shoot reward with a target
+                                 # in true weapon range. 8 beat the room term's
+                                 # wander pressure but measured 3 kills a wave:
+                                 # at low HP the lethality multiplier prices a
+                                 # 2-damage baby alien's approach at ~10, and a
+                                 # swarm of them re-evicted the stand every
+                                 # frame. 16 holds ground against light trash
+                                 # pressure and still folds to anything whose
+                                 # damage is actually worth fleeing
+# A standing Soldier does not passively receive an approaching body -- it
+# SHOOTS it, at +50% damage and +50% attack speed, and trash dies on the way
+# in. Pricing that approach at full contact damage is why the bot fled from
+# things that would never have arrived: threat pricing assumes the enemy
+# lives to touch, which stops being true the moment standing is what kills
+# it. So the STANDING candidate's contact coefficients are discounted by the
+# body's killability (same KILL_HP_REF falloff the target values use): a
+# 6 HP baby alien costs ~40% of book price to stand against, a 300 HP elite
+# costs face value -- which reproduces the guide's play exactly: hold ground
+# and mow trash, still respect elites, still dodge every bullet (projectile
+# and dash coefficients are untouched). Moving candidates always pay full
+# price: fleeing does not shoot anything.
+# -- The damage trade --
+# Field report: once enemies get CLOSE, the bot starts running and never fights
+# again. The arithmetic of that spiral: a close crowd prices the stand as the
+# sum of every body's contact cost, fleeing prices near zero, so flight wins
+# every frame -- but flight fires no shots, the crowd never thins, and the gap
+# never closes. A human Soldier breaks the spiral by TRADING: a few hit points
+# are the fee for the volley that deletes the crowd. So the standing
+# candidate's contact costs from KILLABLE bodies are pooled and capped at a
+# budget scaled by current HP: "this much of my bar buys uninterrupted fire."
+# The pool only admits genuinely killable bodies (TRADE_KILLABLE_MIN) --
+# elites, bullets, dashes and telegraphs stay full price outside the pool, so
+# the trade never talks the bot into standing through what actually kills it.
+# The budget also shrinks with the bar: a wounded Soldier stops trading.
+const TRADE_HP_SHARE = 0.5       # budget in cost points = current HP x this
+const TRADE_KILLABLE_MIN = 0.15  # only bodies at least this killable join the pool.
+                                 # killability = ref/(ref+hp), so 0.15 admits anything
+                                 # that dies inside ~6 s of standing fire. It was 0.35
+                                 # (~2 s), which on w17-d6 excluded EVERYTHING: pursuers
+                                 # at 394 HP against a 186 kill_ref sat at 0.32, the pool
+                                 # stayed empty, every body billed the stand at full
+                                 # price, and the bot fled for 15-22 s killing 5-17.
+                                 # At 0.15 the same wave ran 54-60 s at 170-270 kills
+                                 # and the sustain build healed to full while standing.
+                                 # Sweep via --arb-tradekill.
+
+# -- Where a stand is allowed --
+# The w12 cornering deaths were not a camping pattern: the per-second edge
+# series shows the bot HERDED from open floor to the wall over 20-30 s, then
+# dead within two. Every stand perk made holding ground cheap, so the bot kept
+# making its stand a little closer to the wall each time the crowd pushed,
+# until there was nowhere left. A reactive escape fires too late for that.
+# So the perks are gated on wall room: inside FIRE_STILL_WALL_MIN the Soldier
+# is priced like any other potato, the wall term walks it back out to open
+# floor, and only THERE does it stand again. Escape at the loss of firing,
+# but triggered by geometry before the pin instead of by a timer after it.
+const FIRE_STILL_WALL_MIN = 220.0
+const STUTTER_SPEED_FRAC = 0.5   # net travel speed of the tap cycle; MUST match
+                                 # TAP_MOVE / (TAP_MOVE + TAP_STOP) in
+                                 # player_movement_behavior.gd (2 / (2 + 2))
+
+const FIRE_STILL_KILL = 0.9      # discount share at killability 1.0. 0.75 measured
+                                 # 9-39% still-frames on w6-d5: trash there runs
+                                 # 15-30 HP, killability ~0.4, so the discount only
+                                 # shaved a third while room+enclosure kept paying
+                                 # the bot to drift off its stand
+const FIRE_STILL_CROWD = 0.5     # standing's share of the room and enclosure costs.
+                                 # Both terms grade the END position, so every flee
+                                 # candidate beats the stand on crowding by
+                                 # construction -- a permanent eviction pressure.
+                                 # But crowding measures how bad this spot is for a
+                                 # potato that must ESCAPE it, and a firing Soldier
+                                 # is thinning the crowd instead; half price, not
+                                 # zero, because bullets do not stop a surround
+                                 # from closing
+
+# -- Predictive wall avoidance --
+# The wall term prices proximity at the 0.8 s horizon -- ~336 px of
+# lookahead -- but the herding that ends in a corner death runs 2-5 s while
+# the bot is still mid-arena at full HP (mom analysis: 87% of her hits at
+# edge < 150, median 1 s from first touch to death; +16 max HP falsified
+# the hit-budget theory, so the corner is an ABSORBING state and the only
+# lever is not entering it). This term prices each bearing's RUNWAY: how
+# long it can be held before the arena ends it. Walls slide, so a bearing
+# is dead only when EVERY moving axis has exhausted its room -- straight at
+# a wall stops on contact, a diagonal dies at the corner, parallel to a
+# wall runs forever. Per-candidate discriminating geometry, which is what
+# the four failed wall-weight attempts were not.
+const W_PREDICT = 0.0            # OFF until validated; sweep via --arb-predict
+const PREDICT_SECS = 2.5         # bearings that dead-end sooner than this are costed
+
 # -- Pin escape --
 # Four attempts to solve pinning by WEIGHT failed: wall28 flat, peril regressed
 # five snapshots, trap null on w7 (t=0.49 vs noise 1.65) and null on w11. They
@@ -129,6 +261,14 @@ const PIN_WINDOW = 24            # frames of position history (~0.4 s)
 const PIN_TRAVEL_FRAC = 0.35     # stuck if net travel is under this share of what
                                  # our speed could have covered over the window
 const PIN_CONFIRM = 8            # consecutive stuck frames before the mode fires
+const PIN_DWELL = 40             # fire_still only: frames spent inside PIN_EDGE, moving
+                                 # or not, before the mode fires (~1.25 s). The stuck
+                                 # test above never arms on a tap-mover -- stutter
+                                 # steps read as ordinary travel -- so on w12 the
+                                 # Soldier died at edge 36 with pesc=0 twice. A
+                                 # stand-and-shoot kit has no business holding a
+                                 # wall for more than a second: the swarm closes
+                                 # the exits while it fires, and that is the corner
 const PIN_TICKS = 36             # frames of COMMITTED escape (~0.6 s). Commitment is
                                  # the point: a pin is a local minimum, so leaving
                                  # MUST look worse for several frames. Re-deciding
@@ -137,6 +277,13 @@ const PIN_THREAT = 0.25          # damage discount while escaping -- the "throug
                                  # damage" knob. 0 ignores threats entirely, 1 is
                                  # normal caution and so is an exact no-op control.
 const PIN_WALL_BOOST = 2.5       # pull much harder toward open floor while escaping
+const W_TANGENT = 30.0           # while ESCAPING: reward motion ALONG the nearest
+                                 # wall. The radial exit is where the herding swarm
+                                 # stands; the lateral one is usually open, and no
+                                 # other term knows the difference. Only active
+                                 # during pin escape, so inert while pin is off.
+                                 # Sweep via --arb-tangent.
+const TANGENT_RADIUS = 200.0     # wall proximity ramp for the tangent reward
 
 # -- Threat kinds --
 const KIND_PROJ = 0
@@ -155,6 +302,9 @@ const T_TICKS = 6                # expected damage applications over the horizon
                                  # 1 for anything spent on impact, more for a body
                                  # that stays attached (see world_view)
 const T_END = 7                  # seconds until this threat stops being dangerous.
+const T_KILL = 8                 # OPTIONAL 9th field, contact threats only: how
+                                 # killable the body is (KILL_HP_REF falloff, 0-1).
+                                 # Feeds the fire_still standing discount below.
                                  # Only a pillar uses it (armed 0.14 s, then inert);
                                  # everything else passes INF_TIME. Without it an
                                  # armed-at-0.54 s pillar would be feared for the
@@ -201,8 +351,30 @@ var scan_distance = SCAN_DISTANCE
 
 var pin_enable = 0.0             # --arb-pin=1 turns the escape mode on; default OFF
 var pin_threat = PIN_THREAT      # --arb-pinthreat
+var w_predict = W_PREDICT        # --arb-predict
+var predict_secs = PREDICT_SECS  # --arb-predsecs
+var w_tangent = W_TANGENT        # --arb-tangent
+var wall_swerve = 1.0            # --arb-swerve=0 reverts the dodge sim to raw v
+var w_anchor = W_ANCHOR          # --arb-anchor
+var trade_share = TRADE_HP_SHARE # --arb-trade: the damage-trade budget as a share of HP
+var fire_floor = FIRE_STILL_FLOOR # --arb-floor: the stand-and-shoot floor
+var trade_killable_min = TRADE_KILLABLE_MIN # --arb-tradekill: pool admission threshold
+var _escaping = false            # set by choose() each frame; read by _cost
+# Per-frame character-profile state, resolved by world_view and unpacked once
+# in choose() rather than dictionary-looked-up inside the 16+ candidate loop.
+var _anchor_on = false
+var _anchor = Vector2.ZERO
+var _anchor_radius = 0.0
+var _anchor_inner = 0.0
+var _engage = 0.0
+var _never_still = false
+var _fire_still = false
+var _stand_ok = false            # fire_still AND not escaping AND wall room; gates every perk
+var last_stand_ok = false        # read by the tap-mover: no taps while relocating off a wall
 
 var last_dir = Vector2.ZERO      # read for hysteresis and by telemetry
+var last_still_gap = 0.0         # cost(stand) - cost(best); overlay only now
+var last_stutter_gap = 0.0       # cost(best at stutter speed) - cost(best); the tap gate
 var last_scores = []             # per-candidate cost, for the debug overlay
 var last_dirs = []               # candidate directions matching last_scores
 var last_best_index = -1
@@ -210,6 +382,7 @@ var last_escaping = false        # did the escape mode fire this frame (telemetr
 var pin_fires = 0                # escape activations this run, for the sweep
 var _pin_hist = []               # recent positions, newest last
 var _pin_frames = 0              # consecutive confirmed-stuck frames
+var _pin_dwell = 0               # consecutive frames inside PIN_EDGE (fire_still trigger)
 var _pin_ticks = 0               # frames of escape left to run
 
 # Per-frame prepared threat data. Everything here is candidate-independent, so
@@ -220,6 +393,11 @@ var _p_vel = []                  # threat velocity
 var _p_rad = []                  # combined hit radius (threat + player body)
 var _p_soft = []                 # squared radius past which a miss scores zero
 var _p_coef = []                 # full damage coefficient: damage x kind x lethality x mitigation
+var _p_still = []                # the same coefficient for the STANDING candidate;
+                                 # differs only under fire_still, where standing
+                                 # kills killable contact threats on their approach
+var _p_kill = []                 # killability per threat (0 for non-contact); feeds
+                                 # the damage-trade pool
 var _p_start = []                # wind-up delay
 var _p_end = []                  # when it stops being dangerous, clamped to horizon
 var _p_future = []               # where it will be at the horizon
@@ -245,10 +423,19 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("scandist"): scan_distance = max(float(d["scandist"]), 0.0)
 	if d.has("pin"): pin_enable = float(d["pin"])
 	if d.has("pinthreat"): pin_threat = float(d["pinthreat"])
+	if d.has("predict"): w_predict = float(d["predict"])
+	if d.has("predsecs"): predict_secs = max(float(d["predsecs"]), 0.1)
+	if d.has("tangent"): w_tangent = float(d["tangent"])
+	if d.has("swerve"): wall_swerve = float(d["swerve"])
+	if d.has("anchor"): w_anchor = float(d["anchor"])
+	if d.has("trade"): trade_share = float(d["trade"])
+	if d.has("floor"): fire_floor = float(d["floor"])
+	if d.has("tradekill"): trade_killable_min = float(d["tradekill"])
 	if not d.empty():
-		print("ARBITER weights: proj=%.2f contact=%.2f dash=%.2f aoe=%.2f latent=%.2f room=%.2f roomcap=%.0f wall=%.2f enclose=%.2f dps=%.2f pickup=%.2f hyst=%.2f lethality=%.2f horizon=%.2f pin=%.2f pinthreat=%.2f" % [
+		print("ARBITER weights: proj=%.2f contact=%.2f dash=%.2f aoe=%.2f latent=%.2f room=%.2f roomcap=%.0f wall=%.2f enclose=%.2f dps=%.2f pickup=%.2f hyst=%.2f lethality=%.2f horizon=%.2f pin=%.2f pinthreat=%.2f predict=%.2f predsecs=%.2f tangent=%.2f swerve=%.2f anchor=%.2f" % [
 			w_proj, w_contact, w_dash, w_aoe, w_latent, w_room, room_cap, w_wall,
-			w_enclose, w_dps, w_pickup, w_hyst, lethality, horizon, pin_enable, pin_threat])
+			w_enclose, w_dps, w_pickup, w_hyst, lethality, horizon, pin_enable, pin_threat,
+			w_predict, predict_secs, w_tangent, wall_swerve, w_anchor])
 
 
 # Returns the chosen unit direction, or ZERO to stand still.
@@ -260,20 +447,55 @@ func apply_overrides(d: Dictionary) -> void:
 func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 		threats: Array, rewards: Array, targets: Array, chargers: Array,
 		weapon_range: float, prefers_still: bool, current_hp: float,
-		mitigation: float) -> Vector2:
+		mitigation: float, profile: Dictionary = {}) -> Vector2:
 
 	var edge = min(min(p0.x, far.x - p0.x), min(p0.y, far.y - p0.y))
 	var escaping = false
-	if pin_enable != 0.0:
+	_fire_still = profile.get("fire_still", false)    # read by _update_pin's dwell trigger
+	# Pin escape arms globally via --arb-pin, or per character via the profile:
+	# a stand-and-shoot kit gets cornered by its own best behaviour (the stand
+	# holds while the crowd closes the exits), so for those characters the
+	# escape mode is part of the profile, not an experiment flag.
+	if pin_enable != 0.0 or profile.get("pin", false):
 		escaping = _update_pin(p0, speed, edge)
 	last_escaping = escaping
+	_escaping = escaping         # read by _cost for the tangent reward
+	# One flag for every stand perk: fire_still, not escaping, and enough wall
+	# room that the stand cannot become the corner (see FIRE_STILL_WALL_MIN).
+	_stand_ok = _fire_still and not escaping and edge >= FIRE_STILL_WALL_MIN
+	last_stand_ok = _stand_ok
+
+	_anchor_on = profile.has("anchor") and w_anchor > 0.0
+	_anchor = profile.get("anchor", Vector2.ZERO)
+	_anchor_radius = float(profile.get("anchor_radius", 0.0))
+	_anchor_inner = float(profile.get("anchor_inner", 0.0))
+	_engage = float(profile.get("engage", 0.0))
+	_never_still = profile.get("never_still", false)
+	_fire_still = profile.get("fire_still", false)
 
 	# Scaled BEFORE _prepare, deliberately: the per-kind weight is baked into
 	# _p_coef in there (see the kw assignment), so discounting these afterwards
 	# would compile cleanly, change nothing, and hand back a convincing null.
+	#
+	# Caution and pin escape both live here and COMPOSE. Caution is a standing
+	# character trait -- how much room this potato needs -- while the pin
+	# discount is a momentary "accept damage to get out of this corner". One
+	# save covers both, so a restore cannot miss a weight the other touched.
+	# Note caution multiplies only the THREAT weights: scaling room/wall too
+	# would turn a cautious character into a centre-hugging one, which is a
+	# different (and mostly wrong) behaviour.
+	var caution = float(profile.get("caution", 1.0))
+	var scaled = escaping or caution != 1.0
 	var saved = []
-	if escaping:
+	if scaled:
 		saved = [w_proj, w_contact, w_dash, w_aoe, w_latent, w_dps, w_room, w_wall]
+	if caution != 1.0:
+		w_proj *= caution
+		w_contact *= caution
+		w_dash *= caution
+		w_aoe *= caution
+		w_latent *= caution
+	if escaping:
 		w_proj *= pin_threat
 		w_contact *= pin_threat
 		w_dash *= pin_threat
@@ -329,8 +551,26 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 	last_dirs = cands
 	last_best_index = best_i
 	last_dir = best_dir
+	# How much worse STANDING scored than the chosen move. Kept for the
+	# overlay; the tap-mover no longer gates on it, because a stutter is not
+	# a stand: it is the chosen move at reduced speed, and pricing it as a
+	# full-horizon stop made every flight look uninterruptible when the real
+	# cost of a two-frame volley is ~12 px of separation. The ZERO candidate
+	# always sits at index DIRS in the initial sweep.
+	last_still_gap = scores[DIRS] - best_cost
+	# The stutter's TRUE cost: the winning heading scored again at the net
+	# speed the tap cycle actually delivers, minus the full-speed score. Same
+	# scorer, same threats, same dodge simulation -- only the distance covered
+	# changes -- so a pursuer about to connect prices the slowdown as lethal
+	# and a swarm still 300 px out prices it as nearly free. Standing needs
+	# no stutter (it already fires), so the gap is zero there.
+	last_stutter_gap = 0.0
+	if _fire_still and best_dir != Vector2.ZERO:
+		last_stutter_gap = _cost(best_dir, p0, speed * STUTTER_SPEED_FRAC, body_radius,
+				far, rewards, targets, chargers, weapon_range, prefers_still,
+				current_hp) - best_cost
 
-	if escaping:
+	if scaled:
 		w_proj = saved[0]
 		w_contact = saved[1]
 		w_dash = saved[2]
@@ -340,6 +580,25 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 		w_room = saved[6]
 		w_wall = saved[7]
 	return best_dir
+
+
+# How long can this velocity be held before the arena stops producing
+# displacement? Walls SLIDE (the engine cancels only the crossing component),
+# so motion dies when EVERY moving axis has exhausted its room: straight at a
+# wall stops on contact (no slide component), a diagonal dies at the corner
+# (max of the two axis times), parallel to a wall runs forever. An axis with
+# no velocity contributes nothing -- it neither runs out nor rescues.
+func _runway(p0: Vector2, vel: Vector2, body_radius: float, far: Vector2) -> float:
+	var t = 0.0
+	if vel.x > 0.0:
+		t = max(t, (far.x - body_radius - p0.x) / vel.x)
+	elif vel.x < 0.0:
+		t = max(t, (p0.x - body_radius) / -vel.x)
+	if vel.y > 0.0:
+		t = max(t, (far.y - body_radius - p0.y) / vel.y)
+	elif vel.y < 0.0:
+		t = max(t, (p0.y - body_radius) / -vel.y)
+	return t
 
 
 # Is the bot actually STUCK, as opposed to merely near a wall? Skimming an edge at
@@ -374,8 +633,15 @@ func _update_pin(p0: Vector2, speed: float, edge: float) -> bool:
 	else:
 		_pin_frames = 0
 
-	if _pin_frames >= PIN_CONFIRM:
+	# Wall dwell: the tap-mover's trigger (see PIN_DWELL).
+	if _fire_still and edge < PIN_EDGE:
+		_pin_dwell += 1
+	else:
+		_pin_dwell = 0
+
+	if _pin_frames >= PIN_CONFIRM or _pin_dwell >= PIN_DWELL:
 		_pin_frames = 0
+		_pin_dwell = 0
 		_pin_ticks = PIN_TICKS
 		pin_fires += 1
 		return true
@@ -390,6 +656,8 @@ func _prepare(p0: Vector2, speed: float, body_radius: float, threats: Array,
 	_p_rad = []
 	_p_soft = []
 	_p_coef = []
+	_p_still = []
+	_p_kill = []
 	_p_start = []
 	_p_end = []
 	_p_future = []
@@ -449,7 +717,18 @@ func _prepare(p0: Vector2, speed: float, body_radius: float, threats: Array,
 		_p_vel.push_back(vel)
 		_p_rad.push_back(radius)
 		_p_soft.push_back(soft * soft)
-		_p_coef.push_back(dmg * kw * t[T_TICKS] * lethal * mitigation)
+		var coef = dmg * kw * t[T_TICKS] * lethal * mitigation
+		_p_coef.push_back(coef)
+		var still_coef = coef
+		var kill = 0.0
+		# not _escaping: while pinned, every stand-to-shoot perk yields -- the
+		# override the cornering deaths asked for is "escape at the loss of
+		# firing", so an escaping Soldier prices threats like anyone else.
+		if _stand_ok and t.size() > T_KILL:
+			kill = float(t[T_KILL])
+			still_coef = coef * (1.0 - FIRE_STILL_KILL * kill)
+		_p_still.push_back(still_coef)
+		_p_kill.push_back(kill)
 		_p_start.push_back(t[T_START])
 		_p_end.push_back(t_end)
 		_p_future.push_back(pos + vel * span)
@@ -467,6 +746,18 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 	var p_end = p0 + v * horizon
 	p_end.x = clamp(p_end.x, body_radius, far.x - body_radius)
 	p_end.y = clamp(p_end.y, body_radius, far.y - body_radius)
+	# THE DODGE SIMULATION MUST USE THE VELOCITY THE WALL PERMITS. p_end is
+	# clamped, but the threat pass used to integrate with the raw v -- so a
+	# candidate aimed INTO a wall was priced as if it dodged at full speed for
+	# the whole horizon, when it actually stops on contact. The bot walked
+	# into walls believing it was dodging, and mom collected (87% of her hits
+	# at edge < 150, on a bot that thought it was moving). With the effective
+	# velocity, into-wall headings lose their phantom dodge value and lateral
+	# ones keep full speed, so the swerve along the wall wins the vote by
+	# itself. Away from walls v_eff == v exactly; --arb-swerve=0 reverts.
+	var v_eff = v
+	if wall_swerve != 0.0:
+		v_eff = (p_end - p0) / horizon
 	var total = 0.0
 
 	var room = room_cap
@@ -476,6 +767,8 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 	# Crowding may be felt further out than enclosure is; scan to whichever
 	# reaches further so raising room_cap past ENCLOSE_RADIUS is not a no-op.
 	var scan_sq = max(enclose_sq, room_cap * room_cap)
+
+	var trade_sum = 0.0          # standing's pooled cost from killable bodies
 
 	for i in range(_p_pos.size()):
 		# --- Expected damage: analytic closest approach over the whole path ---
@@ -489,8 +782,8 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 		var t_start = _p_start[i]
 		var span = _p_end[i] - t_start
 		if span > 0.0:
-			var w = _p_pos[i] - (p0 + v * t_start)
-			var rel = _p_vel[i] - v
+			var w = _p_pos[i] - (p0 + v_eff * t_start)
+			var rel = _p_vel[i] - v_eff
 			var t = 0.0
 			var denom = rel.length_squared()
 			if denom > 0.000001:
@@ -509,7 +802,18 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 					# cutoff -- a far-off shot stays cheap but never free.
 					var when = t_start + t
 					var discount = max(1.0 - TIME_DISCOUNT * when / horizon, MIN_DISCOUNT)
-					total += _p_coef[i] * hit * discount
+					# The standing candidate prices killable contact bodies at
+					# a discount (see FIRE_STILL_KILL): a stand that SHOOTS the
+					# approacher is not the same stand that receives it. Their
+					# costs also POOL into the damage-trade budget below rather
+					# than summing unbounded -- a whole crowd of killable trash
+					# can only bill the stand up to the budget, because most of
+					# that crowd will be dead before it collects.
+					var cost_i = (_p_still[i] if d == Vector2.ZERO else _p_coef[i]) * hit * discount
+					if d == Vector2.ZERO and _fire_still and _p_kill[i] > trade_killable_min:
+						trade_sum += cost_i
+					else:
+						total += cost_i
 
 		# --- Where this leaves us ---
 		# One pass serves both terminal terms: the offset to the threat's future
@@ -529,7 +833,10 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 	# replaces gap-seeking and the pocket heuristics -- a direction that ends
 	# boxed in is expensive whether or not anything is currently aimed at us.
 	if room < room_cap:
-		total += w_room * (1.0 - max(room, 0.0) / room_cap)
+		var room_cost = w_room * (1.0 - max(room, 0.0) / room_cap)
+		if _stand_ok and d == Vector2.ZERO:
+			room_cost *= FIRE_STILL_CROWD    # the stand thins the crowd it sits in
+		total += room_cost
 
 	# Enclosure: threats massed on one side leave an escape, threats spread
 	# evenly around us do not. The mean unit direction is long when they are
@@ -546,6 +853,40 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 		total += w_wall * 0.5 * pow(1.0 - wx / WALL_CAP, WALL_POWER)
 	if wy < WALL_CAP:
 		total += w_wall * 0.5 * pow(1.0 - wy / WALL_CAP, WALL_POWER)
+
+	# Predictive wall avoidance: price the bearing's RUNWAY (see const block).
+	# Quadratic ramp so a bearing with 2.4 s of room is a whisper and one with
+	# 0.5 s shouts; standing still has no bearing and pays nothing here --
+	# refusing to move is already priced by the threat terms.
+	if w_predict > 0.0 and d != Vector2.ZERO:
+		var run_t = _runway(p0, v, body_radius, far)
+		if run_t < predict_secs:
+			var short = 1.0 - run_t / predict_secs
+			total += w_predict * short * short
+
+	# Escape ALONG the wall, not off it. Only while the pin-escape mode is
+	# active: the radial exit is where the herding swarm stands, the lateral
+	# one is usually open, and no other term can tell them apart. Rewards the
+	# candidate's component parallel to the NEAREST wall, ramped by proximity
+	# measured at the CURRENT position -- the pin is where we are, not where
+	# the candidate ends. The wrong tangent sense (into a corner's second
+	# wall) is not special-cased: that bearing dead-ends and points into
+	# threats, so the surviving terms veto it; this reward just breaks the
+	# radial-vs-nothing tie toward lateral motion.
+	if _escaping and w_tangent > 0.0 and d != Vector2.ZERO:
+		var near_v = min(p0.x, far.x - p0.x)     # nearest vertical wall
+		var near_h = min(p0.y, far.y - p0.y)     # nearest horizontal wall
+		var near_w = min(near_v, near_h)
+		if near_w < TANGENT_RADIUS:
+			var along = abs(d.y) if near_v <= near_h else abs(d.x)
+			total -= w_tangent * (1.0 - near_w / TANGENT_RADIUS) * along
+
+	if trade_sum > 0.0:
+		# The damage trade: killable-crowd contact bills the stand at most this
+		# much. Uncapped, ten 90%-killable bodies still summed past any reward
+		# and the bot fled forever; capped, the stand pays a bounded fee and the
+		# volley thins the crowd that was charging it. Shrinks with the bar.
+		total += min(trade_sum, current_hp * trade_share)
 
 	# A wall is an enclosure the same way a body is: it deletes escape headings.
 	# Threats alone cannot express "backed against a wall with the swarm on the
@@ -568,7 +909,12 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 			enc_w += 3.0 * weight
 
 	if enc_w >= float(ENCLOSE_MIN):
-		total += w_enclose * (1.0 - enc_sum.length() / enc_w)
+		var enc_cost = w_enclose * (1.0 - enc_sum.length() / enc_w)
+		if _stand_ok and d == Vector2.ZERO:
+			# same reasoning as the room share above; ungated this would halve
+			# the very term the escape uses to find the open side
+			enc_cost *= FIRE_STILL_CROWD
+		total += enc_cost
 
 	# Latent dashes: a charger sitting on a nearly-expired cooldown is a threat
 	# that has not been declared yet. It cannot launch at all from outside its
@@ -607,17 +953,78 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 	if kill_gain > 0.0:
 		# Soft saturation: diminishing returns, but never a flat line, so the
 		# term still separates candidates when the screen is full.
-		total -= w_dps * (1.0 - exp(-kill_gain / KILL_SOFT))
-	if prefers_still and d == Vector2.ZERO and kill_gain > 0.0:
-		# Characters that only fire while stationary are not a special case;
-		# standing still is just where their damage term pays out.
-		total -= w_dps * (1.0 - exp(-kill_gain / KILL_SOFT))
+		var dps_pay = w_dps * (1.0 - exp(-kill_gain / KILL_SOFT))
+		if _fire_still:
+			# Soldier's weapons DO NOT FIRE while moving, and pricing a moving
+			# candidate as if they did is what made the bot kite itself to
+			# death: fleeing "in range" earned the same reward as standing, the
+			# scorer saw kiting as free DPS, nothing died, and the wave ground
+			# it down. So the payout follows the mechanic -- standing collects
+			# double (the kit's +50% damage and +50% attack speed while still),
+			# a moving candidate keeps only a sliver, which is not a firing
+			# reward at all but the approach gradient: without it, nothing
+			# would ever pull the bot into range to take its stand.
+			var pay = dps_pay * (FIRE_STILL_STAND if d == Vector2.ZERO else FIRE_STILL_MOVE)
+			if d == Vector2.ZERO and _stand_ok and pay < fire_floor:
+				# The scaled payout alone measured as no stillness at all
+				# (~8-12% still-frames, same as the control): trash waves carry
+				# tiny kill_gain, so doubling it yields ~3 -- less than the
+				# room term's standing wander pressure, and the bot strolled
+				# while its guns were silent. Standing with ANYTHING actually
+				# shootable from here (true weapon range, not the acquire
+				# band) is worth a flat floor that beats wander and still
+				# loses to every live threat.
+				var wr_sq = weapon_range * weapon_range
+				for t in targets:
+					if p_end.distance_squared_to(t[TG_POS]) <= wr_sq:
+						pay = fire_floor
+						break
+			total -= pay
+		else:
+			total -= dps_pay
+			if prefers_still and d == Vector2.ZERO:
+				# Structure characters that PREFER standing but whose damage
+				# does not stop when they walk: standing is just where their
+				# damage term pays out twice.
+				total -= dps_pay
 
 	for r in rewards:
 		var d0 = p0.distance_to(r[0])
 		var d1 = p_end.distance_to(r[0])
 		var closed = (d0 - d1) / max(speed * horizon, 1.0)   # -1..1, share of the move spent approaching
 		total -= w_pickup * r[1] * closed / (1.0 + d0 / PICKUP_FALLOFF)
+
+	# --- Character anchor ---
+	# Priced at the candidate's END position. Between the two radii every
+	# candidate scores the same zero and the anchor exerts no force at all,
+	# which is what keeps dodging free inside the band; outside it, the
+	# candidate that ends nearer the band is linearly cheaper.
+	if _anchor_on:
+		var from_anchor = p_end.distance_to(_anchor)
+		if _anchor_radius > 0.0:
+			var strayed = from_anchor - _anchor_radius
+			if strayed > 0.0:
+				total += w_anchor * min(strayed / ANCHOR_NORM, ANCHOR_CAP)
+		if _anchor_inner > 0.0:
+			var intruded = _anchor_inner - from_anchor
+			if intruded > 0.0:
+				total += w_anchor * min(intruded / ANCHOR_NORM, ANCHOR_CAP)
+
+	# --- Contact seeking ---
+	# Cost for ENDING far from the nearest thing worth touching, which makes
+	# closing the distance the cheaper candidate. Capped, so one straggler
+	# across the arena cannot drag the bot through everything in between.
+	if _engage > 0.0 and not targets.empty():
+		var near_sq = 1e18
+		for t in targets:
+			var dsq = p_end.distance_squared_to(t[TG_POS])
+			if dsq < near_sq:
+				near_sq = dsq
+		total += _engage * min(sqrt(near_sq) / ENGAGE_NORM, ENGAGE_CAP)
+
+	# --- Standing still as a mechanical penalty ---
+	if _never_still and d == Vector2.ZERO:
+		total += NEVER_STILL_COST
 
 	# --- Continuity ---
 	# One hysteresis term in the arbiter does the job that five separate commit
@@ -628,6 +1035,22 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 		total -= w_hyst * agree
 		if agree < -0.5:
 			total += W_REVERSE * (-agree)
+	elif last_dir == Vector2.ZERO and d == Vector2.ZERO:
+		# Stillness is a HEADING and gets the same stickiness as any other, or it
+		# is the one choice the bot can flicker out of for free. That flicker is
+		# not cosmetic: Streamer's income needs a full unbroken second standing
+		# and every twitch resets the tick, while Soldier and Engineer lose a
+		# firing window to a step they had no reason to take.
+		total -= w_hyst
+	elif prefers_still and last_dir != Vector2.ZERO and d == Vector2.ZERO:
+		# The other half of tap-moving. Mid-dodge, the hysteresis reward above
+		# hands every keep-going candidate ~w_hyst that STOPPING does not get, so
+		# a stand-still character pays a tax on the very move its kit is built
+		# around -- the dodge stretches a body-length past where the threat
+		# cleared, and Soldier spends that distance not firing. Pricing the stop
+		# level with continuing lets the tap end the instant the threat term no
+		# longer demands motion; while one does, 15-65 beats 1.2 regardless.
+		total -= w_hyst
 
 	return total
 

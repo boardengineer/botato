@@ -70,10 +70,243 @@ const KIND_AOE = 3
 
 const TARGET_EXTRA = 220.0       # targets are collected this far past weapon range,
                                  # matching the arbiter's acquisition band
-const KILL_HP_REF = 20.0         # typical trash HP; sets the killability falloff
+const KILL_HP_REF = 20.0         # killability falloff floor; see _refresh_kill_ref --
+                                 # the live reference is the player's own measured
+                                 # DPS, so "killable" means killable BY THIS BUILD
+const KILL_TIME = 1.0            # seconds of sustained fire that define "killable":
+                                 # a body that dies inside one second of shooting is
+                                 # halfway killable at exactly ref = its HP
+const KILL_REF_MAX = 600.0       # sanity cap; past this everything reads killable
+                                 # anyway and a bad stats read cannot go to infinity
 const EXPECTED_EXCHANGES = 2.0   # contacts an unkilled enemy gets before it dies anyway
 const EGG_VALUE = 60.0           # a spawner is worth far more dead than its own damage
                                  # suggests: everything it hatches is future damage too
+
+# -- Character profiles --
+#
+# Generic steering prices every pickup and every position the same way for
+# every character; some characters break those assumptions by design and the
+# fix belongs HERE, in the layer that knows what a character IS, not in the
+# scorer. The scorer stays pure geometry: it is handed a profile dictionary
+# of already-resolved numbers and never learns a character's name.
+#
+# Research behind the table lives in CHARACTER-PROFILES.md next to this file
+# (decompiled effect data + wiki + per-character Danger 5 guides). The design
+# rule from that research: 63 characters do NOT need 63 behaviours. They need
+# six reusable mechanisms, and a character is a row of numbers selecting them.
+#
+#   gold / gold_phases / gold_mode   what a material on the floor is worth
+#   food                             what a consumable on the floor is worth
+#   caution / caution_phases         multiplier on every threat weight
+#   engage (+engage_hp/engage_pack)  contact seeking; the inverse of kiting
+#   anchor (+radius/inner/wave)      a place worth fighting near, or away from
+#   still                            "prefer" standing, or "never" stand
+#
+# Absent character or absent key = baseline, so the table only records real
+# deviations and an unlisted character behaves exactly as before. The whole
+# layer is ablatable with --arb-charprofile=0, which is the honest control arm
+# for every claim any of these rows makes.
+#
+# First profile, and the worked example for the rest: the Builder.
+#
+# The Builder converts materials left uncollected at wave end into turret
+# stats (RunData.add_bonus_gold -> convert_bonus_gold -> structure_range,
+# which is the turret's level/size XP: +1% attack speed and +1 range per 5
+# materials, +1 projectile at 30/150/300), takes -75% stat gains from
+# normal pickup and -30 pickup range. Gold on the ground is therefore worth
+# MORE than gold in the bag -- but not always, and not equally.
+#
+# The material policy is PHASED, following Cephalopocalypse's Danger 5
+# guide ("The GIGATURRET"): waves 1-4 collect EVERYTHING, because economy
+# and defensive stats have to come online before the turret matters and a
+# starved shop loses the run before the turret can win it; from wave 5
+# feed the turret -- leave materials down until it hits its final tier at
+# 300 structure_range ("power up the turret by wave 12 so it can kill the
+# elite"); once maxed, materials only buy attack speed/range at steep
+# diminishing returns, so go back to taking SOME ("not all of them") for
+# levels and defense -- priced mildly positive so the bot picks up what it
+# passes but never detours hard.
+#
+# The turret itself only shoots what comes within ITS range, and the only
+# thing that reliably drags enemies through that circle is the player
+# standing in it ("let the elite explode on our turret", "stay near our
+# turret so the bosses die to it"). The anchor hands the arbiter the
+# turret's position and range so staying near it is a scored preference,
+# not an override. It engages with the feed phase, not before: phase 1 is
+# a roaming-collection phase, and a leash would cost every material lying
+# outside it.
+const GOLD_VALUE = 0.8
+const BUILDER_ECON_WAVES = 4     # last wave of collect-everything (guide: "wave four or five")
+const BUILDER_GOLD_VALUE = -2.0  # feed phase: mild -- shapes paths between equals,
+                                 # never outbids a dodge
+const BUILDER_GOLD_LATE = 0.4    # maxed turret: take what we pass, skip detours
+const BUILDER_TURRET_MAX_LEVEL = 3
+const BUILDER_ANCHOR_MIN = 220.0 # leash radius bounds around the turret's own range:
+const BUILDER_ANCHOR_MAX = 420.0 # roomy enough to kite inside, tight enough to matter
+
+# -- Mechanism constants --
+#
+# Scale note, because it decides whether any of this is safe: the arbiter
+# prices a threat at 15-65 after lethality scaling, and the pickup term is
+# w_pickup(1.0) * value * closed. So every gold number below is a TIE-BREAKER
+# between otherwise-similar candidates and none of them can outbid a dodge.
+# Food and engage sit an order higher (up to ~12), matching w_dps at 14 --
+# they are allowed to shape a fight, never to walk into a corridor.
+const ENGAGE_PACK_RADIUS = 320.0 # "is a pack forming" test for the herders
+const FOOD_MAX = 12.0            # cap on the healing one fruit is priced at
+const FOOD_BANK_FULL = -0.8      # hoarders price stepping on fruit at full HP as a
+                                 # mild COST: the ground is the safest inventory
+const FOOD_FULL_SEEK = 6.0       # characters PAID for eating at full HP
+const FOOD_BOMB_RADIUS = 220.0   # chef/glutton: a fruit is a grenade, and its value
+const FOOD_BOMB_PER = 3.0        # is the enemies standing in its blast, not its heal
+const FOOD_BOMB_MAX = 9.0
+const FOOD_BOMB_ALONE = -1.5     # detonating on an empty floor wastes the whole pickup
+const METER_COOLDOWN_MIN = 12.0  # buccaneer: frames of cooldown that make a weapon
+                                 # worth spending a pickup to reset
+
+# -- The table --
+#
+# Keys, all optional:
+#   gold          float   flat material value (baseline GOLD_VALUE)
+#   gold_phases   Array   [[max_wave, value], ...]; first match wins
+#   gold_mode     String  "builder" | "enemy_gated" | "metered"
+#   food          String  "bank" | "full_hp" | "bomb" | "none"
+#   caution       float   multiplier on threat weights (>1 keeps more distance)
+#   caution_phases Array  [[max_wave, value], ...]
+#   caution_per_wave float added per wave elapsed (compounding-danger characters)
+#   engage        float   contact-seeking strength (inverse kiting)
+#   engage_hp     float   seek contact only while hp_ratio is ABOVE this
+#   engage_pack   int     seek contact only once this many enemies are close
+#   anchor        String  "builder" | "structures" | "center" | "perimeter"
+#                         | "away_structures"
+#   anchor_radius float   outer leash: cost for straying past it
+#   anchor_inner  float   inner keep-out: cost for being closer than it
+#   anchor_wave   int     anchor only engages from this wave on
+#   still         String  "prefer" | "never"
+const CHARACTER_PROFILES = {
+	# --- Economy: materials are the win condition ---
+	"character_saver": {"gold": 2.5, "anchor": "perimeter", "anchor_inner": 460.0,
+			"caution_phases": [[6, 1.25], [99, 0.9]]},
+	"character_mutant": {"gold": 2.0, "caution": 1.2, "still": "never"},
+	"character_demon": {"gold": 2.0, "caution": 1.4, "anchor": "center",
+			"anchor_radius": 520.0},
+	"character_loud": {"gold": 2.0, "caution": 1.15, "still": "never"},
+	"character_baby": {"gold": 2.0, "caution_phases": [[10, 1.5], [99, 0.65]]},
+	"character_jack": {"gold": 1.8, "caution": 1.1},
+	"character_old": {"gold": 1.8, "caution": 0.7, "anchor": "center",
+			"anchor_radius": 420.0},
+	"character_fisherman": {"gold": 1.8, "anchor": "perimeter",
+			"anchor_inner": 440.0, "anchor_wave": 10},
+	"character_apprentice": {"gold": 1.6, "caution": 1.25},
+	"character_arms_dealer": {"gold": 1.6, "caution": 0.95},
+	"character_hunter": {"gold": 1.5, "caution": 1.5},
+	"character_technomage": {"gold": 1.5, "caution": 1.5, "anchor": "structures",
+			"anchor_radius": 420.0},
+	"character_curious": {"gold": 1.5, "caution": 0.9},
+	"character_crazy": {"gold": 1.4, "caution": 0.7, "engage": 6.0, "engage_hp": 0.5},
+	"character_entrepreneur": {"gold": 1.2, "anchor": "structures",
+			"anchor_radius": 380.0},
+	"character_knight": {"gold": 1.2, "caution": 0.5, "engage": 6.0,
+			"engage_boss": true},    # the one kit told to stand ON the elite
+
+	# --- Economy inverted: the floor is the better wallet ---
+	"character_builder": {"gold_mode": "builder", "anchor": "builder"},
+	"character_beast_master": {"gold_phases": [[3, -0.6], [99, 0.9]], "caution": 1.2},
+	"character_hiker": {"gold": 0.3, "caution": 1.3, "anchor": "perimeter",
+			"anchor_inner": 480.0, "still": "never"},
+	"character_ranger": {"gold": 0.3, "caution": 1.6},
+	"character_wounded": {"gold": 0.4, "caution": 2.0},
+
+	# --- Pickups as a weapon: WHEN you step on it is the whole skill ---
+	"character_lucky": {"gold_mode": "enemy_gated", "gold": 1.6, "food": "bank",
+			"still": "never"},
+	"character_buccaneer": {"gold_mode": "metered", "gold": 2.0, "still": "never"},
+	"character_sailor": {"gold": 1.8, "caution": 1.05},
+	"character_lich": {"gold": 2.0, "caution": 0.6, "engage": 12.0, "engage_hp": 0.66},
+	"character_chef": {"food": "bomb"},
+	"character_glutton": {"food": "bomb", "anchor": "center", "anchor_radius": 560.0,
+			"caution_phases": [[5, 1.4], [99, 1.0]]},
+	"character_farmer": {"food": "full_hp", "caution": 1.4},
+	"character_druid": {"food": "full_hp"},
+	"character_golem": {"food": "none", "caution": 1.5},
+	"character_vampire": {"food": "none", "caution": 0.6, "engage": 12.0,
+			"engage_hp": 0.6},
+	"character_ghost": {"food": "bank", "caution": 0.9},
+	"character_chunky": {"food": "bank", "caution": 0.75, "still": "never"},
+	"character_ogre": {"food": "bank", "caution_phases": [[8, 1.1], [99, 0.6]],
+			"engage": 10.0, "engage_pack": 6},
+	"character_vagabond": {"food": "bank", "caution": 0.8, "anchor": "center",
+			"anchor_radius": 460.0},
+
+	# --- Contact seekers: damage taken is the resource ---
+	"character_bull": {"caution": 0.5, "engage": 14.0, "engage_hp": 0.6},
+	"character_masochist": {"caution": 0.6, "engage": 12.0, "engage_hp": 0.66,
+			"anchor": "center", "anchor_radius": 520.0},
+	"character_wildling": {"gold": 1.4, "caution": 0.55, "engage": 8.0,
+			"engage_hp": 0.3},
+	"character_brawler": {"caution": 0.5, "engage": 8.0, "engage_hp": 0.35},
+	"character_dwarf": {"caution": 0.7, "engage": 10.0, "engage_pack": 6},
+	"character_artificer": {"caution": 1.1, "engage": 5.0, "engage_pack": 4,
+			"anchor": "center", "anchor_radius": 560.0},
+
+	# --- Anchored: a place worth fighting near (or away from) ---
+	"character_engineer": {"anchor": "structures", "anchor_radius": 260.0,
+			"still": "prefer", "gold_end": 1.6, "end_secs": 6},
+	"character_streamer": {"anchor": "structures", "anchor_radius": 240.0,
+			"still": "prefer", "gold_end": 1.6, "end_secs": 6},
+	"character_multitasker": {"anchor": "structures", "anchor_radius": 320.0,
+			"caution": 0.75},
+	"character_mage": {"anchor": "away_structures", "anchor_inner": 500.0,
+			"caution": 1.2},
+	"character_pacifist": {"food": "none", "anchor": "perimeter",
+			"anchor_inner": 520.0, "still": "never", "caution": 1.2},
+	"character_creature": {"gold_phases": [[8, 1.8], [99, 0.9]],
+			"caution_phases": [[8, 1.2], [99, 0.8]], "anchor": "perimeter",
+			"anchor_inner": 460.0, "anchor_wave": 10, "still": "never"},
+	"character_one_arm": {"gold": 1.6, "caution_phases": [[5, 0.7], [9, 1.4], [99, 1.1]],
+			"anchor": "center", "anchor_radius": 520.0, "anchor_wave": 5},
+	"character_king": {"caution_phases": [[12, 1.4], [99, 0.8]]},
+
+	# --- Still / never-still ---
+	# Soldier is the tap-mover: +50% damage AND +50% attack speed while
+	# stationary, fire resumes the instant it stops (no re-arm delay), and
+	# +200% pickup range vacuums drops without walking to them. So: stand and
+	# shoot (prefers_still doubles the DPS payout for the ZERO candidate, and
+	# the stop-bonus in the arbiter's continuity term lets a dodge end the
+	# moment the threat clears), never detour for gold mid-wave (0.3 -- the
+	# pickup radius does the collecting), then sweep what the vacuum missed in
+	# the final seconds when standing has nothing left to shoot at.
+	# fire_still is the load-bearing key: weapons only fire while stationary, so
+	# the arbiter's kill reward pays double when standing and near-nothing when
+	# moving (see FIRE_STILL_* in the arbiter). Field report that forced it: the
+	# bot kited constantly, never fired, and lost by attrition. caution below 1
+	# leans the same way -- a potato that must stand to shoot has to accept more
+	# incoming pressure than one that can retreat at no cost to its DPS.
+	# gold 1.2 (was 0.3): the passive-vacuum theory underestimated how far away
+	# a tap-moving Soldier kills things -- drops accumulate at weapon range and
+	# the stand never walks there. Above-baseline value makes repositioning
+	# paths route THROUGH drop fields; the stand-floor and trade budget still
+	# outrank it wherever shooting matters, so it shapes the walk, not the fight.
+	# pin: the stand-and-shoot behaviour is also how this kit gets CORNERED --
+	# the stand holds while the crowd closes the exits (wave-12 field report).
+	# Pin escape overrides every fire_still perk while it runs: no floor, no
+	# kill-discount, no trade budget, no taps -- escape at the loss of firing.
+	"character_soldier": {"still": "prefer", "fire_still": true, "pin": true,
+			"caution": 0.7, "gold": 1.2, "gold_end": 2.0, "end_secs": 10},
+	"character_speedy": {"still": "never", "caution": 1.15},
+
+	# --- Caution-only rows ---
+	"character_captain": {"caution_per_wave": 0.02},
+	"character_romantic": {"caution_per_wave": 0.02},
+	"character_gangster": {"caution": 1.4},
+	"character_explorer": {"caution": 1.3},
+	"character_diver": {"caution": 1.25},
+	"character_generalist": {"caution": 0.8},
+	"character_gladiator": {"caution": 0.8},
+	"character_doctor": {"caution": 0.85},
+	"character_sick": {"caution": 0.85},
+	"character_renegade": {"caution": 0.75},
+}
 
 const WINDUP_ANIM_LENGTH = 0.4   # enemy_charge_prep_animation.tres: start_shoot at 0, shoot at 0.4
 const SIN_DRIFT_HORIZON = 0.8    # must match Arbiter.HORIZON: how far a weaving bullet strays
@@ -172,6 +405,12 @@ var current_hp = 1.0
 var player_speed = 1.0           # sets how sticky every body is; a fast build
                                  # genuinely can afford to brush past things a
                                  # slow one must never touch
+# Per-frame resolved profile handed to the arbiter: already-plain numbers, so
+# the scorer never learns a character's name. Empty = pure baseline steering.
+# Keys the arbiter reads: anchor, anchor_radius, anchor_inner, caution,
+# engage, never_still.
+var profile = {}
+var wave_time_left = 1e9         # seconds until the wave ends; 1e9 when unreadable
 
 
 # Sweepable via --arb-persist=<cap>, so this mechanism can be ablated like any
@@ -206,6 +445,23 @@ var orbit_scan = 1.0
 # leaving the stationary decomposition untouched, so the control arm isolates
 # exactly this change.
 var moving_blade = 1.0
+
+# Sweepable: --arb-bonusspeed=0 reverts enemy speed to bare current_stats,
+# restoring the boost-blind threat model as an exact control arm.
+var bonus_speed_scan = 1.0
+
+# Sweepable: --arb-dpsref=0 pins the killability reference back to the static
+# KILL_HP_REF, restoring build-blind kill values as an exact control arm.
+var dps_ref_scan = 1.0
+var _kill_ref = KILL_HP_REF      # refreshed per gather from live weapon stats
+var _kill_ref_logged = -1e9      # last value announced on BOTLOG DPSREF
+
+# Sweepable: --arb-charprofile=0 disables ALL character-specific logic at once,
+# so "generic strategy on this character" stays an exact control arm.
+# --arb-goldval overrides just the Builder's gold value (0 = ignore, positive
+# = generic greed) to sweep the avoidance separately from the anchor.
+var char_profile = 1.0
+var gold_value_override = null
 
 # Sweepable: --arb-blade=0 reverts to one inflated circle per stationary hitbox,
 # which is exactly how blades were priced before, so the comparison is exact.
@@ -338,6 +594,18 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("mblade"):
 		moving_blade = float(d["mblade"])
 		print("WORLDVIEW moving_blade=%.0f" % moving_blade)
+	if d.has("bonusspeed"):
+		bonus_speed_scan = float(d["bonusspeed"])
+		print("WORLDVIEW bonus_speed_scan=%.0f" % bonus_speed_scan)
+	if d.has("dpsref"):
+		dps_ref_scan = float(d["dpsref"])
+		print("WORLDVIEW dps_ref_scan=%.0f" % dps_ref_scan)
+	if d.has("charprofile"):
+		char_profile = float(d["charprofile"])
+		print("WORLDVIEW char_profile=%.0f" % char_profile)
+	if d.has("goldval"):
+		gold_value_override = float(d["goldval"])
+		print("WORLDVIEW gold_value_override=%.2f" % gold_value_override)
 
 
 # Expected damage applications from a body over one horizon: how often it hits
@@ -363,8 +631,28 @@ func gather(main, player) -> void:
 	var pickup_sq = PICKUP_RANGE * PICKUP_RANGE
 	var spawner = main._entity_spawner
 
+	# The wave clock, for phase behaviours keyed to it (end-of-wave sweeps now;
+	# cyborg's half-wave switch later). _wave_timer is Main's own Timer node --
+	# time_left is 0 while it is stopped (between waves), which correctly reads
+	# as "the wave is over, sweep" rather than as a huge remaining duration.
+	wave_time_left = 1e9
+	if "_wave_timer" in main and main._wave_timer:
+		wave_time_left = float(main._wave_timer.time_left)
+
 	weapon_range = _weapon_range(player)
-	prefers_still = RunData.get_player_character(0).name.to_lower() == "character_soldier"
+	_refresh_kill_ref(player)
+	var character_id = RunData.get_player_character(0).my_id
+	# char_profile = 0 (--arb-charprofile=0) empties the row, which is what makes
+	# "this character, generic steering" an exact control arm rather than an
+	# approximation of one.
+	var row = {}
+	if char_profile != 0.0 and CHARACTER_PROFILES.has(character_id):
+		row = CHARACTER_PROFILES[character_id]
+	prefers_still = row.get("still", "") == "prefer"
+	if character_id != _announced_char:
+		_announced_char = character_id
+		print("BOTLOG PROFILE char=%s %s" % [character_id,
+				"baseline" if row.empty() else str(row)])
 
 	var target_reach = max(THREAT_RANGE, weapon_range + TARGET_EXTRA)
 	var target_range_sq = target_reach * target_reach
@@ -391,13 +679,287 @@ func gather(main, player) -> void:
 			_add_attached(boss, pos, range_sq)
 
 	current_hp = float(player.current_stats.health)
-	var missing_hp = float(player.max_stats.health) - current_hp
+	var max_hp = max(float(player.max_stats.health), 1.0)
+	var missing_hp = max_hp - current_hp
+	var food_mode = row.get("food", "")
 	for c in main._consumables:
 		if c.position.distance_squared_to(pos) < pickup_sq:
-			rewards.push_back([c.position, min(12.0, missing_hp)])
+			rewards.push_back([c.position,
+					_food_value(food_mode, c.position, missing_hp, spawner)])
+	var gold_value = _gold_value(row, player)
 	for g in main._active_golds:
 		if g.position.distance_squared_to(pos) < pickup_sq:
-			rewards.push_back([g.position, 0.8])
+			rewards.push_back([g.position, gold_value])
+
+	profile = {}
+	if not row.empty():
+		var caution = _caution(row)
+		if caution != 1.0:
+			profile["caution"] = caution
+		if row.get("still", "") == "never":
+			profile["never_still"] = true
+		if row.get("fire_still", false):
+			profile["fire_still"] = true
+		if row.get("pin", false):
+			profile["pin"] = true
+		var engage = _engage(row, current_hp / max_hp, pos, spawner)
+		if engage > 0.0:
+			profile["engage"] = engage
+		_resolve_anchor(row, spawner)
+
+
+# "Killable" is relative to the guns doing the killing, and pinning it to a
+# static 20 HP is why a maxed build still tiptoed around elites it could
+# delete: killability read an 800 HP elite as 0.02 forever, so neither the
+# kill reward nor the Soldier's standing discount ever learned the build had
+# outgrown the number. The reference is now the damage the CURRENT loadout
+# deals in KILL_TIME seconds of fire, measured from live weapon stats
+# (weapon.stats is post-init, so attack-speed and damage purchases are already
+# in the cooldown and damage fields; crits and conditional bonuses are not --
+# the estimate runs conservative). Floored at the old constant so a naked
+# early build behaves exactly as before, capped so a bad read cannot explode.
+func _refresh_kill_ref(player) -> void:
+	_kill_ref = KILL_HP_REF
+	if dps_ref_scan == 0.0 or not ("current_weapons" in player):
+		return
+	var dps = 0.0
+	for w in player.current_weapons:
+		if not is_instance_valid(w) or not w.stats:
+			continue
+		var nproj = 1.0
+		if "nb_projectiles" in w.stats:
+			nproj = max(float(w.stats.nb_projectiles), 1.0)
+		dps += float(w.stats.damage) * nproj * 60.0 / max(float(w.stats.cooldown), 1.0)
+	_kill_ref = clamp(dps * KILL_TIME, KILL_HP_REF, KILL_REF_MAX)
+	if abs(_kill_ref - _kill_ref_logged) > 25.0:
+		_kill_ref_logged = _kill_ref
+		print("BOTLOG DPSREF dps=%.0f kill_ref=%.0f" % [dps, _kill_ref])
+
+
+# The Builder's phased material value -- see the character-profiles block.
+# Phase state is read off the run, not tracked: the wave number and the
+# turret's own XP stat (structure_range) fully determine the phase, so a
+# mid-run save/load or a WaveLab snapshot injection lands in the right
+# phase for free. --arb-goldval overrides ALL phases at once, so a sweep
+# can still price gold flat.
+var _builder_phase = -1          # last announced phase, for the BOTLOG line only
+var _announced_char = ""         # ditto: which character's row we already logged
+
+
+# Value of the first phase row whose wave ceiling has not been passed.
+func _phase_value(phases: Array, fallback: float) -> float:
+	for p in phases:
+		if RunData.current_wave <= int(p[0]):
+			return float(p[1])
+	return fallback
+
+
+func _gold_value(row: Dictionary, player) -> float:
+	var mode = row.get("gold_mode", "")
+	if mode == "builder":
+		return _builder_gold_value()
+	if gold_value_override != null:
+		return gold_value_override
+	# End-of-wave sweep: characters that spend the wave NOT collecting (Soldier
+	# stands and lets its tripled pickup radius vacuum; Engineer holds its pod)
+	# still want the leftovers, and the last seconds are when collecting them
+	# costs the least -- the spawner has wound down and, per the Golem guide,
+	# damage taken right before the horn is nearly free. Deliberately a no-op
+	# for the Builder: its feed phase exists precisely to LEAVE the floor full.
+	if row.has("gold_end") and wave_time_left <= float(row.get("end_secs", 8.0)):
+		return float(row["gold_end"])
+	var base = float(row.get("gold", GOLD_VALUE))
+	if row.has("gold_phases"):
+		base = _phase_value(row["gold_phases"], GOLD_VALUE)
+	if mode == "enemy_gated":
+		# Lucky's pickups DEAL DAMAGE (dmg_when_pickup_gold, 15% of Luck), so a
+		# material collected on an empty floor is a wasted shot. Let it lie
+		# until there is something for it to hit.
+		return base if not targets.empty() else 0.0
+	if mode == "metered":
+		# Buccaneer: a pickup RESETS every weapon cooldown, and one pickup pays
+		# the same whether one weapon was waiting or six. Vacuuming a pile
+		# spends its resets on weapons that were ready anyway -- the value is
+		# entirely in the spacing, so only reach for gold while something cools.
+		return base if _weapon_cooling(player) else 0.0
+	return base
+
+
+# Is any weapon deep enough into cooldown that resetting it actually buys a shot?
+func _weapon_cooling(player) -> bool:
+	if not ("current_weapons" in player):
+		return true    # unknown loadout shape: fall back to plain greed
+	for w in player.current_weapons:
+		if is_instance_valid(w) and w._current_cooldown >= METER_COOLDOWN_MIN:
+			return true
+	return false
+
+
+func _food_value(mode: String, fpos: Vector2, missing_hp: float, spawner) -> float:
+	if mode == "none":
+		# Golem cannot heal at all mid-wave and Vampire's consumable_heal is
+		# -100: fruit is scenery, and detouring for it is pure risk.
+		return 0.0
+	if mode == "full_hp" and missing_hp <= 0.0:
+		# Farmer (+1 harvesting) and Druid (a luck roll) are PAID for eating at
+		# full health, which inverts the usual save-it-until-hurt logic.
+		return FOOD_FULL_SEEK
+	if mode == "bomb":
+		# Chef ignites on pickup, Glutton detonates for 500% melee. The fruit is
+		# a grenade with a fixed blast, so its worth is who is standing in it --
+		# and eating it alone throws the whole charge away.
+		var near = 0
+		var r_sq = FOOD_BOMB_RADIUS * FOOD_BOMB_RADIUS
+		for e in spawner.enemies:
+			if is_instance_valid(e) and not e.dead and not e.is_loot \
+					and e.position.distance_squared_to(fpos) < r_sq:
+				near += 1
+		if near == 0:
+			return FOOD_BOMB_ALONE
+		return min(FOOD_BOMB_MAX, FOOD_BOMB_PER * near)
+	if mode == "bank" and missing_hp <= 0.0:
+		# The ground is the safest inventory: fruit not yet eaten is healing that
+		# cannot be wasted. Step on it once the healing is real, not before.
+		return FOOD_BANK_FULL
+	return min(FOOD_MAX, missing_hp)
+
+
+func _caution(row: Dictionary) -> float:
+	var c = float(row.get("caution", 1.0))
+	if row.has("caution_phases"):
+		c = _phase_value(row["caution_phases"], 1.0)
+	if row.has("caution_per_wave"):
+		# Captain hands every enemy +2 HP and +2 damage per wave, Romantic sheds
+		# armour to curse on the same clock: the danger compounds, so caution has
+		# to climb with it instead of sitting at whatever suited wave 1.
+		c += float(row["caution_per_wave"]) * max(RunData.current_wave - 1, 0)
+	return max(c, 0.1)
+
+
+# Contact seeking -- the inverse of kiting. For characters paid in hits TAKEN
+# (bull explodes when hit; vampire/lich/masochist scale off missing HP) or in
+# one swing landing across a crowd (dwarf, ogre, artificer). Both gates matter:
+# they switch the behaviour off exactly where it would otherwise kill the run.
+func _engage(row: Dictionary, hp_ratio: float, pos: Vector2, spawner) -> float:
+	var e = float(row.get("engage", 0.0))
+	if e <= 0.0:
+		return 0.0
+	if row.has("engage_hp") and hp_ratio <= float(row["engage_hp"]):
+		return 0.0    # below the band: break off and let the kit refill
+	if not row.get("engage_boss", false):
+		# Every guide for these characters draws the same line: walk into TRASH,
+		# never into the elite. The mechanics that pay for contact -- an explosion
+		# per hit taken, lifesteal, a swing across six bodies -- all scale with
+		# enemy COUNT, and an elite is one body that hits back far harder than the
+		# trash the behaviour was designed around. Knight is the documented
+		# exception and opts back in with engage_boss.
+		for b in spawner.bosses:
+			if is_instance_valid(b) and not b.dead:
+				return 0.0
+	if row.has("engage_pack"):
+		# A herder must not charge the first enemy it sees: the payoff needs a
+		# CLUMP (dwarf wants 6 kills in one hit), and engaging early is exactly
+		# what stops one forming.
+		var near = 0
+		var r_sq = ENGAGE_PACK_RADIUS * ENGAGE_PACK_RADIUS
+		for en in spawner.enemies:
+			if is_instance_valid(en) and not en.dead and not en.is_loot \
+					and en.position.distance_squared_to(pos) < r_sq:
+				near += 1
+		if near < int(row["engage_pack"]):
+			return 0.0
+	return e
+
+
+# Writes the anchor keys into `profile`. The modes differ only in where the
+# point comes from and whether the cost is for straying OUT (a leash) or for
+# closing IN (a keep-out ring); the arbiter needs nothing but radius and inner.
+func _resolve_anchor(row: Dictionary, spawner) -> void:
+	var mode = row.get("anchor", "")
+	if mode == "":
+		return
+	if row.has("anchor_wave") and RunData.current_wave < int(row["anchor_wave"]):
+		return
+	if row.has("gold_end") and wave_time_left <= float(row.get("end_secs", 8.0)):
+		return    # the end-of-wave sweep needs the leash off, or it only sweeps the pod
+
+	var point = far_corner * 0.5
+	var radius = float(row.get("anchor_radius", 0.0))
+	var inner = float(row.get("anchor_inner", 0.0))
+
+	if mode == "builder":
+		if RunData.current_wave <= BUILDER_ECON_WAVES:
+			return    # phase 1 roams to collect; a leash would cost every material
+		var turret = _builder_turret(spawner)
+		if turret == null:
+			return
+		point = turret.position
+		# Leash to the turret's own firing circle: enemies chasing a player
+		# inside it are enemies the turret gets to shoot.
+		var turret_range = float(turret.stats.max_range) if turret.stats else BUILDER_ANCHOR_MAX
+		radius = clamp(turret_range, BUILDER_ANCHOR_MIN, BUILDER_ANCHOR_MAX)
+	elif mode == "structures" or mode == "away_structures":
+		# The centroid, not the nearest: Engineer's turrets spawn as a POD and
+		# the pod's middle is the spot the guides describe standing in. With one
+		# structure the centroid is that structure, so Mage's keep-away works off
+		# the same number.
+		var c = _structure_centroid(spawner)
+		if c.empty():
+			return
+		point = c[0]
+	elif mode != "center" and mode != "perimeter":
+		return
+	# center and perimeter both anchor on the arena middle and differ only in
+	# which side of it costs: a perimeter row sets inner and no radius, so the
+	# cheapest floor is the rim and the bot laps it instead of parking on a wall.
+
+	profile["anchor"] = point
+	if radius > 0.0:
+		profile["anchor_radius"] = radius
+	if inner > 0.0:
+		profile["anchor_inner"] = inner
+
+
+func _structure_centroid(spawner) -> Array:
+	if not ("structures" in spawner):
+		return []
+	var sum = Vector2.ZERO
+	var n = 0
+	for s in spawner.structures:
+		if is_instance_valid(s):
+			sum += s.position
+			n += 1
+	if n == 0:
+		return []
+	return [sum / n]
+
+
+func _builder_turret(spawner):
+	if not ("structures" in spawner):
+		return null
+	for s in spawner.structures:
+		if is_instance_valid(s) and s is BuilderTurret:
+			return s
+	return null
+
+
+func _builder_gold_value() -> float:
+	var phase = 1
+	var struct_range = 0
+	if RunData.current_wave > BUILDER_ECON_WAVES:
+		struct_range = int(RunData.get_player_effect(Keys.structure_range_hash, 0))
+		phase = 2 if BuilderTurret.get_level(struct_range) < BUILDER_TURRET_MAX_LEVEL else 3
+	if phase != _builder_phase:
+		_builder_phase = phase
+		print("BOTLOG BUILDER phase=%d wave=%d struct_range=%d" % [
+				phase, RunData.current_wave, struct_range])
+	if gold_value_override != null:
+		return gold_value_override
+	if phase == 1:
+		return GOLD_VALUE            # economy first, collect everything
+	if phase == 2:
+		return BUILDER_GOLD_VALUE    # feed the turret to its final tier
+	return BUILDER_GOLD_LATE         # maxed; take some, not all
 
 
 func _add_unit(unit, pos: Vector2, range_sq: float, target_range_sq: float, pickup_sq: float) -> void:
@@ -450,7 +1012,19 @@ func _add_unit(unit, pos: Vector2, range_sq: float, target_range_sq: float, pick
 	var chase = Vector2.ZERO
 	var unit_speed = 0.0
 	if unit.current_stats:
-		unit_speed = float(unit.current_stats.speed)
+		# Speed boosts live OUTSIDE current_stats: a pursuer's boost_self()
+		# accumulates in Unit.bonus_speed (+45 per second, up to +450, reset on
+		# hit), so reading current_stats alone models a 600 px/s chaser at 150.
+		# That error poisons both uses of this number -- the projected future
+		# position (the pursuer "cannot reach us this horizon" while actually
+		# crossing 480 px of it) and _contact_ticks' can-you-outrun test (150
+		# says shed it at once; 600 says it never lets go). The observed failure
+		# mode is exactly that: the bot stands while a boosted pursuer walks the
+		# last 400 px into it. decaying_bonus_speed is the same channel with a
+		# sign: knockback slows really do make a body less able to reach us.
+		unit_speed = max(float(unit.current_stats.speed)
+				+ bonus_speed_scan * (float(unit.bonus_speed)
+				+ float(unit.decaying_bonus_speed)), 0.0)
 		var goal = pos
 		var mb = unit._current_movement_behavior
 		if mb and ("_current_target" in mb) and mb._current_target != Vector2.ZERO:
@@ -458,8 +1032,16 @@ func _add_unit(unit, pos: Vector2, range_sq: float, target_range_sq: float, pick
 		var toward = goal - unit.position
 		if toward.length_squared() > 1.0:
 			chase = toward.normalized() * unit_speed
+	# The optional 9th field is the body's killability (same falloff as
+	# _kill_value): the arbiter's fire_still discount reads it to price
+	# "standing here SHOOTS this thing before it arrives". Contact threats
+	# only -- a bullet cannot be shot down and a dash connects regardless.
+	var health = 20.0
+	if unit.current_stats and unit.current_stats.health > 0:
+		health = float(unit.current_stats.health)
 	threats.push_back([unit.position, chase, radius, damage, KIND_CONTACT, 0.0,
-			_contact_ticks(unit_speed), INF_TIME])
+			_contact_ticks(unit_speed), INF_TIME,
+			_kill_ref / (_kill_ref + health)])
 
 
 # Returns a dash threat tuple, or [] if this unit is not currently dashing or
@@ -482,7 +1064,11 @@ func _dash_corridor(unit) -> Array:
 		return []
 
 	var dir = charge_dir.normalized()
-	var dash_speed = float(unit.current_stats.speed) + behavior.charge_speed
+	# Same bonus_speed blindness as the walker fix above: a dash rides on the
+	# unit's live base speed, boosts included.
+	var dash_speed = max(float(unit.current_stats.speed)
+			+ bonus_speed_scan * (float(unit.bonus_speed)
+			+ float(unit.decaying_bonus_speed)), 0.0) + behavior.charge_speed
 	var radius = _body_radius(unit)
 	var damage = DEFAULT_CONTACT_DAMAGE
 	if unit.current_stats and unit.current_stats.damage > 0:
@@ -776,7 +1362,7 @@ func _kill_value(unit, damage: float) -> float:
 	var health = 20.0
 	if unit.current_stats and unit.current_stats.health > 0:
 		health = float(unit.current_stats.health)
-	var killability = KILL_HP_REF / (KILL_HP_REF + health)
+	var killability = _kill_ref / (_kill_ref + health)
 
 	var value = damage * EXPECTED_EXCHANGES
 	if _is_egg(unit):

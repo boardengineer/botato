@@ -200,15 +200,18 @@ func _tick():
 		# That is the pillar-vs-orbiter proj(v=0) collision that cost a cycle.
 		var pesc = 0
 		var pfire = 0
+		var sok = -1                 # fire_still stand permission at sample time; -1 = n/a
 		if arb.get("last_escaping") != null:
 			pesc = 1 if arb.last_escaping else 0
 			pfire = int(arb.pin_fires)
-		print("BOTLOG ARB wave=%d hp=%d/%d pos=%s mv=(%.2f,%.2f) margin=%.2f threats=%d nearE=%d proj=%d edge=%d dmgW=%d eff=%.2f turn=%.1f flips=%d frames=%d still=%d pesc=%d pfire=%d" % [
+			if arb.get("last_stand_ok") != null:
+				sok = 1 if arb.last_stand_ok else 0
+		print("BOTLOG ARB wave=%d hp=%d/%d pos=%s mv=(%.2f,%.2f) margin=%.2f threats=%d nearE=%d proj=%d edge=%d dmgW=%d eff=%.2f turn=%.1f flips=%d frames=%d still=%d pesc=%d pfire=%d sok=%d" % [
 			RunData.current_wave, int(player.current_stats.health), int(player.max_stats.health),
 			_fmt_pos(player.position), chosen.x, chosen.y, margin,
 			spawner.enemies.size(), int(near_enemy), proj_count, int(edge),
 			int(_damage_taken_this_wave), hs[0], hs[1], hs[2], hs[3], hs[4],
-			pesc, pfire])
+			pesc, pfire, sok])
 		return
 
 	print("BOTLOG t=%d wave=%d hp=%d/%d pos=%s enemies=%d nearE=%d proj=%d charging=%d corr=%d edge=%d dmgW=%d esc=%d %s" % [
