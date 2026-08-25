@@ -42,6 +42,36 @@ Build these ONCE; each covers several characters:
 9. **Still-vs-moving spectrum**: soldier (still by default, instant fire resume, tap-move dodges, 200% pickup range collects passively) → streamer (still with 1s re-arm; relocate decisively then freeze; +40/40% while-moving on elite waves) → baseline → sick (stay engaged; lifesteal only heals in combat) → speedy/hiker/lucky/creature (never stand still; speedy loses 100 armor while stationary).
 10. **Wave-clock phases**: cyborg (ranged kiting first half, melee dive second half — timer turns blue at the switch; 45s on the 90s boss wave), golem + masochist + crazy (end-of-wave dive/engage in last ~5–15s), streamer/engineer/ranger (end-of-wave pickup sweep), wounded (hard phase switch on first damage taken: center anchor + minimal twitch movement).
 
+## Full regression bed — 2026-08-25 (arbiter-world-model @ 14588dc + dirty)
+
+`wavelab.ps1 bed -Count 10`, all 10 members, speed 1, ledger Note "REGRESSION after
+profiles+soldier11+bull6". **33/100** — the first full-bed number for the arbiter lineage since v3
+(26/100, Aug 4). Old field controller record 49/100 (Aug 5) shown for scale.
+
+| member | arbiter v3 | field ctl record | **this bed** |
+|---|---|---|---|
+| w11-loud (croc + pursuers) | 0 | 0 | **0** (3.97 dmg/s; best ever 2.9) |
+| w8-gangster | 3 | 5 | **4** |
+| w5-loud (7 HP) | 3 | 9 | **2** |
+| w4-loud (1 HP) | 1 | 5 | **1** |
+| w3-sailor | 5 | 4 | **6** (best ever; first bench of the sailor row) |
+| w3-renegade | 3 | 7 | **5** |
+| w2-fisherman | 4 | 5 | **2** (knife-edge member; row inert before w10) |
+| w12-wildling | 1 | 4 | **4** (first bench of the facetank row) |
+| w8-king | 4 | 4 | **2** |
+| w11-lucky | 2 | 6 | **7** (v3's −6 regression gone; best ever) |
+
+Read: +7 over the last arbiter sweep, carried by lucky (+5), wildling (+3), renegade (+2), sailor
+(+1), gangster (+1); given back on king (−2), fisherman (−2), w5-loud (−1). The gap to the old
+controller's 49 is concentrated in the two fragile loud early waves (7 HP and 1 HP entries: 3 vs 14
+combined) and renegade/fisherman/king. Those are near-perfect-avoidance members with no room for a
+single hit — the natural next investigation is whether the standing-candidate full price for aimed
+threats (eleventh Soldier pass, global) or the bonus-speed pursuer model changed their dodging; a
+per-member A/B with `--arb-charprofile=0` and `--arb-bonusspeed=0` would attribute it. Nothing in
+this bed suggests a broken mechanism: no member fell below its historical floor except w5-loud by
+one, and every profile row that got its first bench (sailor, renegade, wildling, lucky) landed at or
+above its member's history.
+
 ## Priority shortlist (highest value ÷ effort)
 
 1. **Engineer** — Builder anchor verbatim (structures spawn grouped) + prefers_still + end-of-wave sweep. Cheapest next profile.
@@ -293,6 +323,205 @@ Telemetry: `BOTLOG PROFILE char=<id> <row>` once per character, plus the existin
 Note: `prefers_still` is now table-driven, so `--arb-charprofile=0` also disables Soldier's
 stand-still. That makes the control arm cleaner (it is character-specific logic) but means the flag
 is no longer a pure arbiter-only ablation for that character.
+
+### Builder second pass — THE TIGHT LEASH (2026-08-25, `20260825-w8-builder-d6-hp17`: the user's
+Steam run, wave 9 replay, Danger 6, 17 HP, three shredders, turret tier 2 = feed phase)
+
+User: "get the bot to stay closer to the builder turret". New `anc=` telemetry (px to the profile
+anchor) showed the old leash — radius clamp(turret range, 220, 420) → 420 at tier 2, weight 12 —
+holding the bot at a **mean 611–675 px** from the turret (max ~1,100): outside the turret's kill
+zone most of the wave. Fix: `BUILDER_ANCHOR_MIN/MAX` 140/240 and a per-row `anchor_w` multiplier
+(new generic key; Builder 2.5 → slope 30 per 300 px) so the leash can out-argue crowd room but not
+a live threat; `--arb-leash=<px>` sweep knob. A/B on the bed: old **1/3, avg dmg 29, mean 611–675
+px** → tight **3/3 (two at 0 dmg), avg dmg 8, mean 196–271 px**, kills unchanged (~405), materials
+43–64 vs 12–32 (standing in the kill zone means walking over some drops — the guide's "a material
+here or there is no big deal"). The guide's "playing directly on top of the turret" from mid-game
+is now what the bot does.
+
+### Bull and Pacifist strategies (built 2026-08-24, UNMEASURED — no snapshots exist)
+
+Sources: full transcripts of Cephalopocalypse's "How to Beat Bull WITHOUT Self Damage" and "Pacifist
+Danger 5 Guide and Walkthrough", plus decompiled mechanics.
+
+**Bull** — weaponless; every damage instance that lands (armor-reduced; dodged hits do NOT trigger)
+detonates a 150 px explosion at 300% of melee+ranged+elemental (`bull_explosion_stats`, base 30);
++20 HP, +15 regen (+50% regen mods), +10 armor. Guide doctrine: kite in loops so the crowd bunches,
+then dive so ONE hit kills the pile ("take the hit in the middle of a big group"); dodge procs give
+i-frames to push deeper; back off and regen when low; never fight elites (without self-damage items)
+but keep farming the trash on elite waves; stand beside spawns, never on the red X (relocates the
+spawn); burst the pile right before the horn; slashers flee — don't chase. Row:
+`caution 0.5 / caution_below [0.6, 1.3]` (kite hard while regen refills), `engage 14, engage_hp 0.6,
+engage_mode cluster` (NEW: candidate priced by bodies inside the blast at its END position, boss
+excluded, plus 0.4× nearest pull to start a pile), `engage_pack 3`, `engage_boss "trash"` (farm on
+elite waves, never the elite), `engage_end_hp 0.4 / end_secs 8` (pre-horn burst), `dps 0` (no
+weapons — the kill reward is noise), `avoid_births 90`.
+
+**Pacifist** — 0.65 materials+XP per enemy ALIVE at the horn (`main.manage_harvesting`, halved on
+horde waves); −100% damage; lumberjack shirt. Stepping on a red X (`EntityBirth`, 72 px marker)
+cancels the spawn = lost income. Guide doctrine: lap the outside edge all wave with hands batting the
+crowd away; walk AWAY from spawns; loot aliens are uncatchable; consumables heal 0 once worms stack;
+trees are the only kills and crates — reach them before the horn; elites: just stay away; chargers:
+stop if head-on then change direction, keep moving if from the side. Row: `anchor perimeter
+(inner 520)`, `still never`, `caution 1.2`, `food none`, `dps 0` (NEW key: kill reward ×0),
+`loot_value 0` (NEW), `tree_value 5` (NEW: trees from `spawner.neutrals` as rewards),
+`avoid_births 160` (NEW: active `EntityBirth` markers priced as small standing AoEs).
+
+New generic mechanisms this added: `dps` scale, `loot_value`, `tree_value`, `avoid_births` (serves
+jack/king/lich too — not yet on their rows), `caution_below`, `engage_mode cluster`, `engage_boss
+"trash"`, `engage_end_hp`. Targets now carry `TG_BOSS`.
+
+**Pacifist — MEASURED 2026-08-24 on the user's failing run** (`20260824-pacifist-current`: wave 6,
+Danger 6, six hands, harvesting 76, but dodge 15 / armor 3 / regen 1 / speed −2; the bed loads at
+34/34 HP). Profile resolves live, zero errors. Five arms × 3 runs, **0/15 valid survivals**, every
+death to CHARGERS (3–7 hits/run, plus slashers and 212 px/s bullets):
+default perimeter (inner 520) 2 deaths + 1 harness artifact; `--arb-inner=400` 0/3; generic
+`--arb-charprofile=0` 0/3 and FASTEST deaths (t=14–27); `--arb-latent=2.5 --arb-dash=2.0` 0/3;
+`--arb-centermode=450` (rim → center anchor) 0/3 with the bot clear of walls (min edge 56–97) and
+still 7 charger hits. Attribution: not the rim, not the wall — a Pacifist never thins its chargers,
+so they accumulate all wave and land on a potato with 15 dodge and −2 speed that cannot sidestep a
+1000 px/s dash in the 0.4 s wind-up. The guide's rim lap is played on 60 dodge, 20+ regen and bought
+speed with snail/ugly tooth slowing the crowd 35%. **Verdict: build ceiling, not steering.** The
+profile is kept as designed (rim orbit is right once the defensive stats exist). New sweep knobs:
+`--arb-inner`, `--arb-centermode=<radius>`. Untested idea: the guide's "stop if the charger comes
+head-on, then change direction" — the arbiter already dodges corridors perpendicular; a stop-then-
+turn variant would need a dash-specific candidate.
+
+**Pacifist second pass — THE ANNULUS (2026-08-24 late, `20260824-w2-pacifist-d6-hp3-last`: the
+user's new 12-HP Pacifist that died on wave 3 twice in one live log):** the live BOTLOG series
+showed the rim orbit running the WALL BAND itself (edge 24–48 along the top and right walls) with
+the crowd in a conga line behind and every hit landing pinned — at inner 520 on a 2164×1536 arena
+the "cheapest floor" is 250 px from the short walls, and the swarm fills the inward escape. Fixes:
+(1) orbit is now an ANNULUS — `anchor_inner 340, anchor_radius 560` — so the lap runs mid-arena
+with ≥200 px of wall room; (2) spawn-marker keep-outs moved to a new `KIND_MARK` that prices
+contact only and is skipped by crowding/enclosure (a ring of red X's was reading as a surround).
+Measured on the wave-3 bed: baseline **0/3, 12 dmg each, dead at t=17–26, min edge 12–36** →
+annulus **2/3 survived, avg dmg 9, min edge 84–108**. Wave-6 bed unchanged at 0/3 (chargers —
+the build-ceiling verdict above stands). Bull inherits KIND_MARK through `avoid_births`.
+
+### One-Armed — MEASURED (2026-08-24, the user's losing Steam run)
+
+Bed `20260824-w9-one_arm-d6-hp36-ghost_axe`: wave 10 replay, Danger 6, **36 HP**, one tier-3 ghost
+axe (3,949 dmg the previous wave), 10% lifesteal, dodge 6, armor 2. A MELEE One-Armed — the guide's
+row assumed the ranged build it recommends from ~wave 5 (centre leash 520, caution 1.1), which holds
+a melee fighter away from the contact that feeds its lifesteal. Built: generic **`if_melee`** row
+overlay (applied when the loadout has no `RangedWeaponStats`; `_all_melee`) — One-Armed's overlay
+plays it like Wildling: caution 0.7, `caution_below [0.35, 1.3]`, `engage 8 / engage_hp 0.35`, and
+a WIDE centre leash (620) because every death landed at edge 12–24.
+
+Five arms × 3, **0/15**: base row avg dmg 80 (kills 186–250); overlay 87 (up to 279 kills);
+overlay + `--arb-pin=1` 73 (`pfire` 7–10/run — the escape fires and the brawl drags it straight
+back); overlay + leash 620 **63 (best)**; leash + pin 77. Per hit on this wave: baby alien 9,
+chaser 9, charger 12, 220 px/s bullet 15 → four hits kill the 36-HP body, and one run absorbed 116
+through lifesteal without surviving. Verdict: the melee overlay is kept (it is the right shape and
+the cheapest arm), but **36 HP at wave 10 Danger 6 is a build ceiling** — the guide plays One-Armed
+melee only through wave 5 and is ranged with room to kite by here. Steering cannot buy HP.
+
+**Second pass — the user asked "if it just gets cornered and hit repeatedly, how does more HP
+help?"** — and the interleaved timelines proved the ceiling call premature: HP was being REFILLED
+between hits (17→33, 11→27 via lifesteal+regen); the damage arrived as clusters at the wall; and the
+bot went to the wall AT FULL HP, chasing rim spawns — engage 8 + kill reward 14 outbid the wall
+term's ~13 and the 620 leash cost ~5 there. Built **`fight_room`** (generic): a candidate ending
+inside N px of a wall earns no engage pull and no kill reward (costs untouched, so it still leaves);
+One-Armed melee overlay and Bull get 220. Result on the bed: still 0/3 (avg dmg 61), but the
+death modes split — runs still drifting to the wall now do so under THREAT costs (herding: "away
+from 30 enemies" points at a wall), while one run died entirely mid-arena (hits at edge 333–650,
+9+13 in one second). Closing arms: `--arb-wall=32` 0/3 with only **6/20 hits in the wall band**;
+`--arb-predict=16` 0/3, 8/16. Refined verdict: the chasing-to-the-rim bug was real and is fixed;
+the remaining wall drift is the arbiter's unsolved herding problem (not One-Armed-specific); and
+70% of the damage now lands mid-arena in the brawl, where HP and armor genuinely are the lever.
+Lifesteal heals 8–11 between clusters on this build; it needs a body that survives the cluster.
+
+**Bull sixth pass — THE DAMAGE DIVE (2026-08-25, user: "allow dives that don't kill enemies if
+the bot can survive and there's a good amount of damage to be dealt").** Bodies the blast only
+HURTS (killability < 0.5) used to pay full contact price and a pile of them vetoed the dive. Now,
+while the dive is armed, they pool separately and bill at most `DAMAGE_DIVE_HITS` (2) hits — the
+detonating hit plus one follow-up — provided `hp_ratio >= DAMAGE_DIVE_HP` (0.5) and
+`blast × (killable + surviving bodies in blast) >= DAMAGE_DIVE_MIN` (350; with a 156 blast that is
+three bodies, fewer when mixed with killables). Fail either and full price as before; elites,
+bullets, dashes and out-of-blast bodies never pool. Row key `damage_dive: true`; the resolver
+passes `hp_ratio` and `blast` (= the explosion reference). Measured NEUTRAL on both beds (w10 0/3,
+dmg 166–188, kills 210–287; w5 3/3, dmg 93–106) — these waves carry almost no blast-surviving
+bodies besides stray pursuers. The w11 pursuer horde (five live deaths, 46 pursuer hits) is where
+it should show; no bed exists for it yet.
+
+**Bull fifth pass — "still needs to be more aggressive" (2026-08-25 AM).** The test-game save was
+the same 07:55 state as the w10 bed and the launcher log was still the pre-fix (band 0.6) run, so
+the impression predates the fixes. Baseline on the band-0.25 build: 0/3, 183–213 dmg, 245–348
+kills, dive armed 28–33 s of ~45, **10–14 s of `pack` dead time** (fewer than 3 enemies within
+320 px → engage 0, no pull at all). Built generic `engage_pack_seek` (fraction of engage kept as a
+plain nearest-enemy pull while no pile exists; resolver drops cluster mode for it; telemetry
+`eblk=seek`). Bull at 0.6 measured WORSE: 0/3, deaths at t=38–42 (vs 43–53), kills 187–232,
+nearest-enemy mean 159–182 (no closer). Hunting stragglers scatters the pile before it forms —
+the guide's loop-to-gather in numbers. Reverted to 0 for Bull; key kept for kits that want it.
+Verdict unchanged: the Bull is already diving 28–33 s a wave at ~8 kills per hit; on this bed the
+limit is sustain, not aggression.
+
+**Bull fourth pass — the wave-10 deaths analysed (2026-08-25, bed `20260825-w9-bull-d6-hp26`:
+wave 10, Danger 6, 64 HP, 16 armor, 21 regen, 0 dodge, explosion 156; live deaths at w10 corner
+and 5× on the w11 horde).** Live w10 timeline: dove well early, then at 37/64 the 60% band
+disarmed the dive and never re-armed — 20 s of kiting at 52–65% while the un-thinned crowd grew
+22→47 and herded it into a corner; died with the dive OFF. w11 horde: 46 pursuer hits — 250 HP vs
+a 156 blast, yet the flat kill_ref 90 admitted them to the one-hit trade. Fixes: band 0.6→0.25,
+`explosion_ref` (kill reference = real blast damage from live stats, `BOTLOG DPSREF explosion=`),
+`EXPLODE_KILLABLE_MIN 0.5` (one-hit pricing only for bodies that die to one blast), `--arb-engagehp`
+knob. Bed results, all 0/3: baseline 174–204 dmg (`hp`-mode 18–25 s); fixed band 0.4 181–205;
+`--arb-engage=2` 171–200; band 0.2 149–211; band 0.0 154–222 with **hits fully paid (ok=142–182),
+375 kills / 255 mats, died 4 s short**. Hit attribution: ~36 hits/wave × 5.4 = 4.3 dmg/s incoming
+vs ~2.3 HP/s regen; unpaid (retreating) hits were 25–35% of damage at band 0.4 and 0% at band 0 —
+and survival did not change. Verdict (supported this time by the timeline): the dive works — every
+blast ~8 kills, the crowd is cleared, income is huge — and the wave is a **sustain ceiling** for a
+21-regen / 0-dodge Bull; the guide's Bull here runs 34→100 regen, dodge, and 50 luck for fruit.
+
+**Bull third pass — MEASURED, and the passivity root-caused (2026-08-25, bed
+`20260824-w4-bull-d6-hp33` = wave 5, Danger 6, 33 HP, the user's own run; "the bull play is too
+passive").** Live log: 33/33 HP nearly all wave, hovering 80–270 px from a crowd that grew to 92.
+New telemetry `eng=`/`eblk=` on the ARB line showed the dive was NEVER armed: `eblk=boss` every
+second on a wave with no boss, and the run's **stderr** (`-iN.log.err`, which the error check had
+not been reading) held 4,884 `Invalid operands 'String' and 'bool' in operator '!='` — the
+`engage_boss "trash"` rule compared against `true` aborts `_engage()` every frame in GDScript 3,
+so engage resolved to null and the Bull was a pure kiter whose kills came from enemies walking into
+it. Fixed with `is bool` / `is String` guards. First-ever measured Bull, n=3:
+baseline (gate crashing) 3/3, ~104 kills, ~95 mats, 13 hits, crowd peaking 46–64, avg dmg 47 →
+**fixed: 3/3, 132–134 kills, 110–129 mats, 29–32 hits, crowd peaking only 31–36, avg dmg 98,
+HP ending 16–19/33** with `eng=14 eblk=ok` 20–24 s of 40, `pack` 12–17 s (crowd cleared — nothing
+to dive), `hp` 2–6 s (regen pause). Per-body cluster reward (cap 8), EXPLODE_CROWD 0.35, and the
+`--arb-engage`/`--arb-cnear` knobs from the cadence pass are all in effect. The earlier
+"per-body pricing didn't move the needle" and cadence-arm results were measured with the gate
+crashing and are void.
+
+**Bull second pass — THE EXPLOSION TRADE (2026-08-24 late):** re-reading the first-pass row
+against the scorer exposed why the dive could never fire: every body in the pile was priced as a
+separate contact hit, so three bodies in the blast cost ~48 to stand against while the cluster
+reward tops out at 14 — the bot would kite forever. But Bull's FIRST landed hit detonates a 150 px
+explosion that kills everything killable in the blast; the second and third hits never arrive.
+Built `explode_trade` (generic key): while the dive is armed (engage > 0, i.e. inside the HP band),
+contact costs of killable bodies whose horizon position lies inside `ENGAGE_BLAST` of the
+candidate's END position pool and cap at the single largest coefficient — one hit, not N. Bodies
+outside the blast, unkillable ones, bullets and dashes pay full price, so the dive is still vetoed
+by anything the explosion would not answer. Also `kill_ref 90` on the row: with no weapons the
+measured DPS reference sits at the 20 HP floor and nothing past wave 5 would count as killable;
+the explosion is 30 base at 300% scaling, so the row states its reach. `fight_room 220` added in
+the One-Armed pass (no diving into rim piles). **Still unmeasured — no Bull run exists in any save
+rotation and DebugService has no character override.** Boot-clean; wiring-verified on the Soldier
+and Dwarf beds (the changed `_prepare` path runs for everyone). Harvest one to bench; the risk to watch is the cluster dive committing into a
+pile that contains a charger.
+
+### Soldier eleventh pass — STANDING PAYS FULL FOR AIMED THREATS (2026-08-25)
+
+User: "the bot stood still against too many enemies" (Steam run; the Steam copy loads the user's
+own rezipped workshop build, verified constant-for-constant identical to the tree for Soldier;
+Steam's godot.log carries only the PROFILE prints, no timeline). Bed `20260825-w4-soldier-d6-hp10-
+stood` (wave 5 replay, Abyss — `current_zone 1`, lobsters confirm — 15 max HP, six shredders):
+n=10 → 8/10, and both deaths were **bullets taken at `mv=(0,0)`** with `still=61 sok=1`, 3–10
+projectiles airborne, including 200 px/s shots visible for two seconds. Root cause: the threat time
+discount (down to MIN_DISCOUNT 0.15 past the horizon) encodes "a later frame can still dodge this"
+— true for a moving potato, FALSE for the standing candidate, which is precisely what refuses to
+move; so a slow bullet 300 px out cost the stand ~4 against the 16-point floor until it was too
+close to sidestep on a 15-HP body. Fix (arbiter, all characters): the ZERO candidate takes **no time
+discount on KIND_PROJ / KIND_DASH threats** (`_p_aimed`). Result n=10: **9/10, avg dmg 6** (was 8/10,
+avg 9), slow-bullet (200 px/s) hits 5 → 1 across the ten runs, still-share unchanged (~90%), kills
+unchanged (~110). The remaining death was two 550 px/s bullets plus one 200 — 0.5 s of warning on a
+15-HP body is inside the sidestep time. Regressions: see below.
 
 ### Soldier strategy — MEASURED (2026-08-24, w2-d5-hp4-smg snapshot, n=3/arm)
 

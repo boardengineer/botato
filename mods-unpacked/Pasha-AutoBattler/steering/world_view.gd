@@ -67,6 +67,7 @@ const KIND_PROJ = 0
 const KIND_CONTACT = 1
 const KIND_DASH = 2
 const KIND_AOE = 3
+const KIND_MARK = 4              # spawn-marker keep-out; contact-priced only
 
 const TARGET_EXTRA = 220.0       # targets are collected this far past weapon range,
                                  # matching the arbiter's acquisition band
@@ -141,8 +142,15 @@ const BUILDER_GOLD_VALUE = -2.0  # feed phase: mild -- shapes paths between equa
                                  # never outbids a dodge
 const BUILDER_GOLD_LATE = 0.4    # maxed turret: take what we pass, skip detours
 const BUILDER_TURRET_MAX_LEVEL = 3
-const BUILDER_ANCHOR_MIN = 220.0 # leash radius bounds around the turret's own range:
-const BUILDER_ANCHOR_MAX = 420.0 # roomy enough to kite inside, tight enough to matter
+const BUILDER_ANCHOR_MIN = 140.0 # leash radius bounds around the turret's own range.
+const BUILDER_ANCHOR_MAX = 240.0 # Was 220-420: at a tier-2+ turret (range 640) that
+                                 # resolved to 420, and the guide's play is ON the
+                                 # turret from mid-game ("playing directly on top of
+                                 # the turret"). Sweep via --arb-leash=<radius>.
+const BUILDER_ANCHOR_W = 2.5     # row anchor_w: x the global W_ANCHOR (12). The leash
+                                 # is linear past the radius, so this is the slope --
+                                 # 30 per 300 px strayed, enough to walk back through
+                                 # a crowd's room cost, still under any live threat.
 
 # -- Mechanism constants --
 #
@@ -163,6 +171,11 @@ const FOOD_BOMB_MAX = 9.0
 const FOOD_BOMB_ALONE = -1.5     # detonating on an empty floor wastes the whole pickup
 const METER_COOLDOWN_MIN = 12.0  # buccaneer: frames of cooldown that make a weapon
                                  # worth spending a pickup to reset
+const LOOT_VALUE = 4.0           # a fleeing loot alien, for characters that can catch one
+const BIRTH_STEP_COST = 4.0      # avoid_births: a red X priced as a small standing AoE.
+                                 # Stepping on one relocates (bull) or cancels (pacifist,
+                                 # jack, king) the spawn -- a real cost, never a lethal
+                                 # one, so it must lose to every genuine threat
 
 # -- The table --
 #
@@ -177,6 +190,18 @@ const METER_COOLDOWN_MIN = 12.0  # buccaneer: frames of cooldown that make a wea
 #   engage        float   contact-seeking strength (inverse kiting)
 #   engage_hp     float   seek contact only while hp_ratio is ABOVE this
 #   engage_pack   int     seek contact only once this many enemies are close
+#   engage_mode   String  "cluster": price a candidate by bodies inside the
+#                         blast at its END position (bull) instead of by
+#                         distance to the nearest target
+#   engage_boss   bool|"trash"  true: seek contact even with bosses (knight);
+#                         "trash": keep farming trash while a boss lives but
+#                         never count the boss (bull)
+#   engage_end_hp float   in the final end_secs the HP band drops to this
+#   caution_below Array   [hp_ratio, caution]: caution used below the ratio
+#   dps           float   multiplier on the kill reward (0 for weaponless kits)
+#   loot_value    float   reward for a loot alien (0 if it cannot be caught)
+#   tree_value    float   reward for a living tree (pacifist's only kills)
+#   avoid_births  float   keep-out radius around enemy spawn markers
 #   anchor        String  "builder" | "structures" | "center" | "perimeter"
 #                         | "away_structures"
 #   anchor_radius float   outer leash: cost for straying past it
@@ -210,7 +235,8 @@ const CHARACTER_PROFILES = {
 			"engage_boss": true},    # the one kit told to stand ON the elite
 
 	# --- Economy inverted: the floor is the better wallet ---
-	"character_builder": {"gold_mode": "builder", "anchor": "builder"},
+	"character_builder": {"gold_mode": "builder", "anchor": "builder",
+			"anchor_w": BUILDER_ANCHOR_W},
 	"character_beast_master": {"gold_phases": [[3, -0.6], [99, 0.9]], "caution": 1.2},
 	"character_hiker": {"gold": 0.3, "caution": 1.3, "anchor": "perimeter",
 			"anchor_inner": 480.0, "still": "never"},
@@ -239,7 +265,45 @@ const CHARACTER_PROFILES = {
 			"anchor_radius": 460.0},
 
 	# --- Contact seekers: damage taken is the resource ---
-	"character_bull": {"caution": 0.5, "engage": 14.0, "engage_hp": 0.6},
+	# Bull has NO weapons: every damage instance that lands (armor-reduced,
+	# not dodged) detonates a 150 px explosion at 300% of melee+ranged+
+	# elemental. The guide's loop: kite in circles so the crowd bunches, then
+	# dive so ONE hit kills the pile ("if you're going to take a hit, take it
+	# in the middle of a big group"); back off and regen when low; elites are
+	# survived, never fought, but the trash on an elite wave still gets farmed;
+	# stand near spawns but never ON the red X (it relocates the spawn); burst
+	# the pile right before the horn. engage_mode cluster prices a candidate by
+	# how many bodies its END position puts inside the blast, so the dive
+	# lands where the explosion pays. dps 0: with no weapons the kill reward is
+	# noise. avoid_births keeps it off the markers it wants to stand beside.
+	# engage_hp 0.4 (was 0.6): the w10 death timeline showed the dive disarm
+	# at 37/64 and never re-arm -- twenty seconds of kiting at 52-65% HP while
+	# the crowd it had stopped thinning grew 22 -> 47 and herded it into a
+	# corner. With 16 armor and 21 regen, trash hits for 5; 37 HP is seven
+	# hits of buffer, and every dive KILLS the crowd that would spend it.
+	# Passivity with a big crowd is the Bull's most dangerous mode.
+	# engage_hp 0.25: the w10 band sweep (0.4 / 0.2 / 0.0, all 0/3) showed no
+	# survival difference -- retreating below the band converts paid hits
+	# into unpaid ones without reducing them, because a 50-crowd cannot be
+	# outrun -- while the lower bands earned far more (375 kills / 255 mats
+	# at 0.0 vs ~260 / ~180 at 0.4). 0.25 keeps a sliver of regen retreat for
+	# the moments a crowd has actually been cleared.
+	"character_bull": {"caution": 0.5, "caution_below": [0.25, 1.3],
+			"engage": 14.0, "engage_hp": 0.25, "engage_mode": "cluster",
+			# engage_pack_seek deliberately 0: hunting stragglers between piles
+			# measured WORSE (w10 bed: faster deaths, 187-232 kills vs 245-348)
+			# -- the "pack" seconds are the loop that lets the next pile form.
+			"engage_pack": 3, "engage_pack_seek": 0.0, "engage_boss": "trash",
+			"engage_end_hp": 0.4, "end_secs": 8,
+			"dps": 0.0, "avoid_births": 90.0, "fight_room": 220.0,
+			# explode_trade: the pile in the blast costs ONE hit, not N -- the
+			# first hit detonates and the rest never land (see the arbiter).
+			# explosion_ref: the kill reference is the explosion's ACTUAL damage,
+			# computed from live stats (a flat 90 admitted 250 HP pursuers on the
+			# w11 horde as "killable"; they survive the blast and keep hitting).
+			# damage_dive: bodies the blast only hurts no longer veto a dive when
+			# the bar is above 50% and the blast's total damage is worth it.
+			"explode_trade": true, "explosion_ref": true, "damage_dive": true},
 	"character_masochist": {"caution": 0.6, "engage": 12.0, "engage_hp": 0.66,
 			"anchor": "center", "anchor_radius": 520.0},
 	"character_wildling": {"gold": 1.4, "caution": 0.55, "engage": 8.0,
@@ -258,13 +322,47 @@ const CHARACTER_PROFILES = {
 			"caution": 0.75},
 	"character_mage": {"anchor": "away_structures", "anchor_inner": 500.0,
 			"caution": 1.2},
+	# Pacifist is PAID 0.65 materials+XP per enemy still alive at the horn
+	# (halved on horde waves) and deals ~1 damage, so the guide's whole wave
+	# is a lap of the arena's outside edge with hands batting the crowd away:
+	# "the outside edge of the field, rotating in circles, is where we spend
+	# all our time"; walk AWAY from spawns and never stomp a red X (a cancelled
+	# spawn is lost income); loot aliens are uncatchable and not worth a step;
+	# consumables heal nothing once the worms stack; trees are the only kills
+	# it has (lumberjack shirt) and the only crates -- reach them before the
+	# horn. dps 0: the kill reward can only drag it toward things it cannot
+	# kill; loot_value 0 for the same reason; tree_value gives the lap a
+	# reason to bend inward when a tree stands.
+	# The orbit is an ANNULUS, not a rim: inner 340 keeps the lap off the
+	# centre, outer 560 keeps it >= 200 px off the short walls. At inner 520
+	# on a 2164x1536 arena the "cheapest floor" was the wall band itself, and
+	# the live w3 log showed the lap running at edge 24-48 with the whole
+	# crowd in a conga line behind and every hit landing against a wall.
 	"character_pacifist": {"food": "none", "anchor": "perimeter",
-			"anchor_inner": 520.0, "still": "never", "caution": 1.2},
+			"anchor_inner": 340.0, "anchor_radius": 560.0, "still": "never",
+			"caution": 1.2,
+			"dps": 0.0, "loot_value": 0.0, "tree_value": 5.0,
+			"avoid_births": 160.0},
 	"character_creature": {"gold_phases": [[8, 1.8], [99, 0.9]],
 			"caution_phases": [[8, 1.2], [99, 0.8]], "anchor": "perimeter",
 			"anchor_inner": 460.0, "anchor_wave": 10, "still": "never"},
+	# The guide's One-Armed goes ranged by ~wave 5 and then holds the centre
+	# (the base row). With a single MELEE weapon it is a different character:
+	# every hit is lifesteal, the axe only pays at contact, and a centre leash
+	# plus above-baseline caution hold it exactly where it earns nothing.
+	# The melee overlay plays it like Wildling -- press in while healthy,
+	# widen only when low -- with the anchor dropped.
 	"character_one_arm": {"gold": 1.6, "caution_phases": [[5, 0.7], [9, 1.4], [99, 1.1]],
-			"anchor": "center", "anchor_radius": 520.0, "anchor_wave": 5},
+			"anchor": "center", "anchor_radius": 520.0, "anchor_wave": 5,
+			"if_melee": {"caution": 0.7, "caution_phases": [[99, 0.7]],
+					"caution_below": [0.35, 1.3], "engage": 8.0, "engage_hp": 0.35,
+					# a WIDE centre leash, not the ranged row's 520: every melee
+					# death on the w10 bed was at edge 12-24 -- the brawl drifts
+					# into the wall band and the 36 HP body gets pinned there
+					"anchor": "center", "anchor_radius": 620.0,
+					# no fighting in the wall band: rim spawns are not worth
+					# the corner they are standing in
+					"fight_room": 220.0}},
 	"character_king": {"caution_phases": [[12, 1.4], [99, 0.8]]},
 
 	# --- Still / never-still ---
@@ -454,6 +552,7 @@ var bonus_speed_scan = 1.0
 # KILL_HP_REF, restoring build-blind kill values as an exact control arm.
 var dps_ref_scan = 1.0
 var _kill_ref = KILL_HP_REF      # refreshed per gather from live weapon stats
+var _loot_value = LOOT_VALUE     # per-character loot-alien reward, set each gather
 var _kill_ref_logged = -1e9      # last value announced on BOTLOG DPSREF
 
 # Sweepable: --arb-charprofile=0 disables ALL character-specific logic at once,
@@ -462,6 +561,10 @@ var _kill_ref_logged = -1e9      # last value announced on BOTLOG DPSREF
 # = generic greed) to sweep the avoidance separately from the anchor.
 var char_profile = 1.0
 var gold_value_override = null
+var anchor_inner_override = null # --arb-inner: sweep a perimeter row's keep-out radius
+var center_mode_override = 0.0   # --arb-centermode=<radius>: perimeter row -> center anchor
+var engage_hp_override = null    # --arb-engagehp: sweep a row's engage_hp band
+var leash_override = 0.0         # --arb-leash=<px>: override the builder turret leash radius
 
 # Sweepable: --arb-blade=0 reverts to one inflated circle per stationary hitbox,
 # which is exactly how blades were priced before, so the comparison is exact.
@@ -606,6 +709,21 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("goldval"):
 		gold_value_override = float(d["goldval"])
 		print("WORLDVIEW gold_value_override=%.2f" % gold_value_override)
+	if d.has("inner"):
+		anchor_inner_override = float(d["inner"])
+		print("WORLDVIEW anchor_inner_override=%.0f" % anchor_inner_override)
+	if d.has("leash"):
+		leash_override = float(d["leash"])
+		print("WORLDVIEW leash_override=%.0f" % leash_override)
+	if d.has("engagehp"):
+		engage_hp_override = float(d["engagehp"])
+		print("WORLDVIEW engage_hp_override=%.2f" % engage_hp_override)
+	if d.has("centermode"):
+		# Startup args parse as floats, so the mode switch is numeric: a
+		# nonzero value turns a perimeter row into a CENTER anchor with that
+		# leash radius -- the A/B for "rim orbit vs room to dodge".
+		center_mode_override = float(d["centermode"])
+		print("WORLDVIEW center_mode_override=%.0f" % center_mode_override)
 
 
 # Expected damage applications from a body over one horizon: how often it hits
@@ -648,7 +766,37 @@ func gather(main, player) -> void:
 	var row = {}
 	if char_profile != 0.0 and CHARACTER_PROFILES.has(character_id):
 		row = CHARACTER_PROFILES[character_id]
+		# Loadout-conditional rows. Some characters play two different games
+		# depending on what they picked up -- One-Armed is a ranged kiter with
+		# a gun and a lifesteal brawler with an axe -- and a row tuned for one
+		# actively fights the other. `if_melee` overlays its keys when the
+		# player holds NO ranged weapon (same test _weapon_range uses).
+		if row.has("if_melee") and _all_melee(player):
+			var merged = row.duplicate()
+			for k in row["if_melee"]:
+				merged[k] = row["if_melee"][k]
+			row = merged
 	prefers_still = row.get("still", "") == "prefer"
+	_loot_value = float(row.get("loot_value", LOOT_VALUE))
+	if row.has("kill_ref"):
+		# A weaponless kit has no weapon DPS to measure, so killability would
+		# sit at the 20 HP floor and nothing on wave 5+ would count as killable.
+		_kill_ref = max(_kill_ref, float(row["kill_ref"]))
+	if row.get("explosion_ref", false):
+		# Bull: the explosion is 30 base + 3x each of melee/ranged/elemental
+		# damage (bull_explosion_stats scaling), times %damage and %explosion
+		# damage. Killable means "dies to one blast", so the reference IS the
+		# blast. Crits ignored -- the estimate runs conservative.
+		var flat = float(Utils.get_stat(Keys.generate_hash("stat_melee_damage"), 0)) \
+				+ float(Utils.get_stat(Keys.generate_hash("stat_ranged_damage"), 0)) \
+				+ float(Utils.get_stat(Keys.generate_hash("stat_elemental_damage"), 0))
+		var pct = float(Utils.get_stat(Keys.generate_hash("stat_percent_damage"), 0))
+		var expl = float(Utils.get_stat(Keys.generate_hash("explosion_damage"), 0))
+		var blast = (30.0 + 3.0 * flat) * (1.0 + pct / 100.0) * (1.0 + expl / 100.0)
+		_kill_ref = clamp(blast, KILL_HP_REF, KILL_REF_MAX)
+		if abs(_kill_ref - _kill_ref_logged) > 25.0:
+			_kill_ref_logged = _kill_ref
+			print("BOTLOG DPSREF explosion=%.0f kill_ref=%.0f" % [blast, _kill_ref])
 	if character_id != _announced_char:
 		_announced_char = character_id
 		print("BOTLOG PROFILE char=%s %s" % [character_id,
@@ -691,9 +839,34 @@ func gather(main, player) -> void:
 		if g.position.distance_squared_to(pos) < pickup_sq:
 			rewards.push_back([g.position, gold_value])
 
+	# Trees: pacifist's only kills and crates; cryptid's income (negative value
+	# later). spawner.neutrals holds them.
+	var tree_value = float(row.get("tree_value", 0.0))
+	if tree_value != 0.0 and ("neutrals" in spawner):
+		for n in spawner.neutrals:
+			if is_instance_valid(n) and not n.dead and not n._pending_die \
+					and n.position.distance_squared_to(pos) < pickup_sq:
+				rewards.push_back([n.position, tree_value])
+
+	# Enemy spawn markers (the red X). EntityBirth nodes are pooled under
+	# main._births_container; an active one is shown by start() and hidden
+	# again by birth(), so `visible` is the liveness test. Priced as a small
+	# standing AoE so the collision term keeps the bot OFF the marker without
+	# fearing it: stepping on one relocates the spawn (bull loses the pile it
+	# was setting up) or cancels it (pacifist/jack/king lose the payout).
+	var births_r = float(row.get("avoid_births", 0.0))
+	if births_r > 0.0 and ("_births_container" in main) and main._births_container:
+		for b in main._births_container.get_children():
+			if not b.visible or not ("type" in b) or b.type != EntityType.ENEMY:
+				continue
+			if b.global_position.distance_squared_to(pos) < range_sq:
+				threats.push_back([b.global_position, Vector2.ZERO, births_r,
+						BIRTH_STEP_COST, KIND_MARK, 0.0, TICKS_ONCE, INF_TIME])
+
 	profile = {}
 	if not row.empty():
-		var caution = _caution(row)
+		var hp_ratio = current_hp / max_hp
+		var caution = _caution(row, hp_ratio)
 		if caution != 1.0:
 			profile["caution"] = caution
 		if row.get("still", "") == "never":
@@ -702,9 +875,25 @@ func gather(main, player) -> void:
 			profile["fire_still"] = true
 		if row.get("pin", false):
 			profile["pin"] = true
-		var engage = _engage(row, current_hp / max_hp, pos, spawner)
+		if row.has("dps"):
+			profile["dps"] = float(row["dps"])
+		if row.has("fight_room"):
+			profile["fight_room"] = float(row["fight_room"])
+		if row.get("explode_trade", false):
+			profile["explode_trade"] = true
+		if row.get("damage_dive", false):
+			profile["damage_dive"] = true
+			profile["hp_ratio"] = hp_ratio
+			profile["blast"] = _kill_ref    # explosion_ref makes this the blast damage
+		if row.has("anchor_w"):
+			profile["anchor_w"] = float(row["anchor_w"])
+		var engage = _engage(row, hp_ratio, pos, spawner)
 		if engage > 0.0:
 			profile["engage"] = engage
+			# Cluster pricing only once a pile exists; while seeking, the plain
+			# nearest-body pull closes the distance faster than 0.4x of it.
+			if row.get("engage_mode", "") == "cluster" and last_engage_block != "seek":
+				profile["engage_cluster"] = true
 		_resolve_anchor(row, spawner)
 
 
@@ -824,10 +1013,15 @@ func _food_value(mode: String, fpos: Vector2, missing_hp: float, spawner) -> flo
 	return min(FOOD_MAX, missing_hp)
 
 
-func _caution(row: Dictionary) -> float:
+func _caution(row: Dictionary, hp_ratio: float = 1.0) -> float:
 	var c = float(row.get("caution", 1.0))
 	if row.has("caution_phases"):
 		c = _phase_value(row["caution_phases"], 1.0)
+	if row.has("caution_below") and hp_ratio < float(row["caution_below"][0]):
+		# The other half of an HP-band kit: below the band it is not merely
+		# "not seeking contact", it is actively kiting to let regen refill --
+		# Bull's "back off and regenerate" -- so caution flips ABOVE baseline.
+		c = float(row["caution_below"][1])
 	if row.has("caution_per_wave"):
 		# Captain hands every enemy +2 HP and +2 damage per wave, Romantic sheds
 		# armour to curse on the same clock: the danger compounds, so caution has
@@ -840,13 +1034,33 @@ func _caution(row: Dictionary) -> float:
 # (bull explodes when hit; vampire/lich/masochist scale off missing HP) or in
 # one swing landing across a crowd (dwarf, ogre, artificer). Both gates matter:
 # they switch the behaviour off exactly where it would otherwise kill the run.
+var last_engage_block = "-"      # why _engage returned 0 this frame: off|hp|boss|pack|ok
+
 func _engage(row: Dictionary, hp_ratio: float, pos: Vector2, spawner) -> float:
+	last_engage_block = "off"
 	var e = float(row.get("engage", 0.0))
 	if e <= 0.0:
 		return 0.0
-	if row.has("engage_hp") and hp_ratio <= float(row["engage_hp"]):
+	last_engage_block = "hp"
+	var band = float(row.get("engage_hp", 0.0))
+	if engage_hp_override != null:
+		band = engage_hp_override
+	if row.has("engage_end_hp") and wave_time_left <= float(row.get("end_secs", 8.0)):
+		# "Clear as many enemies right before the end of the wave as
+		# possible": the band drops for the final seconds, because HP spent
+		# now buys income and there is no next crowd this wave to save it for.
+		band = float(row["engage_end_hp"])
+	if hp_ratio <= band:
 		return 0.0    # below the band: break off and let the kit refill
-	if not row.get("engage_boss", false):
+	last_engage_block = "boss"
+	# The rule is a bool for most rows and the String "trash" for Bull. Never
+	# compare the two with != directly: GDScript 3 raises "Invalid operands"
+	# for String-vs-bool, which aborted this function every frame and left
+	# Bull's dive permanently disarmed (eblk=boss on a wave with no boss).
+	var boss_rule = row.get("engage_boss", false)
+	var allow_with_boss = (boss_rule is bool and boss_rule) \
+			or (boss_rule is String and boss_rule == "trash")
+	if not allow_with_boss:
 		# Every guide for these characters draws the same line: walk into TRASH,
 		# never into the elite. The mechanics that pay for contact -- an explosion
 		# per hit taken, lifesteal, a swing across six bodies -- all scale with
@@ -855,6 +1069,7 @@ func _engage(row: Dictionary, hp_ratio: float, pos: Vector2, spawner) -> float:
 		# exception and opts back in with engage_boss.
 		for b in spawner.bosses:
 			if is_instance_valid(b) and not b.dead:
+				last_engage_block = "boss:" + str(b.get("enemy_id"))
 				return 0.0
 	if row.has("engage_pack"):
 		# A herder must not charge the first enemy it sees: the payoff needs a
@@ -866,8 +1081,19 @@ func _engage(row: Dictionary, hp_ratio: float, pos: Vector2, spawner) -> float:
 			if is_instance_valid(en) and not en.dead and not en.is_loot \
 					and en.position.distance_squared_to(pos) < r_sq:
 				near += 1
+		last_engage_block = "pack"
 		if near < int(row["engage_pack"]):
+			# No pile yet. engage_pack_seek keeps a reduced pull toward the
+			# nearest enemy so the kit HUNTS the next pile instead of waiting
+			# for one to arrive -- every "pack" second on the Bull logs was dead
+			# time. The resolver drops cluster mode for it (see gather), so the
+			# pull is the plain nearest-body term at full share.
+			var seek = float(row.get("engage_pack_seek", 0.0))
+			if seek > 0.0:
+				last_engage_block = "seek"
+				return e * seek
 			return 0.0
+	last_engage_block = "ok"
 	return e
 
 
@@ -886,6 +1112,12 @@ func _resolve_anchor(row: Dictionary, spawner) -> void:
 	var point = far_corner * 0.5
 	var radius = float(row.get("anchor_radius", 0.0))
 	var inner = float(row.get("anchor_inner", 0.0))
+	if anchor_inner_override != null and inner > 0.0:
+		inner = anchor_inner_override
+	if center_mode_override > 0.0 and mode == "perimeter":
+		mode = "center"
+		inner = 0.0
+		radius = center_mode_override
 
 	if mode == "builder":
 		if RunData.current_wave <= BUILDER_ECON_WAVES:
@@ -898,6 +1130,8 @@ func _resolve_anchor(row: Dictionary, spawner) -> void:
 		# inside it are enemies the turret gets to shoot.
 		var turret_range = float(turret.stats.max_range) if turret.stats else BUILDER_ANCHOR_MAX
 		radius = clamp(turret_range, BUILDER_ANCHOR_MIN, BUILDER_ANCHOR_MAX)
+		if leash_override > 0.0:
+			radius = leash_override
 	elif mode == "structures" or mode == "away_structures":
 		# The centroid, not the nearest: Engineer's turrets spawn as a POD and
 		# the pod's middle is the spot the guides describe standing in. With one
@@ -972,9 +1206,10 @@ func _add_unit(unit, pos: Vector2, range_sq: float, target_range_sq: float, pick
 	var dist_sq = offset.length_squared()
 
 	if unit.is_loot:
-		# Loot aliens flee and are worth chasing, not avoiding.
-		if dist_sq < pickup_sq:
-			rewards.push_back([unit.position, 4.0])
+		# Loot aliens flee and are worth chasing, not avoiding -- for anyone
+		# who can catch and kill one. Pacifist can do neither (loot_value 0).
+		if dist_sq < pickup_sq and _loot_value != 0.0:
+			rewards.push_back([unit.position, _loot_value])
 		return
 
 	var radius = _body_radius(unit)
@@ -986,7 +1221,9 @@ func _add_unit(unit, pos: Vector2, range_sq: float, target_range_sq: float, pick
 	# which an enemy endangers us, and clipping targets to the threat radius
 	# blinded the bot to things it could already be shooting.
 	if dist_sq < target_range_sq:
-		targets.push_back([unit.position, _kill_value(unit, damage)])
+		# Third field: is this a boss/elite. The cluster engage mode must
+		# never count one as part of the pile it dives into.
+		targets.push_back([unit.position, _kill_value(unit, damage), unit is Boss])
 
 	if dist_sq >= range_sq:
 		return    # too far to threaten us this horizon
@@ -1399,6 +1636,15 @@ func _body_radius(unit) -> float:
 
 # Kite by ranged weapons only: one melee sidearm must not drag the whole build
 # down to knife range.
+func _all_melee(player) -> bool:
+	if not ("current_weapons" in player) or player.current_weapons.empty():
+		return false
+	for weapon in player.current_weapons:
+		if is_instance_valid(weapon) and weapon.current_stats is RangedWeaponStats:
+			return false
+	return true
+
+
 func _weapon_range(player) -> float:
 	var best = 1000.0
 	var has_ranged = false

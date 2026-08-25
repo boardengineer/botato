@@ -148,6 +148,25 @@ const ENGAGE_NORM = 260.0        # distance to the nearest target that costs one
 const ENGAGE_CAP = 2.2           # beyond ~570 px the pull stops growing, so a
                                  # far-off straggler cannot drag the bot across
                                  # the arena through everything in between
+# Cluster engage (Bull): the explosion is 150 px around the potato and fires
+# once per hit taken, so the value of a dive is not "how close is the nearest
+# body" but "how many bodies will be inside the blast when the hit lands".
+# The candidate's END position is scored by that count. The nearest-target
+# pull stays on at reduced weight so the bot still closes on a lone straggler
+# when no pile exists yet -- otherwise nothing would ever start one.
+const ENGAGE_BLAST = 170.0       # explosion max_range 150 + ~body radius
+const ENGAGE_CLUSTER_CAP = 8.0   # bodies in the blast at which the reward saturates
+const ENGAGE_CLUSTER_NEAR = 0.4  # share of the nearest-target pull kept in cluster mode
+# The cluster reward is PER BODY, not normalised: every body inside the blast
+# at the end position dies to the first hit, so a six-body dive is worth six
+# kills, not "one saturated dive". Normalised to a 14-point maximum it lost
+# every vote to crowding + enclosure + the detonating hit + the bodies just
+# outside the blast, and the live w4 log showed the Bull hovering at full HP
+# while the crowd grew to 92. Crowding and enclosure at the end position are
+# also discounted while the dive is armed: for a Bull, ending inside the
+# crowd is the payoff, not the failure the terms were written to price.
+const EXPLODE_CROWD = 0.35       # share of room + enclosure cost kept while diving
+
 const NEVER_STILL_COST = 6.0     # Speedy loses 100 armour while stationary and
                                  # Hiker's income IS distance covered: standing
                                  # is a mechanical penalty, so price it as one
@@ -290,6 +309,10 @@ const KIND_PROJ = 0
 const KIND_CONTACT = 1
 const KIND_DASH = 2              # a charge, in flight or still winding up
 const KIND_AOE = 3               # stationary ground telegraph
+const KIND_MARK = 4              # a spawn marker keep-out: priced on CONTACT only. It
+                                 # must not feed crowding or enclosure -- a ring of
+                                 # red X's is not a surround, and on Danger 6 there are
+                                 # enough of them at once to read as one
 
 # -- Threat tuple layout (as built by world_view) --
 const T_POS = 0
@@ -314,6 +337,7 @@ const T_KILL = 8                 # OPTIONAL 9th field, contact threats only: how
 # -- Target tuple layout --
 const TG_POS = 0
 const TG_VALUE = 1               # expected HP this enemy costs us if left alive
+const TG_BOSS = 2                # OPTIONAL: true for bosses/elites; cluster engage skips them
 
 # -- Charger tuple layout --
 const C_POS = 0
@@ -359,6 +383,8 @@ var w_anchor = W_ANCHOR          # --arb-anchor
 var trade_share = TRADE_HP_SHARE # --arb-trade: the damage-trade budget as a share of HP
 var fire_floor = FIRE_STILL_FLOOR # --arb-floor: the stand-and-shoot floor
 var trade_killable_min = TRADE_KILLABLE_MIN # --arb-tradekill: pool admission threshold
+var engage_mult = 1.0            # --arb-engage: multiplier on the profile's engage weight
+var cluster_near = ENGAGE_CLUSTER_NEAR # --arb-cnear: nearest-body pull share in cluster mode
 var _escaping = false            # set by choose() each frame; read by _cost
 # Per-frame character-profile state, resolved by world_view and unpacked once
 # in choose() rather than dictionary-looked-up inside the 16+ candidate loop.
@@ -366,11 +392,60 @@ var _anchor_on = false
 var _anchor = Vector2.ZERO
 var _anchor_radius = 0.0
 var _anchor_inner = 0.0
+var _anchor_w = W_ANCHOR         # w_anchor x the row's anchor_w multiplier
+var last_anchor_dist = -1.0      # distance to the anchor this frame, for telemetry
 var _engage = 0.0
 var _never_still = false
 var _fire_still = false
+var _engage_cluster = false      # engage prices bodies-in-blast instead of nearest distance
+# The explosion trade (Bull). Bull is priced like every other potato: each
+# body in the pile is a separate contact hit, so three bodies in the blast
+# cost ~48 to stand against while the dive reward tops out at 14, and the
+# dive never happens. But Bull's FIRST hit detonates a 150 px explosion that
+# kills everything killable in the blast -- the second and third hits from
+# those bodies never arrive. So while the dive is armed (engage > 0, i.e.
+# the HP band allows it) the contact costs of killable bodies that will be
+# inside the blast at the END position pool and cap at ONE hit: the largest
+# single coefficient among them, because that is the one that lands before
+# the explosion resolves. Bodies outside the blast, unkillable ones, bullets
+# and dashes all pay full price, so the dive is still vetoed by anything the
+# explosion would not answer.
+var _explode_trade = false
+# -- The damage dive --
+# The explosion trade only relieves KILLABLE bodies; anything that survives the
+# blast (a 250 HP pursuer against a 156 blast) pays full contact price and a
+# pile of them vetoes the dive outright. But a blast that does not kill still
+# DEALS 156 to every body in it, and a Bull with a full bar can afford the
+# exchange. So while the dive is armed, surviving bodies inside the blast pool
+# too, and their cost is capped at DAMAGE_DIVE_HITS hits -- the one that
+# detonates and the follow-up before the bot steps out -- provided (a) the bar
+# is above DAMAGE_DIVE_HP, so two hits are survivable with margin, and (b) the
+# blast's total damage across everything in it reaches DAMAGE_DIVE_MIN, so the
+# exchange is worth having. Fail either and they pay full price as before.
+# Bullets, dashes and elites are never in either pool.
+var _damage_dive = false         # profile key damage_dive
+var _hp_ratio = 1.0              # profile key hp_ratio (world_view computes it)
+var _blast = 0.0                 # profile key blast: damage the explosion deals per body
+const DAMAGE_DIVE_HP = 0.5       # bar needed to trade hits with bodies that live
+const DAMAGE_DIVE_MIN = 350.0    # blast x bodies-in-blast that makes the trade worth it
+const DAMAGE_DIVE_HITS = 2.0     # hits the surviving pile may bill: detonate + one more
+
+const EXPLODE_KILLABLE_MIN = 0.5 # explode_trade admission: killability >= 0.5 means
+                                 # hp <= kill_ref, i.e. the body DIES to one blast. The
+                                 # general pool's 0.15 ("dies within ~6 s of fire") is
+                                 # wrong here -- a body that survives the explosion keeps
+                                 # hitting, and pricing it at "one hit" is what let 250 HP
+                                 # pursuers bill the w11 horde dive as cheap
+var _fight_room = 0.0            # px of wall room a candidate must END with to earn any
+                                 # engage or kill reward. The One-Armed w10 timelines: at
+                                 # full HP the brawler CHASED rim spawns into the wall band
+                                 # (engage 8 + dps 14 outbid the wall term's ~13), sat there
+                                 # unhurt for seconds, then took 33 -> 3 in eight. Rewards
+                                 # that pull toward a wall are what cornered it; costs
+                                 # stay untouched, so it still leaves
 var _stand_ok = false            # fire_still AND not escaping AND wall room; gates every perk
 var last_stand_ok = false        # read by the tap-mover: no taps while relocating off a wall
+var last_engage = 0.0            # resolved contact-seeking weight this frame, for telemetry
 
 var last_dir = Vector2.ZERO      # read for hysteresis and by telemetry
 var last_still_gap = 0.0         # cost(stand) - cost(best); overlay only now
@@ -398,6 +473,11 @@ var _p_still = []                # the same coefficient for the STANDING candida
                                  # kills killable contact threats on their approach
 var _p_kill = []                 # killability per threat (0 for non-contact); feeds
                                  # the damage-trade pool
+var _p_mark = []                 # true for KIND_MARK: skipped by crowding/enclosure
+var _p_aimed = []                # true for KIND_PROJ / KIND_DASH: a thing that flies at
+                                 # us. The time discount below assumes a later frame
+                                 # can still dodge it -- false for the STANDING
+                                 # candidate, so it gets none (see the loop)
 var _p_start = []                # wind-up delay
 var _p_end = []                  # when it stops being dangerous, clamped to horizon
 var _p_future = []               # where it will be at the horizon
@@ -431,6 +511,8 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("trade"): trade_share = float(d["trade"])
 	if d.has("floor"): fire_floor = float(d["floor"])
 	if d.has("tradekill"): trade_killable_min = float(d["tradekill"])
+	if d.has("engage"): engage_mult = float(d["engage"])
+	if d.has("cnear"): cluster_near = float(d["cnear"])
 	if not d.empty():
 		print("ARBITER weights: proj=%.2f contact=%.2f dash=%.2f aoe=%.2f latent=%.2f room=%.2f roomcap=%.0f wall=%.2f enclose=%.2f dps=%.2f pickup=%.2f hyst=%.2f lethality=%.2f horizon=%.2f pin=%.2f pinthreat=%.2f predict=%.2f predsecs=%.2f tangent=%.2f swerve=%.2f anchor=%.2f" % [
 			w_proj, w_contact, w_dash, w_aoe, w_latent, w_room, room_cap, w_wall,
@@ -469,7 +551,16 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 	_anchor = profile.get("anchor", Vector2.ZERO)
 	_anchor_radius = float(profile.get("anchor_radius", 0.0))
 	_anchor_inner = float(profile.get("anchor_inner", 0.0))
-	_engage = float(profile.get("engage", 0.0))
+	_anchor_w = w_anchor * float(profile.get("anchor_w", 1.0))
+	last_anchor_dist = p0.distance_to(_anchor) if _anchor_on else -1.0
+	_engage = float(profile.get("engage", 0.0)) * engage_mult
+	last_engage = _engage        # public mirror for telemetry (get() on _engage returns null)
+	_engage_cluster = profile.get("engage_cluster", false)
+	_fight_room = float(profile.get("fight_room", 0.0))
+	_explode_trade = profile.get("explode_trade", false)
+	_damage_dive = profile.get("damage_dive", false)
+	_hp_ratio = float(profile.get("hp_ratio", 1.0))
+	_blast = float(profile.get("blast", 0.0))
 	_never_still = profile.get("never_still", false)
 	_fire_still = profile.get("fire_still", false)
 
@@ -485,7 +576,8 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 	# would turn a cautious character into a centre-hugging one, which is a
 	# different (and mostly wrong) behaviour.
 	var caution = float(profile.get("caution", 1.0))
-	var scaled = escaping or caution != 1.0
+	var dps_scale = float(profile.get("dps", 1.0))
+	var scaled = escaping or caution != 1.0 or dps_scale != 1.0
 	var saved = []
 	if scaled:
 		saved = [w_proj, w_contact, w_dash, w_aoe, w_latent, w_dps, w_room, w_wall]
@@ -495,6 +587,10 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 		w_dash *= caution
 		w_aoe *= caution
 		w_latent *= caution
+	if dps_scale != 1.0:
+		# Weaponless kits (Bull) and kits that cannot kill (Pacifist): the kill
+		# reward would only drag them toward things they have no way to shoot.
+		w_dps *= dps_scale
 	if escaping:
 		w_proj *= pin_threat
 		w_contact *= pin_threat
@@ -658,6 +754,8 @@ func _prepare(p0: Vector2, speed: float, body_radius: float, threats: Array,
 	_p_coef = []
 	_p_still = []
 	_p_kill = []
+	_p_mark = []
+	_p_aimed = []
 	_p_start = []
 	_p_end = []
 	_p_future = []
@@ -710,8 +808,10 @@ func _prepare(p0: Vector2, speed: float, body_radius: float, threats: Array,
 			kw = w_contact
 		elif kind == KIND_DASH:
 			kw = w_dash
-		elif kind == KIND_AOE:
+		elif kind == KIND_AOE or kind == KIND_MARK:
 			kw = w_aoe
+		_p_mark.push_back(kind == KIND_MARK)
+		_p_aimed.push_back(kind == KIND_PROJ or kind == KIND_DASH)
 
 		_p_pos.push_back(pos)
 		_p_vel.push_back(vel)
@@ -724,9 +824,10 @@ func _prepare(p0: Vector2, speed: float, body_radius: float, threats: Array,
 		# not _escaping: while pinned, every stand-to-shoot perk yields -- the
 		# override the cornering deaths asked for is "escape at the loss of
 		# firing", so an escaping Soldier prices threats like anyone else.
-		if _stand_ok and t.size() > T_KILL:
+		if (_stand_ok or _explode_trade) and t.size() > T_KILL:
 			kill = float(t[T_KILL])
-			still_coef = coef * (1.0 - FIRE_STILL_KILL * kill)
+			if _stand_ok:
+				still_coef = coef * (1.0 - FIRE_STILL_KILL * kill)
 		_p_still.push_back(still_coef)
 		_p_kill.push_back(kill)
 		_p_start.push_back(t[T_START])
@@ -769,6 +870,13 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 	var scan_sq = max(enclose_sq, room_cap * room_cap)
 
 	var trade_sum = 0.0          # standing's pooled cost from killable bodies
+	var blast_sum = 0.0          # explode_trade: pooled cost of killable bodies in the blast
+	var blast_max = 0.0          # ...and the single largest of them (the hit that detonates)
+	var blast_n = 0              # bodies the blast kills
+	var hurt_sum = 0.0           # damage dive: pooled cost of bodies the blast only HURTS
+	var hurt_max = 0.0
+	var hurt_n = 0
+	var blast_sq = ENGAGE_BLAST * ENGAGE_BLAST
 
 	for i in range(_p_pos.size()):
 		# --- Expected damage: analytic closest approach over the whole path ---
@@ -802,6 +910,15 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 					# cutoff -- a far-off shot stays cheap but never free.
 					var when = t_start + t
 					var discount = max(1.0 - TIME_DISCOUNT * when / horizon, MIN_DISCOUNT)
+					if d == Vector2.ZERO and _p_aimed[i]:
+						# STANDING against something aimed at us: the discount's
+						# premise -- "a later frame can still dodge this" -- is
+						# exactly what the stand refuses to do, so the hit is
+						# certain and prices at full. Without this a 200 px/s
+						# Abyss bullet 300 px out cost a Soldier's stand ~4 against
+						# a 16-point floor; both w5 deaths were bullets taken at
+						# mv=(0,0) with two seconds of warning.
+						discount = 1.0
 					# The standing candidate prices killable contact bodies at
 					# a discount (see FIRE_STILL_KILL): a stand that SHOOTS the
 					# approacher is not the same stand that receives it. Their
@@ -812,12 +929,27 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 					var cost_i = (_p_still[i] if d == Vector2.ZERO else _p_coef[i]) * hit * discount
 					if d == Vector2.ZERO and _fire_still and _p_kill[i] > trade_killable_min:
 						trade_sum += cost_i
+					elif _explode_trade and _engage > 0.0 and _p_kill[i] >= EXPLODE_KILLABLE_MIN \
+							and _p_future[i].distance_squared_to(p_end) < blast_sq:
+						blast_sum += cost_i
+						blast_n += 1
+						if cost_i > blast_max:
+							blast_max = cost_i
+					elif _damage_dive and _engage > 0.0 and _p_kill[i] > 0.0 \
+							and _p_future[i].distance_squared_to(p_end) < blast_sq:
+						# a contact body (_p_kill > 0) the blast will not kill
+						hurt_sum += cost_i
+						hurt_n += 1
+						if cost_i > hurt_max:
+							hurt_max = cost_i
 					else:
 						total += cost_i
 
 		# --- Where this leaves us ---
 		# One pass serves both terminal terms: the offset to the threat's future
 		# position gives crowding, and its direction gives enclosure.
+		if _p_mark[i]:
+			continue    # a spawn marker takes up no room and blocks no heading
 		var off = _p_future[i] - p_end
 		var off_sq = off.length_squared()
 		if off_sq < scan_sq:
@@ -836,6 +968,8 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 		var room_cost = w_room * (1.0 - max(room, 0.0) / room_cap)
 		if _stand_ok and d == Vector2.ZERO:
 			room_cost *= FIRE_STILL_CROWD    # the stand thins the crowd it sits in
+		elif _explode_trade and _engage > 0.0:
+			room_cost *= EXPLODE_CROWD       # the dive WANTS the crowd it ends in
 		total += room_cost
 
 	# Enclosure: threats massed on one side leave an escape, threats spread
@@ -887,6 +1021,17 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 		# and the bot fled forever; capped, the stand pays a bounded fee and the
 		# volley thins the crowd that was charging it. Shrinks with the bar.
 		total += min(trade_sum, current_hp * trade_share)
+	if blast_sum > 0.0:
+		# The explosion trade: the pile in the blast costs ONE hit, not N.
+		total += min(blast_sum, blast_max)
+	if hurt_sum > 0.0:
+		# The damage dive: bodies that survive the blast bill at most two hits
+		# -- but only when the bar can take them and the blast is worth it.
+		var worth = _blast * float(blast_n + hurt_n)
+		if _hp_ratio >= DAMAGE_DIVE_HP and worth >= DAMAGE_DIVE_MIN:
+			total += min(hurt_sum, hurt_max * DAMAGE_DIVE_HITS)
+		else:
+			total += hurt_sum
 
 	# A wall is an enclosure the same way a body is: it deletes escape headings.
 	# Threats alone cannot express "backed against a wall with the swarm on the
@@ -914,6 +1059,8 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 			# same reasoning as the room share above; ungated this would halve
 			# the very term the escape uses to find the open side
 			enc_cost *= FIRE_STILL_CROWD
+		elif _explode_trade and _engage > 0.0:
+			enc_cost *= EXPLODE_CROWD
 		total += enc_cost
 
 	# Latent dashes: a charger sitting on a nearly-expired cooldown is a threat
@@ -939,8 +1086,17 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 	# left alive, discounted by how killable it actually is -- so a 4 HP charger
 	# outranks an 880 HP boss we will not kill this second, and an egg outranks
 	# both because everything it hatches is future damage too.
+	# Fight-room gate (see _fight_room): a candidate ending inside the wall
+	# band earns neither the kill reward nor the engage pull.
+	var fight_ok = true
+	if _fight_room > 0.0:
+		var end_edge = min(min(p_end.x, far.x - p_end.x), min(p_end.y, far.y - p_end.y))
+		fight_ok = end_edge >= _fight_room
+
 	var kill_gain = 0.0
 	for t in targets:
+		if not fight_ok:
+			break
 		var dist = p_end.distance_to(t[TG_POS])
 		if dist > weapon_range + ACQUIRE_BAND:
 			continue
@@ -1004,23 +1160,36 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 		if _anchor_radius > 0.0:
 			var strayed = from_anchor - _anchor_radius
 			if strayed > 0.0:
-				total += w_anchor * min(strayed / ANCHOR_NORM, ANCHOR_CAP)
+				total += _anchor_w * min(strayed / ANCHOR_NORM, ANCHOR_CAP)
 		if _anchor_inner > 0.0:
 			var intruded = _anchor_inner - from_anchor
 			if intruded > 0.0:
-				total += w_anchor * min(intruded / ANCHOR_NORM, ANCHOR_CAP)
+				total += _anchor_w * min(intruded / ANCHOR_NORM, ANCHOR_CAP)
 
 	# --- Contact seeking ---
 	# Cost for ENDING far from the nearest thing worth touching, which makes
 	# closing the distance the cheaper candidate. Capped, so one straggler
 	# across the arena cannot drag the bot through everything in between.
-	if _engage > 0.0 and not targets.empty():
+	if _engage > 0.0 and fight_ok and not targets.empty():
 		var near_sq = 1e18
+		var in_blast = 0    # blast_sq is declared at the top of the threat loop
 		for t in targets:
+			if _engage_cluster and t.size() > TG_BOSS and t[TG_BOSS]:
+				continue    # a boss is never part of the pile worth diving into
 			var dsq = p_end.distance_squared_to(t[TG_POS])
 			if dsq < near_sq:
 				near_sq = dsq
-		total += _engage * min(sqrt(near_sq) / ENGAGE_NORM, ENGAGE_CAP)
+			if dsq < blast_sq:
+				in_blast += 1
+		if _engage_cluster:
+			# Reward PER BODY inside the blast at the END position (see
+			# ENGAGE_CLUSTER_CAP), plus a reduced pull toward the nearest body
+			# so a pile can get started.
+			total -= _engage * min(float(in_blast), ENGAGE_CLUSTER_CAP)
+			if near_sq < 1e17:
+				total += _engage * cluster_near * min(sqrt(near_sq) / ENGAGE_NORM, ENGAGE_CAP)
+		else:
+			total += _engage * min(sqrt(near_sq) / ENGAGE_NORM, ENGAGE_CAP)
 
 	# --- Standing still as a mechanical penalty ---
 	if _never_still and d == Vector2.ZERO:
