@@ -167,6 +167,27 @@ var _proj_dodge_dir = Vector2.ZERO
 var _proj_dodge_until_ms = 0
 var proj_dodging = false                 # imminent-bullet dodge active; read by ai_telemetry
 var last_move_dir = Vector2.ZERO         # final vector last frame; read by ai_telemetry
+var last_arb_us = 0                      # microseconds spent in the last gather+choose
+# -- Decision interval --
+# Measured on the tracker Pacifist beds: gather+choose costs 0.2 ms on an
+# empty field and 8-12 ms with 100+ threats (us= in the ARB line), against a
+# 16.7 ms frame budget -- the steering IS the late-wave stutter. Above the
+# budget the decision is taken every other physics tick and the heading held
+# in between; a 33 ms re-decide is well inside the horizon (0.8 s) and the
+# commitments the scorer already makes (pin escape 0.6 s, crossfire
+# hysteresis) -- but not inside a chain-dasher's re-aim. Measured A/B, n=10:
+# loud-w11 (croc + boosting pursuers) every-tick 6/10 vs adaptive 3/10;
+# fisherman w2 9 vs 10; Soldier w5-d6 8 vs 7; tracker Pacifist w7/w8 7 vs 8.
+# The 33 ms reaction gap is paid exactly where it is fatal, so the DEFAULT is
+# every tick and the frame-rate trade is opt-in: --arb-every=0 is adaptive
+# (skip alternate ticks while a decision costs more than ARB_BUDGET_US),
+# --arb-every=N a fixed interval. Skipped ticks still run the tap-move
+# interleave and heading stats below. The arbiter is told the interval
+# (tick_step) so its pin-escape frame counters keep counting frames.
+const ARB_BUDGET_US = 5000               # adaptive threshold: skip alternate ticks above this
+var arb_every = 1                        # --arb-every; 1 = every tick (default), 0 = adaptive
+var _arb_tick = 0
+var _arb_decided = false
 var _dmg_events = []                     # [ms, amount], last 3 s of damage taken
 var _hp_seen = - 1.0
 var _caution_until_ms = 0
@@ -1004,12 +1025,22 @@ func _arbiter_move(player)->Vector2:
 		var overrides = $"/root/AutobattlerOptions".arb_overrides
 		_arbiter.apply_overrides(overrides)
 		_world.apply_overrides(overrides)
-	_world.gather($"/root/Main", player)
-	last_move_dir = _arbiter.choose(player.position, player.get_move_speed(),
-			_world.body_radius, _world.far_corner,
-			_world.threats, _world.rewards, _world.targets, _world.chargers,
-			_world.weapon_range, _world.prefers_still, _world.current_hp,
-			_world.mitigation, _world.profile)
+		arb_every = int(overrides.get("every", 1))
+	_arb_tick += 1
+	var every = arb_every
+	if every <= 0:
+		every = 2 if last_arb_us > ARB_BUDGET_US else 1
+	if not _arb_decided or _arb_tick % every == 0:
+		_arbiter.tick_step = every
+		var t0 = OS.get_ticks_usec()
+		_world.gather($"/root/Main", player)
+		last_move_dir = _arbiter.choose(player.position, player.get_move_speed(),
+				_world.body_radius, _world.far_corner,
+				_world.threats, _world.rewards, _world.targets, _world.chargers,
+				_world.weapon_range, _world.prefers_still, _world.current_hp,
+				_world.mitigation, _world.profile)
+		last_arb_us = OS.get_ticks_usec() - t0
+		_arb_decided = true
 
 	# -- Tap-move interleave (fire_still characters) --
 	# The game fires every cooldown-ready weapon on the FIRST frame movement

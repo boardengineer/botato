@@ -288,6 +288,12 @@ const PIN_DWELL = 40             # fire_still only: frames spent inside PIN_EDGE
                                  # stand-and-shoot kit has no business holding a
                                  # wall for more than a second: the swarm closes
                                  # the exits while it fires, and that is the corner
+                                 # Any other pin-enabled row arms the same trigger
+                                 # with its own "pin_dwell" (frames): a perimeter
+                                 # kit sliding along the wall under bullet hell is
+                                 # never "stuck" -- lateral travel reads as travel --
+                                 # so without a dwell the escape never fires (w7/w8
+                                 # Pacifist deaths at edge 12-36 with pesc=0).
 const PIN_TICKS = 36             # frames of COMMITTED escape (~0.6 s). Commitment is
                                  # the point: a pin is a local minimum, so leaving
                                  # MUST look worse for several frames. Re-deciding
@@ -397,6 +403,17 @@ var _anchor = Vector2.ZERO
 var _anchor_radius = 0.0
 var _anchor_inner = 0.0
 var _anchor_w = W_ANCHOR         # w_anchor x the row's anchor_w multiplier
+# Orbit: a perimeter kit is herded from mid-arena into a corner in seconds
+# (tracker Pacifist w7/w8: anc 790 -> 1150, edge 30, then contact hits) and
+# the anchor term cannot stop it -- it prices END positions, so between two
+# candidates it differs by ~13, the cost of one bullet. This term prices the
+# DIRECTION at the current position once the bot is outside the outer radius:
+# the outward radial component costs, the inward one pays, and the tangential
+# component (kiting around the middle, which is how the character is played)
+# earns half credit, all ramped by how far out we are. Row key "orbit" sets
+# the weight; --arb-orbit=W overrides it for every row (0 = off, the control).
+var _orbit_w = 0.0
+var orbit_override = -1.0        # --arb-orbit
 var last_anchor_dist = -1.0      # distance to the anchor this frame, for telemetry
 var _engage = 0.0
 var _never_still = false
@@ -461,7 +478,13 @@ var last_escaping = false        # did the escape mode fire this frame (telemetr
 var pin_fires = 0                # escape activations this run, for the sweep
 var _pin_hist = []               # recent positions, newest last
 var _pin_frames = 0              # consecutive confirmed-stuck frames
-var _pin_dwell = 0               # consecutive frames inside PIN_EDGE (fire_still trigger)
+var _pin_dwell = 0               # consecutive frames inside PIN_EDGE (dwell trigger)
+var _pin_dwell_limit = 0         # frames of wall dwell that fire the escape; 0 = off
+var tick_step = 1                # physics ticks this choose() call stands for (the
+                                 # movement behaviour's decision interval); every pin
+                                 # counter advances by it so the frame constants keep
+                                 # meaning frames when decisions are skipped
+var pin_dwell_override = 0       # --arb-pindwell: force the dwell limit for any pin row
 var _pin_ticks = 0               # frames of escape left to run
 
 # Per-frame prepared threat data. Everything here is candidate-independent, so
@@ -506,6 +529,8 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("roomcap"): room_cap = float(d["roomcap"])
 	if d.has("scandist"): scan_distance = max(float(d["scandist"]), 0.0)
 	if d.has("pin"): pin_enable = float(d["pin"])
+	if d.has("pindwell"): pin_dwell_override = int(d["pindwell"])
+	if d.has("orbit"): orbit_override = float(d["orbit"])
 	if d.has("pinthreat"): pin_threat = float(d["pinthreat"])
 	if d.has("predict"): w_predict = float(d["predict"])
 	if d.has("predsecs"): predict_secs = max(float(d["predsecs"]), 0.1)
@@ -545,6 +570,9 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 	# holds while the crowd closes the exits), so for those characters the
 	# escape mode is part of the profile, not an experiment flag.
 	if pin_enable != 0.0 or profile.get("pin", false):
+		_pin_dwell_limit = int(profile.get("pin_dwell", PIN_DWELL if _fire_still else 0))
+		if pin_dwell_override > 0:
+			_pin_dwell_limit = pin_dwell_override
 		escaping = _update_pin(p0, speed, edge)
 	last_escaping = escaping
 	_escaping = escaping         # read by _cost for the tangent reward
@@ -558,6 +586,9 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 	_anchor_radius = float(profile.get("anchor_radius", 0.0))
 	_anchor_inner = float(profile.get("anchor_inner", 0.0))
 	_anchor_w = w_anchor * float(profile.get("anchor_w", 1.0))
+	_orbit_w = float(profile.get("orbit", 0.0))
+	if orbit_override >= 0.0:
+		_orbit_w = orbit_override
 	last_anchor_dist = p0.distance_to(_anchor) if _anchor_on else -1.0
 	_engage = float(profile.get("engage", 0.0)) * engage_mult
 	last_engage = _engage        # public mirror for telemetry (get() on _engage returns null)
@@ -716,7 +747,7 @@ func _update_pin(p0: Vector2, speed: float, edge: float) -> bool:
 		_pin_hist.pop_front()
 
 	if _pin_ticks > 0:
-		_pin_ticks -= 1
+		_pin_ticks -= tick_step
 		# End early once genuinely clear, so we spend no more of the damage
 		# budget than getting out actually cost.
 		if edge >= PIN_CLEAR:
@@ -728,20 +759,21 @@ func _update_pin(p0: Vector2, speed: float, edge: float) -> bool:
 	var stuck = false
 	if edge < PIN_EDGE and _pin_hist.size() >= PIN_WINDOW:
 		var travelled = p0.distance_to(_pin_hist[0])
-		var could = speed * float(PIN_WINDOW) / 60.0
+		var could = speed * float(PIN_WINDOW * tick_step) / 60.0
 		stuck = travelled < could * PIN_TRAVEL_FRAC
 	if stuck:
-		_pin_frames += 1
+		_pin_frames += tick_step
 	else:
 		_pin_frames = 0
 
-	# Wall dwell: the tap-mover's trigger (see PIN_DWELL).
-	if _fire_still and edge < PIN_EDGE:
-		_pin_dwell += 1
+	# Wall dwell: the tap-mover's trigger (see PIN_DWELL), and any row's that
+	# sets pin_dwell (see the note above PIN_TICKS).
+	if _pin_dwell_limit > 0 and edge < PIN_EDGE:
+		_pin_dwell += tick_step
 	else:
 		_pin_dwell = 0
 
-	if _pin_frames >= PIN_CONFIRM or _pin_dwell >= PIN_DWELL:
+	if _pin_frames >= PIN_CONFIRM or (_pin_dwell_limit > 0 and _pin_dwell >= _pin_dwell_limit):
 		_pin_frames = 0
 		_pin_dwell = 0
 		_pin_ticks = PIN_TICKS
@@ -1171,6 +1203,16 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 			var intruded = _anchor_inner - from_anchor
 			if intruded > 0.0:
 				total += _anchor_w * min(intruded / ANCHOR_NORM, ANCHOR_CAP)
+		# Orbit (see _orbit_w): direction pricing while outside the band
+		if _orbit_w > 0.0 and _anchor_radius > 0.0 and d != Vector2.ZERO:
+			var radial = p0 - _anchor
+			var dist = radial.length()
+			var out_frac = clamp((dist - _anchor_radius) / ANCHOR_NORM, 0.0, 1.0)
+			if out_frac > 0.0 and dist > 1.0:
+				var ru = radial / dist
+				var outward = d.dot(ru)                      # +1 straight away from home
+				var along = abs(d.dot(Vector2(-ru.y, ru.x)))  # kiting around it
+				total += _orbit_w * out_frac * (outward - 0.5 * along)
 
 	# --- Contact seeking ---
 	# Cost for ENDING far from the nearest thing worth touching, which makes

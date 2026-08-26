@@ -699,3 +699,83 @@ masochist phases below.
 - **Charmed-enemy threat exclusion** (romantic) — `world_view._add_unit` already skips charmed units,
   so this is likely already correct; unverified.
 
+
+## Tracker reproduction: Pacifist, brotatotracker.com run #31194 (2026-08-25)
+
+Real Nightmare (danger 6) Abyss win, unmodded, no retries, rebuilt wave by wave
+from `/api/runs/31194/waves/{n}` with `tools/tracker2build.py` + the WaveLab
+`--wavelab-build` mode (every stat matched the record exactly, 20/20 waves).
+Snapshots `20260825-w{n}-pacifist-d6-hp*-tracker31194.json`. Bot replay,
+ARBITER on, speed 1, random seed per iteration, 3 iterations per wave:
+
+| wave | event | HP | result | avg dmg | note |
+|---|---|---|---|---|---|
+| 1 | | 10 | 3/3 | 0 | |
+| 2 | bullet hell | 11 | 3/3 | 6 | |
+| 3 | | 13 | 3/3 | 3 | |
+| 4 | bullet hell | 23 | 3/3 | 13 | |
+| 5 | | 25 | 3/3 | 8 | |
+| 6 | fog | 27 | 3/3 | 17 | |
+| 7 | bullet hell | 37 | **1/3** | 38 | died at 38 s and 43 s |
+| 8 | bullet hell | 40 | **1/3** | 84 | died at 45 s and 50 s |
+| 9 | | 45 | **2/3** | 71 | died at 43 s |
+| 10 | | 73 | 3/3 | 70 | |
+| 11 | elite | 77 | 3/3 | 133 | |
+| 12 | bullet hell | 95 | 3/3 | 78 | |
+| 13 | fog | 107 | 3/3 | 120 | |
+| 14 | bullet hell | 123 | 3/3 | 205 | |
+| 15 | elite | 132 | 3/3 | 92 | |
+| 16 | | 136 | 3/3 | 191 | |
+| 17 | elite | 137 | 3/3 | 217 | |
+| 18 | fog | 166 | 3/3 | 189 | |
+| 19 | bullet hell | 179 | 3/3 | 200 | |
+| 20 | two bosses | 183 | 3/3 | 296 | |
+
+Total 55/60. The human won every wave with this build; the bot's gap is waves
+7-9 (37-45 HP, 100+ threats, 25-30 live bullet-hell projectiles at 550 px/s
+for 7 each, plus 90 slow projectiles on w9). Every death shares one signature:
+the bot is at the map edge (`edge=12..36`) and 700-1200 px outside the
+perimeter annulus (`anc`, band 340-560) when the contact hits land
+(viperfish/anglerfish 8-12 each). From wave 10 on, 21+ regen and 60+ HP carry
+the same play. Next: w7/w8 bed for the edge-pinning under bullet hell.
+
+### Pacifist w7/w8 fix pass (2026-08-26) — pin dwell, orbit, decision interval
+
+Beds: the tracker w7 (37 HP) and w8 (40 HP) snapshots above, ARBITER, speed 1,
+random seeds. Baseline 1/3 + 1/4 (≈2/7). Weight knobs first (n=4 per wave):
+anchor ×3 4/4 + 2/4, wall ×3 3/4 + 2/4, both 1/4 + 0/4 — noise, as the
+arbiter's own note on pinning-by-weight predicts.
+
+1. **`pin_dwell` row key** (+ `--arb-pindwell`): the Soldier's wall-dwell
+   trigger generalised to any pin row. The Pacifist slides along the wall
+   under bullet hell, so the stuck detector never fires (`pesc=0`). Pacifist
+   row `pin: true, pin_dwell: 60`. Arms, n=5 per wave (w7 + w8): dwell 25
+   **3/10**, dwell 45 **6/10**, dwell 70 **8/10**.
+2. **`orbit` row key** (+ `--arb-orbit`): outside `anchor_radius` the
+   outward radial component of the heading costs, inward pays, tangential
+   earns half, ramped by distance out. Pacifist `orbit: 30`. With dwell 60,
+   n=5 per wave: default (orbit 30) **8/10**, orbit 0 **7/10**, orbit 60
+   **4/10** — 30 kept, evidence thin; 60 clearly walks into the crowd.
+3. **`tick_step`**: the pin counters count `choose()` calls; under a decision
+   interval they silently stretched (w4/w9 deaths at `edge<110` for 4 s with
+   `pfire=0`). Fixed by telling the arbiter the interval. After the fix, n=5:
+   tracker w4 4/5, **w8 5/5**, w9 3/5; Soldier w12-d6 1/5 (0/3 before),
+   colossus 3/5 (2/3), w5-d6 15-HP 3/5 then 8/10 every-tick, w5-d5 6guns 5/5.
+
+Full sweep after 1+2 (before 3): 55/60 again, redistributed — w7 3/3, w8
+1/3, w9 1/3, w4 2/3. Pooled w8 since the fix: 5/5 + 4/5 + 1/3 = 10/13 vs
+2/7. **w9 stays open**: escapes fire (`pfire` 3–5) but the bot is herded
+outward through 40–94 slow 13-damage projectiles and finished by narwhal /
+slasher contacts — a projectile-field dodging problem, not pinning.
+
+**Lag** (user report: "the game lags when the wave gets fuller"): new `us=`
+field in the ARB line = microseconds in gather+choose. Empty field 0.2 ms;
+100+ threats **8–12 ms per physics tick** against a 16.7 ms budget — the
+steering is the late-wave stutter. Built an adaptive decision interval
+(`--arb-every`: skip alternate ticks while a decision costs > 5 ms). A/B,
+n=10: loud-w11 (croc chain-dasher + boosting pursuers) every-tick **6/10 vs
+adaptive 3/10**; fisherman w2 9 vs 10; Soldier w5-d6 8 vs 7; tracker w7+w8
+7 vs 8. The 33 ms reaction gap is fatal exactly on the dasher bed, so the
+**default is every tick**; `--arb-every=0` opts into adaptive for lag-bound
+live play. ARBITER bed with adaptive on: 89/100 (loud-w11 3, fisherman 8,
+wildling 8, renegade 10, rest 10) vs 93 — the loud-w11 drop is the interval.

@@ -212,16 +212,19 @@ func _tick():
 		var anc = -1
 		if arb.get("last_anchor_dist") != null:
 			anc = int(arb.last_anchor_dist)   # px to the profile anchor (-1 = none)
+		var us = -1
+		if move_behavior.get("last_arb_us") != null:
+			us = int(move_behavior.last_arb_us)   # steering cost this tick, microseconds
 		var eblk = "-"
 		if move_behavior.get("_world") != null and move_behavior._world != null \
 				and move_behavior._world.get("last_engage_block") != null:
 			eblk = str(move_behavior._world.last_engage_block)   # why engage resolved to 0
-		print("BOTLOG ARB wave=%d hp=%d/%d pos=%s mv=(%.2f,%.2f) margin=%.2f threats=%d nearE=%d proj=%d edge=%d dmgW=%d eff=%.2f turn=%.1f flips=%d frames=%d still=%d pesc=%d pfire=%d sok=%d eng=%.0f eblk=%s anc=%d" % [
+		print("BOTLOG ARB wave=%d hp=%d/%d pos=%s mv=(%.2f,%.2f) margin=%.2f threats=%d nearE=%d proj=%d edge=%d dmgW=%d eff=%.2f turn=%.1f flips=%d frames=%d still=%d pesc=%d pfire=%d sok=%d eng=%.0f eblk=%s anc=%d us=%d" % [
 			RunData.current_wave, int(player.current_stats.health), int(player.max_stats.health),
 			_fmt_pos(player.position), chosen.x, chosen.y, margin,
 			spawner.enemies.size(), int(near_enemy), proj_count, int(edge),
 			int(_damage_taken_this_wave), hs[0], hs[1], hs[2], hs[3], hs[4],
-			pesc, pfire, sok, eng, eblk, anc])
+			pesc, pfire, sok, eng, eblk, anc, us])
 		return
 
 	print("BOTLOG t=%d wave=%d hp=%d/%d pos=%s enemies=%d nearE=%d proj=%d charging=%d corr=%d edge=%d dmgW=%d esc=%d %s" % [

@@ -207,6 +207,11 @@ const BIRTH_STEP_COST = 4.0      # avoid_births: a red X priced as a small stand
 #   anchor_radius float   outer leash: cost for straying past it
 #   anchor_inner  float   inner keep-out: cost for being closer than it
 #   anchor_wave   int     anchor only engages from this wave on
+#   orbit         float   direction pricing outside anchor_radius: outward costs,
+#                         inward pays, tangential earns half (perimeter kiting)
+#   pin           bool    arm the arbiter's pin-escape mode
+#   pin_dwell     int     frames at the wall (edge < 150 px) that fire the escape
+#                         even while moving; fire_still rows default to 40
 #   still         String  "prefer" | "never"
 const CHARACTER_PROFILES = {
 	# --- Economy: materials are the win condition ---
@@ -338,7 +343,7 @@ const CHARACTER_PROFILES = {
 	# on a 2164x1536 arena the "cheapest floor" was the wall band itself, and
 	# the live w3 log showed the lap running at edge 24-48 with the whole
 	# crowd in a conga line behind and every hit landing against a wall.
-	"character_pacifist": {"food": "none", "anchor": "perimeter",
+	"character_pacifist": {"food": "none", "anchor": "perimeter", "orbit": 30.0, "pin": true, "pin_dwell": 60,
 			"anchor_inner": 340.0, "anchor_radius": 560.0, "still": "never",
 			"caution": 1.2,
 			"dps": 0.0, "loot_value": 0.0, "tree_value": 5.0,
