@@ -403,7 +403,28 @@ const CHARACTER_PROFILES = {
 	"character_captain": {"caution_per_wave": 0.02},
 	"character_romantic": {"caution_per_wave": 0.02},
 	"character_gangster": {"caution": 1.4},
-	"character_explorer": {"caution": 1.3},
+	# Explorer (tracker run #27048, Nightmare Abyss win): the human picks up
+	# 26/47/64/79/101 materials on w1-5 and fells 5-26 trees a wave; the bot on
+	# the same builds collected 8/9/25/44/43 with kills near-human from w6.
+	# The character IS the tree lap (+50 pickup range, one-hit trees), so
+	# materials and living trees are worth more than the generic row says.
+	# Both w9 deaths (33 HP) were two 22-damage bullets taken at edge 36-42;
+	# pin-dwell and wall x2 did nothing (3/6, 2/6, 4/6). The map is +33%, so
+	# the centre leash is wider than the Pacifist annulus.
+	# Tasers are RANGED with a 200 px reach (weapons/ranged/taser: type 1,
+	# 7 dmg, no knockback): the human kills 50/93/134/151 on w2-5, the bot
+	# 12/34/70/53 because it keeps everything past 200 px. The Crazy band
+	# (engage 6 above half HP) is the generic "go stand near it" for a
+	# short-reach kit that must still flee when hurt.
+	# Caution by phase: at 11-15 HP (w2-5) caution x0.6 and engage x2 only
+	# added damage (w2 "both" died at 11 s, kills flat at 8-13); at 33 HP
+	# (w9) caution x0.6 was 6/6 with kills 433-483 vs the human's 549 and
+	# materials 216-255 vs 410 -- the taser kit earns its income by standing
+	# in the crowd once the body can take a hit.
+	"character_explorer": {"caution": 1.3, "caution_phases": [[8, 1.3], [99, 0.8]],
+			"gold": 2.0, "tree_value": 6.0,
+			"anchor": "center", "anchor_radius": 700.0,
+			"engage": 6.0, "engage_hp": 0.5},
 	"character_diver": {"caution": 1.25},
 	"character_generalist": {"caution": 0.8},
 	"character_gladiator": {"caution": 0.8},
@@ -570,6 +591,7 @@ var gold_value_override = null
 var anchor_inner_override = null # --arb-inner: sweep a perimeter row's keep-out radius
 var center_mode_override = 0.0   # --arb-centermode=<radius>: perimeter row -> center anchor
 var engage_hp_override = null    # --arb-engagehp: sweep a row's engage_hp band
+var caution_mult = 1.0           # --arb-caution: multiplier on the resolved row caution
 var leash_override = 0.0         # --arb-leash=<px>: override the builder turret leash radius
 
 # Sweepable: --arb-blade=0 reverts to one inflated circle per stationary hitbox,
@@ -724,6 +746,9 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("engagehp"):
 		engage_hp_override = float(d["engagehp"])
 		print("WORLDVIEW engage_hp_override=%.2f" % engage_hp_override)
+	if d.has("caution"):
+		caution_mult = float(d["caution"])
+		print("WORLDVIEW caution_mult=%.2f" % caution_mult)
 	if d.has("centermode"):
 		# Startup args parse as floats, so the mode switch is numeric: a
 		# nonzero value turns a perimeter row into a CENTER anchor with that
@@ -1033,7 +1058,7 @@ func _caution(row: Dictionary, hp_ratio: float = 1.0) -> float:
 		# armour to curse on the same clock: the danger compounds, so caution has
 		# to climb with it instead of sitting at whatever suited wave 1.
 		c += float(row["caution_per_wave"]) * max(RunData.current_wave - 1, 0)
-	return max(c, 0.1)
+	return max(c * caution_mult, 0.1)
 
 
 # Contact seeking -- the inverse of kiting. For characters paid in hits TAKEN

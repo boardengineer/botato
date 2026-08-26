@@ -813,3 +813,38 @@ the wall — a lookahead longer than 0.8 s on the herding direction, or a
 "where will I be in 3 s" runway term against the crowd rather than the wall.
 `orbit_from` row key / `--arb-orbitfrom` added for the experiment (default =
 anchor_radius, no behaviour change).
+
+## Tracker reproduction: Explorer, brotatotracker.com run #27048 (2026-08-26)
+
+Nightmare Abyss win, unmodded, no retries: tasers -> thunder swords, speed
+35-49, 10-15 HP through w5, 38 at w10, regen 48-60 late; fog 5/11/18, horde
+12, elites 15/17. Built 20/20 waves with zero stat mismatches
+(`20260826-w{n}-explorer-d6-hp*-tracker27048.json`).
+
+**Baseline sweep (row `{caution: 1.3}`), 3 per wave: 58/60** — every wave
+3/3 except w9 (33 HP) 1/3: both deaths two 22-damage `v=300` bullets taken
+at edge 36-42 (the Explorer has no armour; the same shot did 13 to the
+Pacifist). Wave 20 clears by killing both bosses at 64-73 s. But income:
+kills near-human from w6, materials ~30% of the human's on w1-5 and ~45%
+after; the human fells 5-30 trees a wave.
+
+Row built, each key measured (arms n=3 income / n=6 survival):
+
+| key | evidence |
+|---|---|
+| `gold: 2.0, tree_value: 6.0` | w2-5 materials +~15%; `trees=` (new RESULT field) shows the tree lap was already at parity (w2 10/10, w4 15-16/15, w9 25-27/25) |
+| `anchor: center 700` | w9 5/6 on, 5/6 off, but avg damage 34 vs 52; w4 income neutral |
+| `engage: 6, engage_hp: 0.5` | w9 6/6 on vs 5/6 off; w4 kills +8%; w2 kills flat at 11-13 |
+| `caution_phases [[8,1.3],[99,0.8]]` | at 11-15 HP caution x0.6 / engage x2 only added damage (w2 "both" died at 11 s, kills 8-13); at 33 HP caution x0.6 6/6, kills 433-483 vs 419-447, materials 216-255 vs 200-223 |
+| rejected | pin-dwell 60 (w9 2/6), wall x2 (4/6), engage x2 (w9 4/6, w2 kills 8-12 + damage) |
+
+Pooled w9: 14/30 (47%) before the row -> 24/27 (89%) with it.
+
+**Final sweep (finished row): 59/60** — w9 2/3, everything else 3/3, bosses
+down at 47-59 s. Income vs the human over 20 waves: kills 6,398 vs 7,002
+(91%), trees at parity, in-wave materials 3,586 vs 7,304 (49%). Leftover
+materials become bonus gold at wave end (`main.clean_up_room`, sampled after
+the RESULT line), and the human's bonus gold is only 2-34 a wave, so the
+human is collecting in-wave what the bot leaves for the bag. Open: in-wave
+pickup with a 200 px kit — the bot kills but does not walk the drops.
+`--arb-caution=<mult>` added (multiplier on the resolved row caution).
