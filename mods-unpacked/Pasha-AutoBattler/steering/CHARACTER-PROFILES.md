@@ -44,9 +44,16 @@ Build these ONCE; each covers several characters:
 
 ## Full regression bed — 2026-08-25 (arbiter-world-model @ 14588dc + dirty)
 
+**INVALID AS AN ARBITER MEASUREMENT.** `wavelab.ps1 bed` (like `run`) defaults to `--arbiter=0`;
+this sweep was run without `-Arbiter` and its own logs read `ARBITER off` — it measured the OLD
+FIELD CONTROLLER that still ships in the build. Discovered during the regression hunt when two
+arbiter arms on w5-loud (`ARBITER on`) scored 10/10 each against this bed's 2. The table is kept
+as a field-controller datapoint (33 vs its own 49 record); the arbiter bed is re-run below with
+`-Arbiter`. Historical bed numbers (19/31/37/49) were all field-controller runs; the only prior
+arbiter bed is v3's 26. Rule: check the `ARBITER on` line in a run log before believing a number.
+
 `wavelab.ps1 bed -Count 10`, all 10 members, speed 1, ledger Note "REGRESSION after
-profiles+soldier11+bull6". **33/100** — the first full-bed number for the arbiter lineage since v3
-(26/100, Aug 4). Old field controller record 49/100 (Aug 5) shown for scale.
+profiles+soldier11+bull6". **33/100** — field controller.
 
 | member | arbiter v3 | field ctl record | **this bed** |
 |---|---|---|---|
@@ -71,6 +78,40 @@ per-member A/B with `--arb-charprofile=0` and `--arb-bonusspeed=0` would attribu
 this bed suggests a broken mechanism: no member fell below its historical floor except w5-loud by
 one, and every profile row that got its first bench (sailor, renegade, wildling, lucky) landed at or
 above its member's history.
+
+## ARBITER regression bed — 2026-08-25 (b56c850 + the aimedfull/neverstill knobs)
+
+`wavelab.ps1 bed -Count 10 -Arbiter`, all 10 members, speed 1, ledger Note "ARBITER bed b56c850".
+**93/100.** The only prior arbiter bed was v3's 26 (Aug 4); the field controller's all-time record
+was 49.
+
+| member | field ctl (today) | field ctl record | arbiter v3 | **arbiter now** |
+|---|---|---|---|---|
+| w11-loud (croc + boosted pursuers; won twice ever) | 0 | 0 (1 once) | 0 | **5** (1.9 dmg/s; prior best 2.9) |
+| w8-gangster | 4 | 7 | 3 | **10** (6 dmg) |
+| w5-loud (7 HP) | 2 | 9 | 3 | **10** |
+| w4-loud (1 HP) | 1 | 5 | 1 | **10** (3 dmg) |
+| w3-sailor | 6 | 6 | 5 | **10** |
+| w3-renegade | 5 | 7 | 3 | **9** |
+| w2-fisherman (knife-edge) | 2 | 7 | 4 | **10** |
+| w12-wildling | 4 | 5 | 1 | **9** (138 dmg, lifesteal) |
+| w8-king | 2 | 4 | 4 | **10** (2 dmg) |
+| w11-lucky | 7 | 8 | 2 | **10** |
+
+**The regression hunt, in full.** The earlier 33/100 bed was run without `-Arbiter` and measured
+the old field controller; the "biggest regressions" (w5-loud 2, w4-loud 1, king 2, fisherman 2) were
+that controller's numbers. Stage 1 of the hunt — per-arm controls on w5-loud and king-w8 with the
+arbiter ON (`--arb-charprofile=0`, `--arb-bonusspeed=0`, `--arb-aimedfull=0`, `--arb-dpsref=0`) —
+scored **10/10 on all eight arms**, against the field controller's 7 and 4 on the same beds. So no
+change this session hurt either member; there was no arbiter-side regression to bisect (the commit
+bisection driver was also broken — pwsh mangles a binary `git archive | tar` pipe — and was not
+needed). The arbiter bed above is the real number: +67 over v3, +44 over the field controller's
+record, with every fragile early-wave member perfect and the founding croc/pursuer bench won for
+only the third, fourth, fifth, sixth and seventh times in its history.
+
+Lessons recorded: always pass `-Arbiter` (run/bench/bed all default to the field controller) and
+check the log's `ARBITER on` line; GDScript runtime errors live in `-iN.log.err`; never grep the
+newest task-output file from inside a queued task (it finds itself).
 
 ## Priority shortlist (highest value ÷ effort)
 

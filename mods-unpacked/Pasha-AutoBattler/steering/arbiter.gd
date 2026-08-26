@@ -384,6 +384,10 @@ var trade_share = TRADE_HP_SHARE # --arb-trade: the damage-trade budget as a sha
 var fire_floor = FIRE_STILL_FLOOR # --arb-floor: the stand-and-shoot floor
 var trade_killable_min = TRADE_KILLABLE_MIN # --arb-tradekill: pool admission threshold
 var engage_mult = 1.0            # --arb-engage: multiplier on the profile's engage weight
+var never_still_scan = 1.0       # --arb-neverstill=0 ignores rows' still:"never" (control arm)
+var aimed_full = 1.0             # --arb-aimedfull=0 restores the time discount for the
+                                 # standing candidate (the pre-2026-08-25 pricing) as an
+                                 # exact control arm
 var cluster_near = ENGAGE_CLUSTER_NEAR # --arb-cnear: nearest-body pull share in cluster mode
 var _escaping = false            # set by choose() each frame; read by _cost
 # Per-frame character-profile state, resolved by world_view and unpacked once
@@ -512,6 +516,8 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("floor"): fire_floor = float(d["floor"])
 	if d.has("tradekill"): trade_killable_min = float(d["tradekill"])
 	if d.has("engage"): engage_mult = float(d["engage"])
+	if d.has("aimedfull"): aimed_full = float(d["aimedfull"])
+	if d.has("neverstill"): never_still_scan = float(d["neverstill"])
 	if d.has("cnear"): cluster_near = float(d["cnear"])
 	if not d.empty():
 		print("ARBITER weights: proj=%.2f contact=%.2f dash=%.2f aoe=%.2f latent=%.2f room=%.2f roomcap=%.0f wall=%.2f enclose=%.2f dps=%.2f pickup=%.2f hyst=%.2f lethality=%.2f horizon=%.2f pin=%.2f pinthreat=%.2f predict=%.2f predsecs=%.2f tangent=%.2f swerve=%.2f anchor=%.2f" % [
@@ -561,7 +567,7 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 	_damage_dive = profile.get("damage_dive", false)
 	_hp_ratio = float(profile.get("hp_ratio", 1.0))
 	_blast = float(profile.get("blast", 0.0))
-	_never_still = profile.get("never_still", false)
+	_never_still = profile.get("never_still", false) and never_still_scan != 0.0
 	_fire_still = profile.get("fire_still", false)
 
 	# Scaled BEFORE _prepare, deliberately: the per-kind weight is baked into
@@ -910,7 +916,7 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 					# cutoff -- a far-off shot stays cheap but never free.
 					var when = t_start + t
 					var discount = max(1.0 - TIME_DISCOUNT * when / horizon, MIN_DISCOUNT)
-					if d == Vector2.ZERO and _p_aimed[i]:
+					if d == Vector2.ZERO and _p_aimed[i] and aimed_full != 0.0:
 						# STANDING against something aimed at us: the discount's
 						# premise -- "a later frame can still dodge this" -- is
 						# exactly what the stand refuses to do, so the hit is
