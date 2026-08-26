@@ -209,6 +209,7 @@ const BIRTH_STEP_COST = 4.0      # avoid_births: a red X priced as a small stand
 #   anchor_wave   int     anchor only engages from this wave on
 #   orbit         float   direction pricing outside anchor_radius: outward costs,
 #                         inward pays, tangential earns half (perimeter kiting)
+#   orbit_from    float   radius the orbit ramp starts at (default anchor_radius)
 #   pin           bool    arm the arbiter's pin-escape mode
 #   pin_dwell     int     frames at the wall (edge < 150 px) that fire the escape
 #                         even while moving; fire_still rows default to 40

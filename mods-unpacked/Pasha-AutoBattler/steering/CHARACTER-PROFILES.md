@@ -779,3 +779,37 @@ adaptive 3/10**; fisherman w2 9 vs 10; Soldier w5-d6 8 vs 7; tracker w7+w8
 **default is every tick**; `--arb-every=0` opts into adaptive for lag-bound
 live play. ARBITER bed with adaptive on: 89/100 (loud-w11 3, fisherman 8,
 wildling 8, renegade 10, rest 10) vs 93 — the loud-w11 drop is the interval.
+
+### Wave 9 dive (2026-08-26) — open
+
+Bed `20260825-w9-pacifist-d6-hp45-tracker31194.json` (45 HP, 9 armor, 32
+dodge, 19 regen; no Nightmare event; 100+ threats, 40–94 slow 13-damage
+projectiles from shrimp/bat/dragonfish/hermit in the crowd). Timelines: the
+bot holds the annulus (`anc` 330–600) at full HP for ~22 s, then drifts out
+to `anc` 800–1200 / `edge` 12–36 as the slow-lane count passes ~20; every
+hit of every death lands there, as bursts (narwhal/slasher 10 + plankton 4 +
+a 13 bullet inside ~2 s) that 19 regen cannot cover. Escapes fire
+(`pfire` 3–5) and it returns to the wall.
+
+Arms, n=6 unless noted (pooled where repeated):
+
+| arm | w9 | w7 | w8 |
+|---|---|---|---|
+| default (orbit 30, anchor ×1, dwell 60) | 6/11 | 7/8 | 10/13 |
+| anchor ×2 (`--arb-anchor=24`) | **10/12** | 6/6 | 3/6 |
+| anchor ×1.5 | 2/6 | | |
+| orbit 45 | 10/12 | 3/6 | 2/6 |
+| anchor ×2 + orbit 45 | 4/6 | 3/6 | 2/6 |
+| orbit ramp from inner radius (`--arb-orbitfrom=340`) | 3/6 | | |
+| wall ×2 | 5/6 | | |
+| scan 250 / 150 px (slow-lane warning) | 4/6 / 4/6 | | |
+
+Anchor ×1 → ×1.5 → ×2 reads 6/11 → 2/6 → 10/12: the knob space is at the
+noise floor. Orbit ≥45 costs waves 7/8 outright. The slow-projectile-scan
+hypothesis (lane floors summing into an outward gradient) is refuted by the
+scan arms. Defaults kept. What is left is structural: the bot needs to
+prefer crossing a thin lane early (while `anc` < 600) over being walked to
+the wall — a lookahead longer than 0.8 s on the herding direction, or a
+"where will I be in 3 s" runway term against the crowd rather than the wall.
+`orbit_from` row key / `--arb-orbitfrom` added for the experiment (default =
+anchor_radius, no behaviour change).

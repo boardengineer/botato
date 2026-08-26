@@ -414,6 +414,9 @@ var _anchor_w = W_ANCHOR         # w_anchor x the row's anchor_w multiplier
 # the weight; --arb-orbit=W overrides it for every row (0 = off, the control).
 var _orbit_w = 0.0
 var orbit_override = -1.0        # --arb-orbit
+var _orbit_from = 0.0            # radius the orbit ramp starts at (row "orbit_from";
+                                 # default the outer anchor_radius)
+var orbit_from_override = -1.0   # --arb-orbitfrom
 var last_anchor_dist = -1.0      # distance to the anchor this frame, for telemetry
 var _engage = 0.0
 var _never_still = false
@@ -531,6 +534,7 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("pin"): pin_enable = float(d["pin"])
 	if d.has("pindwell"): pin_dwell_override = int(d["pindwell"])
 	if d.has("orbit"): orbit_override = float(d["orbit"])
+	if d.has("orbitfrom"): orbit_from_override = float(d["orbitfrom"])
 	if d.has("pinthreat"): pin_threat = float(d["pinthreat"])
 	if d.has("predict"): w_predict = float(d["predict"])
 	if d.has("predsecs"): predict_secs = max(float(d["predsecs"]), 0.1)
@@ -589,6 +593,9 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 	_orbit_w = float(profile.get("orbit", 0.0))
 	if orbit_override >= 0.0:
 		_orbit_w = orbit_override
+	_orbit_from = float(profile.get("orbit_from", _anchor_radius))
+	if orbit_from_override >= 0.0:
+		_orbit_from = orbit_from_override
 	last_anchor_dist = p0.distance_to(_anchor) if _anchor_on else -1.0
 	_engage = float(profile.get("engage", 0.0)) * engage_mult
 	last_engage = _engage        # public mirror for telemetry (get() on _engage returns null)
@@ -1204,10 +1211,10 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 			if intruded > 0.0:
 				total += _anchor_w * min(intruded / ANCHOR_NORM, ANCHOR_CAP)
 		# Orbit (see _orbit_w): direction pricing while outside the band
-		if _orbit_w > 0.0 and _anchor_radius > 0.0 and d != Vector2.ZERO:
+		if _orbit_w > 0.0 and _orbit_from > 0.0 and d != Vector2.ZERO:
 			var radial = p0 - _anchor
 			var dist = radial.length()
-			var out_frac = clamp((dist - _anchor_radius) / ANCHOR_NORM, 0.0, 1.0)
+			var out_frac = clamp((dist - _orbit_from) / ANCHOR_NORM, 0.0, 1.0)
 			if out_frac > 0.0 and dist > 1.0:
 				var ru = radial / dist
 				var outward = d.dot(ru)                      # +1 straight away from home
