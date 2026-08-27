@@ -102,6 +102,10 @@ const WALL_CAP = 220.0           # wall room beyond this is irrelevant
 const ENCLOSE_RADIUS = 340.0     # threats inside this ring shape the enclosure term
 const ENCLOSE_MIN = 3            # fewer than this cannot meaningfully surround us
 const PICKUP_FALLOFF = 320.0     # loot this far away barely steers us
+const PICKUP_TAKEN = 1.0         # x value: bonus for a move that ENDS inside the
+                                 # attract radius of a drop it started outside --
+                                 # the pass-through pickup a kiting lap is made of.
+                                 # --arb-taken sweeps it; 0 is the exact control.
 
 # -- Engagement --
 # Killing something is worth the damage it would otherwise have done to us, so
@@ -232,6 +236,19 @@ const TRADE_KILLABLE_MIN = 0.15  # only bodies at least this killable join the p
 # floor, and only THERE does it stand again. Escape at the loss of firing,
 # but triggered by geometry before the pin instead of by a timer after it.
 const FIRE_STILL_WALL_MIN = 220.0
+# -- Hop candidates --
+# The croc's second form drops a 10-pillar ring 250 px around the bot that
+# arms 0.54 s later; every full-speed candidate covers ~280 px over the
+# horizon, so all of them END on or past the ring while it is armed, and the
+# only in-ring option was standing still under the dash. A hop is the move a
+# human makes there: a short lateral step inside the ring. It is scored at
+# HOP_FRAC speed (executed by the movement behaviour as the tap duty cycle,
+# 2 frames on / 2 off) on HOP_DIRS headings, and only offered while a ground
+# telegraph or a dash is within HOP_RANGE -- it costs HOP_DIRS extra
+# evaluations, which the quiet frames must not pay. --arb-hop=0 disables.
+const HOP_FRAC = 0.5             # MUST match the tap duty cycle (TAP_MOVE / (TAP_MOVE + TAP_STOP))
+const HOP_DIRS = 8
+const HOP_RANGE = 420.0
 const STUTTER_SPEED_FRAC = 0.5   # net travel speed of the tap cycle; MUST match
                                  # TAP_MOVE / (TAP_MOVE + TAP_STOP) in
                                  # player_movement_behavior.gd (2 / (2 + 2))
@@ -365,6 +382,12 @@ var w_wall = W_WALL
 var w_enclose = W_ENCLOSE
 var w_dps = W_DPS
 var w_pickup = W_PICKUP
+var pickup_taken = PICKUP_TAKEN  # --arb-taken
+var hop_enable = 1.0             # --arb-hop
+var last_hop = false             # the chosen candidate is a half-speed hop (telemetry + execution)
+var _hop_wanted = false          # set by _prepare: a telegraph or dash is close enough
+var last_aoe_n = 0               # KIND_AOE threats priced this decision (telemetry)
+var _pickup_radius = 0.0         # profile pickup_radius: the attract area's rim
 var w_hyst = W_HYST
 var lethality = LETHALITY
 var horizon = HORIZON
@@ -526,6 +549,8 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("enclose"): w_enclose = float(d["enclose"])
 	if d.has("dps"): w_dps = float(d["dps"])
 	if d.has("pickup"): w_pickup = float(d["pickup"])
+	if d.has("taken"): pickup_taken = float(d["taken"])
+	if d.has("hop"): hop_enable = float(d["hop"])
 	if d.has("hyst"): w_hyst = float(d["hyst"])
 	if d.has("lethality"): lethality = float(d["lethality"])
 	if d.has("horizon"): horizon = float(d["horizon"])
@@ -590,6 +615,7 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 	_anchor_radius = float(profile.get("anchor_radius", 0.0))
 	_anchor_inner = float(profile.get("anchor_inner", 0.0))
 	_anchor_w = w_anchor * float(profile.get("anchor_w", 1.0))
+	_pickup_radius = float(profile.get("pickup_radius", 0.0))
 	_orbit_w = float(profile.get("orbit", 0.0))
 	if orbit_override >= 0.0:
 		_orbit_w = orbit_override
@@ -666,6 +692,23 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 			best_cost = c
 			best_i = i
 
+	# Hops (see HOP_FRAC): half-speed headings, offered only near a telegraph
+	# or a dash and never while escaping a pin (that flight wants every frame).
+	var hop_first = cands.size()
+	if hop_enable != 0.0 and _hop_wanted and not escaping:
+		for k in range(HOP_DIRS):
+			var a = k * TAU / HOP_DIRS + TAU / (2 * HOP_DIRS)   # offset from the full set
+			var hd = Vector2(cos(a), sin(a))
+			var c = _cost(hd, p0, speed * HOP_FRAC, body_radius, far, rewards, targets,
+					chargers, weapon_range, prefers_still, current_hp)
+			cands.push_back(hd)
+			scores.push_back(c)
+			if c < best_cost:
+				best_cost = c
+				best_i = cands.size() - 1
+	last_hop = best_i >= hop_first
+	var best_speed = speed * HOP_FRAC if last_hop else speed
+
 	# Bisection refinement. A flat 24-way sweep cannot thread a bullet gap
 	# narrower than 15 deg; halving twice around the winner reaches 3.75 deg
 	# without paying for 96 candidates every frame.
@@ -676,7 +719,7 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 			var improved = best_dir
 			for s in [step, -step]:
 				var rc = best_dir.rotated(s)
-				var c = _cost(rc, p0, speed, body_radius, far, rewards, targets,
+				var c = _cost(rc, p0, best_speed, body_radius, far, rewards, targets,
 						chargers, weapon_range, prefers_still, current_hp)
 				cands.push_back(rc)
 				scores.push_back(c)
@@ -807,6 +850,9 @@ func _prepare(p0: Vector2, speed: float, body_radius: float, threats: Array,
 
 	var inv_hp = 1.0 / max(current_hp, 1.0)
 	var reach = speed * horizon          # everything we could possibly walk to
+	_hop_wanted = false
+	last_aoe_n = 0
+	var hop_sq = HOP_RANGE * HOP_RANGE
 
 	for t in threats:
 		var radius = t[T_RADIUS] + body_radius
@@ -857,6 +903,10 @@ func _prepare(p0: Vector2, speed: float, body_radius: float, threats: Array,
 			kw = w_aoe
 		_p_mark.push_back(kind == KIND_MARK)
 		_p_aimed.push_back(kind == KIND_PROJ or kind == KIND_DASH)
+		if (kind == KIND_AOE or kind == KIND_DASH) and pos.distance_squared_to(p0) < hop_sq:
+			_hop_wanted = true
+		if kind == KIND_AOE:
+			last_aoe_n += 1
 
 		_p_pos.push_back(pos)
 		_p_vel.push_back(vel)
@@ -1190,10 +1240,17 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 				total -= dps_pay
 
 	for r in rewards:
-		var d0 = p0.distance_to(r[0])
-		var d1 = p_end.distance_to(r[0])
+		# Attracted rewards (drops, food) are taken at the attract rim, so the
+		# distance that matters is to the rim; a felled reward (tree, r[2]
+		# false) still has to be reached.
+		var rim = _pickup_radius if (r.size() < 3 or r[2]) else 0.0
+		var d0 = max(p0.distance_to(r[0]) - rim, 0.0)
+		var d1 = max(p_end.distance_to(r[0]) - rim, 0.0)
 		var closed = (d0 - d1) / max(speed * horizon, 1.0)   # -1..1, share of the move spent approaching
-		total -= w_pickup * r[1] * closed / (1.0 + d0 / PICKUP_FALLOFF)
+		var gain = w_pickup * r[1] * closed / (1.0 + d0 / PICKUP_FALLOFF)
+		if d1 == 0.0 and d0 > 0.0:
+			gain += w_pickup * r[1] * pickup_taken           # this move collects it
+		total -= gain
 
 	# --- Character anchor ---
 	# Priced at the candidate's END position. Between the two radii every

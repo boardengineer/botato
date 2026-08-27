@@ -848,3 +848,69 @@ the RESULT line), and the human's bonus gold is only 2-34 a wave, so the
 human is collecting in-wave what the bot leaves for the bag. Open: in-wave
 pickup with a 200 px kit — the bot kills but does not walk the drops.
 `--arb-caution=<mult>` added (multiplier on the resolved row caution).
+
+## Drop collection (2026-08-26)
+
+Built three pieces: drops priced to the ATTRACT RIM (`profile.pickup_radius`,
+150 x (1 + pickup_range/100), Explorer 225 px) instead of contact; a
+`PICKUP_TAKEN` bonus (`--arb-taken`) for a move that ends inside the rim of a
+drop it started outside; a row key `sweep` (`--arb-sweep`) multiplying drop
+value while no enemy is inside `sweep_radius` (420). Explorer w4/w5/w9 arms
+(n=4): full / no-taken / no-sweep / neither = 51/45/51/50, 51/48/53/44,
+243/207/232/236 materials — noise. Fisherman w2 (12 HP, pickup-heavy) A/B
+n=10: taken 9/10, no-taken 9/10. Kept as modelling (rim + taken); `sweep`
+left off every row. The premise was wrong: per kill the bot already collects
+what the human does (w1-5: 0.69/0.82/0.68/0.60/0.67 vs 0.76/0.94/0.69/0.59/
+0.67 materials per kill); the late-game "49%" compared the tracker's gold
+VALUE with the watcher's material COUNT. Income tracks kill rate, full stop.
+
+## Tracker reproduction: Masochist, run #29392 (2026-08-26)
+
+Six Lutes, 20 HP / 8 armour / 20 regen at w1 -> 113 HP, 21 armour, 39 regen,
+80 dodge, 35 lifesteal at w20; bullet hell 2/3/6/8/11/16/19, elites 12/17,
+horde 14, fog 7/13/15. Existing row `{caution 0.6, engage 12, engage_hp 0.66,
+anchor center 520}` untouched. **Sweep 59/60**: w9 (39 HP) 2/3, the death an
+edge hit chain after a correct below-band disengage; bosses down at 51-66 s.
+Versus the human: kills 5,447 vs 5,946 (92%), early pickups at parity, and
+the bot takes LESS damage per wave than the human on most waves (30->182 vs
+14->264) — the HP-band row already plays the character; the guide's
+hits-taken gating would be an optimisation, not a fix. w9 arms queued and
+not run (band 0.5/0.8, pin-dwell) — superseded by the Jack work.
+
+## Jack w11 croc bed (2026-08-26) — open, with two model fixes
+
+`20260826-w11-jack-d6-hp31-croc.json`: the user's Steam run, Jack at wave 11
+(first elite wave, croc), Danger 6, 31 HP, five laser guns + blunderbuss.
+"The bot walks into the croc's encircling attack after the elite mutates."
+0/5 baseline, **0/35 across every arm** (AoE x2.5, clock off, horizon 1.2,
+dash x2, hop on/off, dash-fix on/off). Everything two-shots 31 HP: pillar 18,
+pursuer 25, croc slash 26, croc contact 23.
+
+The attack (croc.tscn): after the state change, `ChargingShootProjectiles-
+Behavior2` drops 10 pillars ON the player's position, `projectile_spawn_
+spread 500` on borders = a ring of radius **250** (spread / 2), 157 px apart,
+every 45 frames while move-locked; pillar_projectile arms at 0.54 s, disarms
+at 0.68 s (animation method track), footprint ~50 px.
+
+Evidence (new telemetry: `PHIT` carries the pillar's animation clock and
+distance; `PCHOICE` the last decision's six cheapest candidates; `PHIST` the
+previous 40 decisions): every pillar hit lands at anim 0.57-0.63 with the bot
+5-43 px from the pillar. The history before a hit: ring appears (`a10`) with
+the bot at its centre; standing still already costs 950-1,100 (boosted
+pursuers on 31 HP); every heading 60-90; the scorer picks a bearing 11 deg off
+a pillar — a FULL pillar hit in its own pricing — because the gap centre and
+every other bearing carry more pursuer/croc cost, then drifts 4 deg toward
+the pillar over the next re-decisions. The ring is modelled correctly; the
+bot buys the pillar as the cheapest exit. What it lacks is a two-step plan
+(stay inside the ring 0.68 s, circling off the pursuers, then leave) or a
+commit to the gap centre against myopic drift.
+
+Fixed on the way (kept):
+- **Dash model** (`--arb-dashfix=0` reverts): the game applies charge_speed
+  AS bonus_speed, so adding it again in flight priced a croc dash at 1,550
+  px/s instead of 950; and the lane never ended (INF) while the charge stops
+  at charge_duration (~520 px). loud-w11 A/B n=10: fix 7/10 vs 6/10.
+- **Hop candidates** (`--arb-hop=0` disables): 8 half-speed headings, offered
+  only with a telegraph or dash inside 420 px, executed as the tap duty
+  cycle (2 on / 2 off) for every row. Never the winner on the croc bed
+  (pursuer pressure), longest time-to-death with it (mean ~30 s vs 17 s).

@@ -137,6 +137,10 @@ const EGG_VALUE = 60.0           # a spawner is worth far more dead than its own
 # a roaming-collection phase, and a leash would cost every material lying
 # outside it.
 const GOLD_VALUE = 0.8
+const SWEEP_RADIUS = 420.0       # no enemy inside this = a quiet field, sweep the drops
+var sweep_override = -1.0        # --arb-sweep: force the row's sweep multiplier
+var dash_fix = 1.0               # --arb-dashfix=0: revert the dash speed/duration model
+var pickup_radius = 150.0        # the player's ItemAttractArea radius this frame
 const BUILDER_ECON_WAVES = 4     # last wave of collect-everything (guide: "wave four or five")
 const BUILDER_GOLD_VALUE = -2.0  # feed phase: mild -- shapes paths between equals,
                                  # never outbids a dodge
@@ -201,6 +205,9 @@ const BIRTH_STEP_COST = 4.0      # avoid_births: a red X priced as a small stand
 #   dps           float   multiplier on the kill reward (0 for weaponless kits)
 #   loot_value    float   reward for a loot alien (0 if it cannot be caught)
 #   tree_value    float   reward for a living tree (pacifist's only kills)
+#   sweep         float   multiplier on material value while no enemy is inside
+#                         sweep_radius of the bot: the between-bursts drop walk
+#   sweep_radius  float   the quiet test's radius (default SWEEP_RADIUS)
 #   avoid_births  float   keep-out radius around enemy spawn markers
 #   anchor        String  "builder" | "structures" | "center" | "perimeter"
 #                         | "away_structures"
@@ -749,6 +756,12 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("caution"):
 		caution_mult = float(d["caution"])
 		print("WORLDVIEW caution_mult=%.2f" % caution_mult)
+	if d.has("sweep"):
+		sweep_override = float(d["sweep"])
+		print("WORLDVIEW sweep_override=%.2f" % sweep_override)
+	if d.has("dashfix"):
+		dash_fix = float(d["dashfix"])
+		print("WORLDVIEW dash_fix=%.0f" % dash_fix)
 	if d.has("centermode"):
 		# Startup args parse as floats, so the mode switch is numeric: a
 		# nonzero value turns a perimeter row into a CENTER anchor with that
@@ -865,8 +878,35 @@ func gather(main, player) -> void:
 		if c.position.distance_squared_to(pos) < pickup_sq:
 			rewards.push_back([c.position,
 					_food_value(food_mode, c.position, missing_hp, spawner)])
+	# Drops are collected by the attract area, not by contact: the arbiter
+	# prices distance to its rim (profile pickup_radius) and pays a "taken"
+	# bonus for a move that ends inside it. A drop already flying to us is
+	# income either way and steers nothing.
+	if "_item_attract_area" in player and player._item_attract_area != null:
+		var shape = player._item_attract_area.get_node_or_null("CollisionShape2D")
+		if shape != null and shape.shape != null and "radius" in shape.shape:
+			pickup_radius = float(shape.shape.radius)
 	var gold_value = _gold_value(row, player)
+	# Sweep: between spawn bursts the floor is free money and the human walks
+	# it (Explorer #27048 left 2-34 bonus gold a wave, the bot ~half its
+	# drops). With no enemy inside sweep_radius the drops are worth more.
+	var sweep = float(row.get("sweep", 1.0))
+	if sweep_override >= 0.0:
+		sweep = sweep_override
+	if sweep != 1.0:
+		var quiet_sq = pow(float(row.get("sweep_radius", SWEEP_RADIUS)), 2)
+		var quiet = true
+		for en in spawner.enemies:
+			if is_instance_valid(en) and not en.dead and not en.is_loot 					and en.position.distance_squared_to(pos) < quiet_sq:
+				quiet = false
+				break
+		if quiet:
+			gold_value *= sweep
 	for g in main._active_golds:
+		if not is_instance_valid(g):
+			continue
+		if "attracted_by" in g and g.attracted_by != null:
+			continue
 		if g.position.distance_squared_to(pos) < pickup_sq:
 			rewards.push_back([g.position, gold_value])
 
@@ -877,7 +917,7 @@ func gather(main, player) -> void:
 		for n in spawner.neutrals:
 			if is_instance_valid(n) and not n.dead and not n._pending_die \
 					and n.position.distance_squared_to(pos) < pickup_sq:
-				rewards.push_back([n.position, tree_value])
+				rewards.push_back([n.position, tree_value, false])   # felled, not attracted
 
 	# Enemy spawn markers (the red X). EntityBirth nodes are pooled under
 	# main._births_container; an active one is shown by start() and hidden
@@ -895,6 +935,7 @@ func gather(main, player) -> void:
 						BIRTH_STEP_COST, KIND_MARK, 0.0, TICKS_ONCE, INF_TIME])
 
 	profile = {}
+	profile["pickup_radius"] = pickup_radius   # every row: the attract rim prices drops
 	if not row.empty():
 		var hp_ratio = current_hp / max_hp
 		var caution = _caution(row, hp_ratio)
@@ -1333,10 +1374,17 @@ func _dash_corridor(unit) -> Array:
 
 	var dir = charge_dir.normalized()
 	# Same bonus_speed blindness as the walker fix above: a dash rides on the
-	# unit's live base speed, boosts included.
+	# unit's live base speed, boosts included. The launch itself is applied
+	# by the game AS bonus_speed (charging_attack_behavior.shoot: bonus_speed
+	# = charge_speed), so once in flight the boost is already in the live
+	# figure; adding charge_speed on top priced a croc dash at 1550 px/s
+	# instead of 950 (tracker Jack w11: the bot fled dashes from 440 px into
+	# its own pillar ring). During the wind-up the boost is still to come.
 	var dash_speed = max(float(unit.current_stats.speed)
 			+ bonus_speed_scan * (float(unit.bonus_speed)
-			+ float(unit.decaying_bonus_speed)), 0.0) + behavior.charge_speed
+			+ float(unit.decaying_bonus_speed)), 0.0)
+	if not in_flight or bonus_speed_scan == 0.0 or dash_fix == 0.0:
+		dash_speed += behavior.charge_speed
 	var radius = _body_radius(unit)
 	var damage = DEFAULT_CONTACT_DAMAGE
 	if unit.current_stats and unit.current_stats.damage > 0:
@@ -1345,10 +1393,20 @@ func _dash_corridor(unit) -> Array:
 	var launch_delay = 0.0
 	if not in_flight:
 		launch_delay = _windup_remaining(unit)
+	# The charge ENDS: charging_attack_behavior unlocks movement when its
+	# charge_duration timer runs out (0.5-0.6 s for the croc = ~520 px), and
+	# the body is an ordinary walker again. An unbounded lane priced every
+	# candidate along the bearing for the whole horizon, which is what made
+	# radial flight the only answer to a dash that stops short.
+	var t_end = INF_TIME
+	if dash_fix != 0.0 and ("_unlock_move_timer" in behavior) and behavior._unlock_move_timer != null:
+		var timer = behavior._unlock_move_timer
+		var left = float(timer.time_left) if in_flight else float(timer.wait_time)
+		t_end = launch_delay + max(left, 0.0)
 	# A dash connects once and then the charger is spent and recovering, so it
 	# is not priced as sustained contact however fast the corridor moves.
 	return [unit.position, dir * dash_speed, radius, damage, KIND_DASH, launch_delay,
-			TICKS_ONCE, INF_TIME]
+			TICKS_ONCE, t_end]
 
 
 # Seconds until a winding-up charge actually launches. The telegraph animation

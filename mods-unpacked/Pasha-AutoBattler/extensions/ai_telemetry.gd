@@ -215,16 +215,19 @@ func _tick():
 		var us = -1
 		if move_behavior.get("last_arb_us") != null:
 			us = int(move_behavior.last_arb_us)   # steering cost this tick, microseconds
+		var hop = 0
+		if arb.get("last_hop") != null and arb.last_hop:
+			hop = 1                                # the chosen move is a half-speed hop
 		var eblk = "-"
 		if move_behavior.get("_world") != null and move_behavior._world != null \
 				and move_behavior._world.get("last_engage_block") != null:
 			eblk = str(move_behavior._world.last_engage_block)   # why engage resolved to 0
-		print("BOTLOG ARB wave=%d hp=%d/%d pos=%s mv=(%.2f,%.2f) margin=%.2f threats=%d nearE=%d proj=%d edge=%d dmgW=%d eff=%.2f turn=%.1f flips=%d frames=%d still=%d pesc=%d pfire=%d sok=%d eng=%.0f eblk=%s anc=%d us=%d" % [
+		print("BOTLOG ARB wave=%d hp=%d/%d pos=%s mv=(%.2f,%.2f) margin=%.2f threats=%d nearE=%d proj=%d edge=%d dmgW=%d eff=%.2f turn=%.1f flips=%d frames=%d still=%d pesc=%d pfire=%d sok=%d eng=%.0f eblk=%s anc=%d us=%d hop=%d" % [
 			RunData.current_wave, int(player.current_stats.health), int(player.max_stats.health),
 			_fmt_pos(player.position), chosen.x, chosen.y, margin,
 			spawner.enemies.size(), int(near_enemy), proj_count, int(edge),
 			int(_damage_taken_this_wave), hs[0], hs[1], hs[2], hs[3], hs[4],
-			pesc, pfire, sok, eng, eblk, anc, us])
+			pesc, pfire, sok, eng, eblk, anc, us, hop])
 		return
 
 	print("BOTLOG t=%d wave=%d hp=%d/%d pos=%s enemies=%d nearE=%d proj=%d charging=%d corr=%d edge=%d dmgW=%d esc=%d %s" % [
@@ -297,9 +300,48 @@ func _on_player_took_damage(_unit, value, _kb, _is_crit, is_dodge, is_protected,
 				if mb and ("last_move_dir" in mb):
 					mv = mb.last_move_dir
 				var bv = hb_parent.velocity
-				print("BOTLOG PHIT ppos=%s bv=(%d,%d) esc=%d mv=(%.2f,%.2f)" % [
+				# Stationary telegraphs: the clock the world-view reads off the
+				# projectile's AnimationPlayer decides when it is priced as
+				# armed, so record that clock at the moment it actually hit.
+				var clock = ""
+				if bv.length_squared() < 100.0 and ("_animation_player" in hb_parent) 						and hb_parent._animation_player != null:
+					var ap = hb_parent._animation_player
+					clock = " anim=%s@%.2f playing=%d ppdist=%d" % [
+						ap.current_animation, ap.current_animation_position,
+						1 if ap.is_playing() else 0,
+						int(_hooked_player.position.distance_to(hb_parent.global_position))]
+				print("BOTLOG PHIT ppos=%s bv=(%d,%d) esc=%d mv=(%.2f,%.2f)%s" % [
 					_fmt_pos(_hooked_player.position), int(bv.x), int(bv.y),
-					_esc_bits(mb), mv.x, mv.y])
+					_esc_bits(mb), mv.x, mv.y, clock])
+				# The scorer's own numbers for the decision that walked into a
+				# telegraph: the six cheapest candidates (bearing deg, cost,
+				# H = half-speed hop) and what standing still cost.
+				if clock != "" and mb and ("_arbiter" in mb) and mb._arbiter != null 						and mb._arbiter.get("last_scores") != null:
+					var arb = mb._arbiter
+					var order = []
+					for i in range(arb.last_scores.size()):
+						order.push_back(i)
+					_sort_scores = arb.last_scores
+					order.sort_custom(self, "_score_less")
+					var parts = []
+					var hop_first = 24 + 1   # DIRS + ZERO precede the hop set when it was offered
+					for k in range(min(6, order.size())):
+						var i = order[k]
+						var d = arb.last_dirs[i]
+						var tag = "Z" if d == Vector2.ZERO else "%d" % int(rad2deg(d.angle()))
+						parts.push_back("%s:%.0f" % [tag, arb.last_scores[i]])
+					var zero = arb.last_scores[24] if arb.last_scores.size() > 24 else -1.0
+					print("BOTLOG PCHOICE best=%s still=%.0f hop=%d" % [
+						" ".join(parts), zero, 1 if arb.last_hop else 0])
+					# ...and the decisions of the previous ~0.6 s that walked here
+					if mb.get("decision_hist") != null and mb.decision_hist.size() > 0:
+						var now = OS.get_ticks_msec()
+						var rows = []
+						for h in mb.decision_hist:
+							rows.push_back("-%d:(%d,%d)%s/%d/%d/a%d%s" % [now - h[0], h[1], h[2],
+									"Z" if h[3] == -999 else str(h[3]), h[4], h[5], h[6],
+									"H" if h[7] == 1 else ""])
+						print("BOTLOG PHIST ms:(x,y)bearing/best/still/aoe " + " ".join(rows))
 		elif args.from != null and ("enemy_id" in args.from):
 			src = args.from.enemy_id
 		elif hb_parent != null and ("enemy_id" in hb_parent):
@@ -352,3 +394,8 @@ func _nearby_threats(main, player, count) -> String:
 
 func _fmt_pos(pos) -> String:
 	return "(%d,%d)" % [int(pos.x), int(pos.y)]
+
+
+var _sort_scores = []
+func _score_less(a, b) -> bool:
+	return _sort_scores[a] < _sort_scores[b]

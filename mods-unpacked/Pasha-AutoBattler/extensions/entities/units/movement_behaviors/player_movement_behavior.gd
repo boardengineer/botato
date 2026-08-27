@@ -188,6 +188,11 @@ const ARB_BUDGET_US = 5000               # adaptive threshold: skip alternate ti
 var arb_every = 1                        # --arb-every; 1 = every tick (default), 0 = adaptive
 var _arb_tick = 0
 var _arb_decided = false
+# Decision history for the telegraph post-mortem (ai_telemetry PHIST): the
+# last HIST_LEN decisions as [msec, x, y, bearing deg (-999 = still),
+# best cost, still cost, aoe count, hop]. Cheap: one small array per tick.
+const HIST_LEN = 40
+var decision_hist = []
 var _dmg_events = []                     # [ms, amount], last 3 s of damage taken
 var _hp_seen = - 1.0
 var _caution_until_ms = 0
@@ -1041,6 +1046,17 @@ func _arbiter_move(player)->Vector2:
 				_world.mitigation, _world.profile)
 		last_arb_us = OS.get_ticks_usec() - t0
 		_arb_decided = true
+		var still_cost = -1.0
+		if _arbiter.last_scores.size() > 24:
+			still_cost = _arbiter.last_scores[24]
+		var bearing = -999
+		if last_move_dir != Vector2.ZERO:
+			bearing = int(rad2deg(last_move_dir.angle()))
+		decision_hist.push_back([OS.get_ticks_msec(), int(player.position.x), int(player.position.y),
+				bearing, int(_arbiter.last_scores[_arbiter.last_best_index]), int(still_cost),
+				_arbiter.last_aoe_n, 1 if _arbiter.last_hop else 0])
+		if decision_hist.size() > HIST_LEN:
+			decision_hist.pop_front()
 
 	# -- Tap-move interleave (fire_still characters) --
 	# The game fires every cooldown-ready weapon on the FIRST frame movement
@@ -1059,10 +1075,13 @@ func _arbiter_move(player)->Vector2:
 	# connect prices the slowdown as lethal, so that stretch runs at full
 	# speed. Pin escape stays full speed unconditionally: a corner exit is
 	# the one flight where every frame of travel is the point.
+	# The same duty cycle executes the arbiter's HOP candidates (half-speed
+	# steps inside a telegraph ring, see arbiter HOP_FRAC) for every row.
 	if TAP_STOP > 0 and last_move_dir != Vector2.ZERO \
-			and _world.profile.get("fire_still", false) \
 			and not _arbiter.last_escaping \
-			and _arbiter.last_stutter_gap < TAP_SAFE_GAP:
+			and (_arbiter.last_hop \
+				or (_world.profile.get("fire_still", false) \
+					and _arbiter.last_stutter_gap < TAP_SAFE_GAP)):
 		_tap_phase = (_tap_phase + 1) % (TAP_MOVE + TAP_STOP)
 		if _tap_phase < TAP_STOP:
 			return Vector2.ZERO    # let the volley off; heading stats keep the tap
