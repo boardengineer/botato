@@ -16,6 +16,9 @@ const TAP_SAFE_GAP = 35.0        # only tap while standing scores within this of
                                  # 25 -> 35: keep stuttering under moderate threat
                                  # pressure; real dodge gaps run far past this
 var _tap_phase = 0
+var _hdg_run = 0                 # consecutive still frames (survives take_heading_stats)
+var _hdg_ticks = 0               # full seconds stood since the last stats window
+var _hdg_breaks = 0              # stands broken since the last stats window
 
 var _arbiter = null
 var _world = null
@@ -1090,7 +1093,15 @@ func _arbiter_move(player)->Vector2:
 
 	if last_move_dir == Vector2.ZERO:
 		_hdg_still += 1
+		_hdg_run += 1
+		if _hdg_run == 60:
+			_hdg_ticks += 1          # a full unbroken second stood (Streamer tick)
+		elif _hdg_run > 60 and _hdg_run % 60 == 0:
+			_hdg_ticks += 1
 	else:
+		if _hdg_run > 0:
+			_hdg_breaks += 1         # a stand was broken
+		_hdg_run = 0
 		_hdg_sum = _hdg_sum + last_move_dir
 		_hdg_count += 1
 		if _hdg_prev != Vector2.ZERO:
@@ -1110,7 +1121,9 @@ func take_heading_stats()->Array:
 	if _hdg_count > 0:
 		coh = _hdg_sum.length() / _hdg_count
 		turn = _hdg_turn_sum / max(_hdg_count - 1, 1)
-	var out = [coh, turn, _hdg_flips, _hdg_count, _hdg_still]
+	var out = [coh, turn, _hdg_flips, _hdg_count, _hdg_still, _hdg_ticks, _hdg_breaks]
+	_hdg_ticks = 0
+	_hdg_breaks = 0
 	_hdg_sum = Vector2.ZERO
 	_hdg_count = 0
 	_hdg_turn_sum = 0.0

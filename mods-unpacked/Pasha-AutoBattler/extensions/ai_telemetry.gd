@@ -192,9 +192,11 @@ func _tick():
 				margin = rival - best
 		# eff is path efficiency over the last second: 1.0 = held a heading,
 		# low = the decision oscillated and most of the movement cancelled out.
-		var hs = [0.0, 0.0, 0, 0, 0]
+		var hs = [0.0, 0.0, 0, 0, 0, 0, 0]
 		if move_behavior.has_method("take_heading_stats"):
 			hs = move_behavior.take_heading_stats()
+			while hs.size() < 7:
+				hs.push_back(0)
 		# pesc/pfire, NOT esc/fires: the BOTLOG t= line below already carries an
 		# esc= field, and a shared name would make every sweep regex match both.
 		# That is the pillar-vs-orbiter proj(v=0) collision that cost a cycle.
@@ -218,16 +220,19 @@ func _tick():
 		var hop = 0
 		if arb.get("last_hop") != null and arb.last_hop:
 			hop = 1                                # the chosen move is a half-speed hop
+		var stand = 0
+		if arb.get("last_stand") != null:
+			stand = int(arb.last_stand)            # standing income, points per second
 		var eblk = "-"
 		if move_behavior.get("_world") != null and move_behavior._world != null \
 				and move_behavior._world.get("last_engage_block") != null:
 			eblk = str(move_behavior._world.last_engage_block)   # why engage resolved to 0
-		print("BOTLOG ARB wave=%d hp=%d/%d pos=%s mv=(%.2f,%.2f) margin=%.2f threats=%d nearE=%d proj=%d edge=%d dmgW=%d eff=%.2f turn=%.1f flips=%d frames=%d still=%d pesc=%d pfire=%d sok=%d eng=%.0f eblk=%s anc=%d us=%d hop=%d" % [
+		print("BOTLOG ARB wave=%d hp=%d/%d pos=%s mv=(%.2f,%.2f) margin=%.2f threats=%d nearE=%d proj=%d edge=%d dmgW=%d eff=%.2f turn=%.1f flips=%d frames=%d still=%d pesc=%d pfire=%d sok=%d eng=%.0f eblk=%s anc=%d us=%d hop=%d stand=%d ticks=%d breaks=%d" % [
 			RunData.current_wave, int(player.current_stats.health), int(player.max_stats.health),
 			_fmt_pos(player.position), chosen.x, chosen.y, margin,
 			spawner.enemies.size(), int(near_enemy), proj_count, int(edge),
 			int(_damage_taken_this_wave), hs[0], hs[1], hs[2], hs[3], hs[4],
-			pesc, pfire, sok, eng, eblk, anc, us, hop])
+			pesc, pfire, sok, eng, eblk, anc, us, hop, stand, hs[5], hs[6]])
 		return
 
 	print("BOTLOG t=%d wave=%d hp=%d/%d pos=%s enemies=%d nearE=%d proj=%d charging=%d corr=%d edge=%d dmgW=%d esc=%d %s" % [

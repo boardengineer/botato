@@ -384,6 +384,17 @@ var w_dps = W_DPS
 var w_pickup = W_PICKUP
 var pickup_taken = PICKUP_TAKEN  # --arb-taken
 var hop_enable = 1.0             # --arb-hop
+var stand_mult = 1.0             # --arb-stand: multiplier on the row's standing income (0 = off)
+# A break costs more than the partial second: the NEXT full second has to be
+# stood from zero too, so leaving a stand throws away progress + one whole
+# tick. stand x3 on the tracker w10 bed changed nothing (156-184 materials
+# either way) because the breaks are one-frame flickers priced at a fraction
+# of a tick; this is what makes them dear. --arb-standcommit sweeps it.
+const STAND_COMMIT = 1.0
+var stand_commit = STAND_COMMIT  # --arb-standcommit
+var _stand_income = 0.0          # profile stand_income: points per second a stand earns
+var _stand_progress = 0.0        # profile stand_progress: share of the current tick done
+var last_stand = 0.0             # telemetry mirror of _stand_income
 var last_hop = false             # the chosen candidate is a half-speed hop (telemetry + execution)
 var _hop_wanted = false          # set by _prepare: a telegraph or dash is close enough
 var last_aoe_n = 0               # KIND_AOE threats priced this decision (telemetry)
@@ -551,6 +562,8 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("pickup"): w_pickup = float(d["pickup"])
 	if d.has("taken"): pickup_taken = float(d["taken"])
 	if d.has("hop"): hop_enable = float(d["hop"])
+	if d.has("stand"): stand_mult = float(d["stand"])
+	if d.has("standcommit"): stand_commit = float(d["standcommit"])
 	if d.has("hyst"): w_hyst = float(d["hyst"])
 	if d.has("lethality"): lethality = float(d["lethality"])
 	if d.has("horizon"): horizon = float(d["horizon"])
@@ -616,6 +629,9 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 	_anchor_inner = float(profile.get("anchor_inner", 0.0))
 	_anchor_w = w_anchor * float(profile.get("anchor_w", 1.0))
 	_pickup_radius = float(profile.get("pickup_radius", 0.0))
+	_stand_income = float(profile.get("stand_income", 0.0)) * stand_mult
+	_stand_progress = float(profile.get("stand_progress", 0.0))
+	last_stand = _stand_income
 	_orbit_w = float(profile.get("orbit", 0.0))
 	if orbit_override >= 0.0:
 		_orbit_w = orbit_override
@@ -1239,16 +1255,35 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 				# damage term pays out twice.
 				total -= dps_pay
 
+	# Standing income (Streamer, see world_view stand_income): the stand earns
+	# the tick for the whole horizon; any move forfeits the part of the current
+	# second already stood -- the "every twitch resets the tick" rule.
+	if _stand_income > 0.0:
+		if d == Vector2.ZERO:
+			total -= _stand_income * horizon
+		elif last_dir == Vector2.ZERO:
+			total += _stand_income * (_stand_progress + stand_commit)   # breaking a stand
+		else:
+			total += _stand_income * _stand_progress
+
 	for r in rewards:
 		# Attracted rewards (drops, food) are taken at the attract rim, so the
 		# distance that matters is to the rim; a felled reward (tree, r[2]
-		# false) still has to be reached.
-		var rim = _pickup_radius if (r.size() < 3 or r[2]) else 0.0
+		# false) still has to be reached. A HELD reward (r[3] = its own rim,
+		# e.g. a dead scapegoat's revive zone) pays its value to every move
+		# that ENDS inside the rim, so standing in it keeps earning and
+		# stepping out costs the same -- that is what makes the bot stay the
+		# three seconds a revive takes.
+		var held = r.size() > 3 and float(r[3]) > 0.0
+		var rim = float(r[3]) if held else (_pickup_radius if (r.size() < 3 or r[2]) else 0.0)
 		var d0 = max(p0.distance_to(r[0]) - rim, 0.0)
 		var d1 = max(p_end.distance_to(r[0]) - rim, 0.0)
 		var closed = (d0 - d1) / max(speed * horizon, 1.0)   # -1..1, share of the move spent approaching
 		var gain = w_pickup * r[1] * closed / (1.0 + d0 / PICKUP_FALLOFF)
-		if d1 == 0.0 and d0 > 0.0:
+		if held:
+			if d1 == 0.0:
+				gain += w_pickup * r[1]                      # inside the zone: keep earning
+		elif d1 == 0.0 and d0 > 0.0:
 			gain += w_pickup * r[1] * pickup_taken           # this move collects it
 		total -= gain
 

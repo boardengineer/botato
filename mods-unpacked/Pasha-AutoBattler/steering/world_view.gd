@@ -138,6 +138,20 @@ const EGG_VALUE = 60.0           # a spawner is worth far more dead than its own
 # outside it.
 const GOLD_VALUE = 0.8
 const SWEEP_RADIUS = 420.0       # no enemy inside this = a quiet field, sweep the drops
+# -- Scapegoat --
+# item_scapegoat spawns a pet that enemies target INSTEAD of the player; when
+# it dies, a player standing inside its HealingTriggeringZone (100 px circle,
+# 20 px above the body) refills it over revive_duration (3 s) and it rises
+# (entities/units/pet/scapegoat/scapegoat.gd). A dead goat is therefore worth
+# a walk and a 3-second stand: every hit it would have drawn lands on us
+# instead. Priced as a HELD reward -- the arbiter pays REVIVE_VALUE to any
+# move that ends inside the zone, so leaving it costs the same each frame.
+# --arb-revive=<mult> sweeps it (0 = off).
+const REVIVE_VALUE = 30.0        # ~two expected hits; the goat tanks far more than that
+const SCAPEGOAT_ZONE = 100.0
+const SCAPEGOAT_ZONE_OFFSET = Vector2(0, -20)
+var revive_mult = 1.0            # --arb-revive
+var _goat_dead = {}              # instance id -> seconds dead (telemetry)
 var sweep_override = -1.0        # --arb-sweep: force the row's sweep multiplier
 var dash_fix = 1.0               # --arb-dashfix=0: revert the dash speed/duration model
 var pickup_radius = 150.0        # the player's ItemAttractArea radius this frame
@@ -205,6 +219,9 @@ const BIRTH_STEP_COST = 4.0      # avoid_births: a red X priced as a small stand
 #   dps           float   multiplier on the kill reward (0 for weaponless kits)
 #   loot_value    float   reward for a loot alien (0 if it cannot be caught)
 #   tree_value    float   reward for a living tree (pacifist's only kills)
+#   stand_income  bool    Streamer: price standing by the game's own not-moving
+#                         material tick (3% of held gold per full second, min 1,
+#                         cap 25) and charge a move with the tick it throws away
 #   sweep         float   multiplier on material value while no enemy is inside
 #                         sweep_radius of the bot: the between-bursts drop walk
 #   sweep_radius  float   the quiet test's radius (default SWEEP_RADIUS)
@@ -329,8 +346,13 @@ const CHARACTER_PROFILES = {
 	# --- Anchored: a place worth fighting near (or away from) ---
 	"character_engineer": {"anchor": "structures", "anchor_radius": 260.0,
 			"still": "prefer", "gold_end": 1.6, "end_secs": 6},
+	# Streamer (tracker #22113, Nightmare Abyss win): the human takes 12-75
+	# steps a WAVE and collects 630-1,130 materials from the standing tick.
+	# stand_income prices exactly that tick (player.gd NotMovingTimer, 1 s,
+	# repeating; handle_gold_stat pays min(cap, max(1, pct x held))): standing
+	# earns it, and a step forfeits the second already accumulated.
 	"character_streamer": {"anchor": "structures", "anchor_radius": 240.0,
-			"still": "prefer", "gold_end": 1.6, "end_secs": 6},
+			"still": "prefer", "stand_income": true, "gold_end": 1.6, "end_secs": 6},
 	"character_multitasker": {"anchor": "structures", "anchor_radius": 320.0,
 			"caution": 0.75},
 	"character_mage": {"anchor": "away_structures", "anchor_inner": 500.0,
@@ -762,6 +784,9 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("dashfix"):
 		dash_fix = float(d["dashfix"])
 		print("WORLDVIEW dash_fix=%.0f" % dash_fix)
+	if d.has("revive"):
+		revive_mult = float(d["revive"])
+		print("WORLDVIEW revive_mult=%.2f" % revive_mult)
 	if d.has("centermode"):
 		# Startup args parse as floats, so the mode switch is numeric: a
 		# nonzero value turns a perimeter row into a CENTER anchor with that
@@ -910,6 +935,26 @@ func gather(main, player) -> void:
 		if g.position.distance_squared_to(pos) < pickup_sq:
 			rewards.push_back([g.position, gold_value])
 
+	# Scapegoat revive (see REVIVE_VALUE): a dead goat's zone is a held reward.
+	if revive_mult > 0.0 and ("pets" in spawner):
+		for pet in spawner.pets:
+			if not is_instance_valid(pet) or not pet.get("is_scapegoat"):
+				continue
+			var id = pet.get_instance_id()
+			if pet.dead and not pet.get("_end_of_wave"):
+				if not _goat_dead.has(id):
+					_goat_dead[id] = 0.0
+					print("BOTLOG GOAT died wave=%d t=%d pos=(%d,%d)" % [RunData.current_wave,
+							int(main._wave_timer.wait_time - main._wave_timer.time_left),
+							int(pet.position.x), int(pet.position.y)])
+				_goat_dead[id] += 1.0 / float(max(Engine.iterations_per_second, 1))   # one physics tick
+				rewards.push_back([pet.position + SCAPEGOAT_ZONE_OFFSET, REVIVE_VALUE * revive_mult,
+						false, SCAPEGOAT_ZONE])
+			elif _goat_dead.has(id):
+				print("BOTLOG GOAT revived wave=%d t=%d after=%.1fs" % [RunData.current_wave,
+						int(main._wave_timer.wait_time - main._wave_timer.time_left), _goat_dead[id]])
+				_goat_dead.erase(id)
+
 	# Trees: pacifist's only kills and crates; cryptid's income (negative value
 	# later). spawner.neutrals holds them.
 	var tree_value = float(row.get("tree_value", 0.0))
@@ -936,6 +981,22 @@ func gather(main, player) -> void:
 
 	profile = {}
 	profile["pickup_radius"] = pickup_radius   # every row: the attract rim prices drops
+	if row.get("stand_income", false):
+		# The not-moving material tick, in the pickup unit (gold_value per
+		# material), and how far into the current second the stand is.
+		var per_sec = 0.0
+		for ts in RunData.get_player_effect(Keys.temp_stats_while_not_moving_hash, 0):
+			if ts[0] == Keys.percent_materials_hash:
+				var v = max(1.0, abs(float(ts[1]) / 100.0 * float(RunData.get_player_gold(0))))
+				if ts.size() >= 3:
+					v = min(v, float(ts[2]))
+				per_sec += v
+		profile["stand_income"] = per_sec * gold_value
+		var progress = 0.0
+		if ("not_moving_bonuses_applied" in player) and player.not_moving_bonuses_applied 				and ("_not_moving_timer" in player) and player._not_moving_timer != null:
+			var t = player._not_moving_timer
+			progress = clamp((t.wait_time - t.time_left) / max(t.wait_time, 0.01), 0.0, 1.0)
+		profile["stand_progress"] = progress
 	if not row.empty():
 		var hp_ratio = current_hp / max_hp
 		var caution = _caution(row, hp_ratio)

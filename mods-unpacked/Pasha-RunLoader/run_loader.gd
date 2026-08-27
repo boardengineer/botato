@@ -1,9 +1,13 @@
 extends Node
 
-# RunLoader: load a public brotatotracker.com run at a chosen wave.
+# RunLoader: browse and load public brotatotracker.com runs at a chosen wave.
 #
 # brotatotracker.com is the companion site of the BrotatoRunTracker workshop
 # mod. Every run it holds is queryable without a login:
+#   GET /api/runs?character=&difficulty=&zone=&outcome=&pageSize=&page=
+#                                 the run list (newest first; those four
+#                                 filters are honoured server-side, there is
+#                                 no sort or search)
 #   GET /api/runs/{id}            the run (character, difficulty, zone, elite
 #                                 and Nightmare-event schedule, mods, ...)
 #   GET /api/runs/{id}/waves/{n}  the build AT wave n: level, gold, items with
@@ -12,9 +16,13 @@ extends Node
 # This mod fetches those, assembles the run through RunData -- the same calls
 # the character/weapon/shop screens make, so the game computes every effect
 # itself -- and continues into wave n's shop as if you had just cleared wave
-# n-1 with that exact build. Use it from the title-screen panel, or launch
-# the game with  --runloader=<run id>:<wave>  (add  --runloader-quit=1  to
-# build, save, print a RUNLOADER line and quit -- for tooling).
+# n-1 with that exact build. Use the title-screen panel (filter, Search, pick
+# a row, pick a wave, Load), or launch the game with
+#   --runloader=<run id>:<wave>        load that run at that wave
+#   --runloader-query=<character|any>:<difficulty|any>:<zone|any>:<outcome|any>
+#                                      list page 1 of that filter (RUNLOADER
+#                                      ROW / LIST lines)
+#   --runloader-quit=1                 quit after the load or the list (tooling)
 #
 # WHAT IS REPRODUCED EXACTLY
 #   character, difficulty, zone, wave, level, xp, gold, every item (count,
@@ -32,8 +40,10 @@ extends Node
 #   2. DLC content needs the DLC. Abyss runs (zone 1), Nightmare (difficulty 6)
 #      and every Abyssal Terrors item/weapon/character require the DLC to be
 #      installed and enabled; the loader refuses such runs otherwise.
-#   3. Modded runs do not resolve. Ids from other mods are unknown here; they
-#      are skipped and listed. The record's `moddedContent` flag is shown.
+#   3. Modded runs do not resolve. Ids from other mods are unknown here. The
+#      browser HIDES modded runs (the API cannot filter them, so they are
+#      dropped client-side and counted); a modded id loaded by hand has its
+#      unknown ids skipped and listed.
 #   4. Game-version drift. Records carry the version they were played on;
 #      items rebalanced or renamed since then load as the CURRENT version.
 #   5. Your current saved run is replaced. Loading writes the built run as the
@@ -41,21 +51,28 @@ extends Node
 #      runloader_previous_run.json); the shop then autosaves normally.
 #   6. The shop you land in is fresh: the record does not carry the shop offer,
 #      rerolls, locks or bans of that wave.
-#   7. Endless waves (21+) and co-op runs are not supported; the record's
-#      wave range is what the API serves (typically 1 .. waveReached).
+#   7. Retried and endless runs are listed. A retried wave was died on at least
+#      once with that build, and its per-wave stats may mix attempts; endless
+#      runs load only up to the zone's last wave (the wave picker caps there).
+#      Co-op runs are not supported.
 #   8. Stats are matched to the record's snapshot, which the tracker takes at
 #      a fixed moment of the wave; items bought and stats gained in the shop
 #      after that moment belong to the NEXT wave's record.
 
 const API = "https://brotatotracker.com/api/runs"
 const LIMITS_SHORT = "Not seed-exact (spawns, drops, shop and elite species are rolled here). " \
-	+ "DLC runs need the DLC. Modded ids are skipped. Replaces your saved run (backup kept)."
+	+ "DLC runs need the DLC. Modded runs are hidden. Retried/endless runs are listed " \
+	+ "(endless: waves up to the zone's last). Loading replaces your saved run (backup kept)."
 const ELITE_BASE_WAVE = 10          # RunData marks the 10-wave block whose schedule is set
+const PAGE_SIZE = 25
+const LIST_ROWS = 10
 
 const S_IDLE = 0
 const S_RUN = 1
 const S_WAVE = 2
 const S_UPGRADES = 3
+const S_LIST = 4
+const S_PREVIEW = 5
 
 var _http: HTTPRequest
 var _state = S_IDLE
@@ -66,13 +83,36 @@ var _wave_rec = {}
 var _upgrades = {}                  # "upgrade_x_<tier+1>" -> count, picks BEFORE the wave
 var _upgrade_wave = 1               # next wave record to fetch for the level-up picks
 var _cli = ""                       # --runloader=<id>:<wave>
+var _cli_query = ""                 # --runloader-query=<char>:<diff>:<zone>:<outcome>
 var _cli_quit = false               # --runloader-quit=1
 var _cli_started = false
+
+# browser
+var _page = 1
+var _total = 0
+var _hidden_modded = 0
+var _rows = []                      # the visible page's unmodded run records
+var _preview_key = ""               # "<id>:<wave>" of _preview_rec
+var _preview_rec = {}
+var _preview_pending = false
+
+# panel
 var _panel: Control = null
 var _status: Label = null
 var _id_edit: LineEdit = null
 var _wave_spin: SpinBox = null
 var _load_button: Button = null
+var _char_opt: OptionButton = null
+var _diff_opt: OptionButton = null
+var _zone_opt: OptionButton = null
+var _outcome_opt: OptionButton = null
+var _search_button: Button = null
+var _list: ItemList = null
+var _list_header: Label = null
+var _page_label: Label = null
+var _prev_button: Button = null
+var _next_button: Button = null
+var _preview_label: Label = null
 
 
 func _ready() -> void:
@@ -80,6 +120,8 @@ func _ready() -> void:
 	var args = Utils.get_startup_arguments()
 	if args.has("runloader"):
 		_cli = str(args["runloader"])
+	if args.has("runloader-query"):
+		_cli_query = str(args["runloader-query"])
 	if args.has("runloader-quit"):
 		_cli_quit = str(args["runloader-quit"]) != "0"
 	_http = HTTPRequest.new()
@@ -97,15 +139,18 @@ func _process(_delta: float) -> void:
 		return
 	if _panel == null or not is_instance_valid(_panel):
 		_attach_panel(scene)
-	if _cli != "" and not _cli_started:
+	if not _cli_started and (_cli != "" or _cli_query != ""):
 		_cli_started = true
-		var parts = _cli.split(":")
-		if parts.size() == 2:
-			_id_edit.text = parts[0]
-			_wave_spin.value = int(parts[1])
-			_start(int(parts[0]), int(parts[1]))
-		else:
-			_set_status("--runloader expects <run id>:<wave>")
+		if _cli_query != "":
+			_apply_cli_query(_cli_query)
+		elif _cli != "":
+			var parts = _cli.split(":")
+			if parts.size() == 2:
+				_id_edit.text = parts[0]
+				_wave_spin.value = int(parts[1])
+				_start(int(parts[0]), int(parts[1]))
+			else:
+				_set_status("--runloader expects <run id>:<wave>")
 
 
 # -- Panel ------------------------------------------------------------------
@@ -117,14 +162,82 @@ func _attach_panel(scene: Node) -> void:
 	_panel.anchor_top = 0.0
 	_panel.margin_left = 24
 	_panel.margin_top = 24
-	_panel.rect_min_size = Vector2(520, 0)
+	_panel.rect_min_size = Vector2(760, 0)
 	var box = VBoxContainer.new()
 	_panel.add_child(box)
 
 	var title = Label.new()
-	title.text = "brotatotracker.com run loader"
+	title.text = "brotatotracker.com run browser"
 	box.add_child(title)
 
+	# Filter row
+	var filters = HBoxContainer.new()
+	box.add_child(filters)
+	_char_opt = OptionButton.new()
+	_char_opt.add_item("any character")
+	_char_opt.set_item_metadata(0, "")
+	var chars = []
+	for c in ItemService.characters:
+		chars.push_back([c.get_name_text(), c.my_id])
+	chars.sort_custom(self, "_by_first")
+	for c in chars:
+		_char_opt.add_item(c[0])
+		_char_opt.set_item_metadata(_char_opt.get_item_count() - 1, c[1])
+	filters.add_child(_char_opt)
+	_diff_opt = OptionButton.new()
+	_diff_opt.add_item("any danger")
+	_diff_opt.set_item_metadata(0, -1)
+	for d in range(7):
+		_diff_opt.add_item("Nightmare" if d == 6 else "Danger %d" % d)
+		_diff_opt.set_item_metadata(d + 1, d)
+	filters.add_child(_diff_opt)
+	_zone_opt = OptionButton.new()
+	_zone_opt.add_item("any zone")
+	_zone_opt.set_item_metadata(0, -1)
+	_zone_opt.add_item("Crash Zone")
+	_zone_opt.set_item_metadata(1, 0)
+	_zone_opt.add_item("Abyss")
+	_zone_opt.set_item_metadata(2, 1)
+	filters.add_child(_zone_opt)
+	_outcome_opt = OptionButton.new()
+	_outcome_opt.add_item("won")
+	_outcome_opt.set_item_metadata(0, "Won")
+	_outcome_opt.add_item("lost")
+	_outcome_opt.set_item_metadata(1, "Lost")
+	_outcome_opt.add_item("any outcome")
+	_outcome_opt.set_item_metadata(2, "")
+	filters.add_child(_outcome_opt)
+	_search_button = Button.new()
+	_search_button.text = "  Search  "
+	filters.add_child(_search_button)
+	var _e1 = _search_button.connect("pressed", self, "_on_search_pressed")
+
+	# Results
+	_list_header = Label.new()
+	_list_header.text = "no search yet"
+	box.add_child(_list_header)
+	_list = ItemList.new()
+	_list.rect_min_size = Vector2(0, LIST_ROWS * 22)
+	_list.select_mode = ItemList.SELECT_SINGLE
+	box.add_child(_list)
+	var _e2 = _list.connect("item_selected", self, "_on_row_selected")
+	var paging = HBoxContainer.new()
+	box.add_child(paging)
+	_prev_button = Button.new()
+	_prev_button.text = " < "
+	_prev_button.disabled = true
+	paging.add_child(_prev_button)
+	var _e3 = _prev_button.connect("pressed", self, "_on_prev_pressed")
+	_page_label = Label.new()
+	_page_label.text = ""
+	paging.add_child(_page_label)
+	_next_button = Button.new()
+	_next_button.text = " > "
+	_next_button.disabled = true
+	paging.add_child(_next_button)
+	var _e4 = _next_button.connect("pressed", self, "_on_next_pressed")
+
+	# Load row
 	var row = HBoxContainer.new()
 	box.add_child(row)
 	var id_label = Label.new()
@@ -142,14 +255,20 @@ func _attach_panel(scene: Node) -> void:
 	_wave_spin.max_value = 20
 	_wave_spin.value = 1
 	row.add_child(_wave_spin)
+	var _e5 = _wave_spin.connect("value_changed", self, "_on_wave_changed")
 	_load_button = Button.new()
 	_load_button.text = "  Load  "
 	row.add_child(_load_button)
-	var _e = _load_button.connect("pressed", self, "_on_load_pressed")
+	var _e6 = _load_button.connect("pressed", self, "_on_load_pressed")
+
+	_preview_label = Label.new()
+	_preview_label.autowrap = true
+	_preview_label.text = ""
+	box.add_child(_preview_label)
 
 	_status = Label.new()
 	_status.autowrap = true
-	_status.text = "Loads the recorded build of that run at that wave and opens its shop."
+	_status.text = "Pick filters and Search, or type a run id. Loading opens that wave's shop with the recorded build."
 	box.add_child(_status)
 
 	var limits = Label.new()
@@ -161,11 +280,188 @@ func _attach_panel(scene: Node) -> void:
 	scene.add_child(_panel)
 
 
+func _by_first(a, b) -> bool:
+	return a[0] < b[0]
+
+
 func _set_status(text: String) -> void:
 	print("RUNLOADER " + text)
 	if _status != null and is_instance_valid(_status):
 		_status.text = text
 
+
+func _set_busy(busy: bool) -> void:
+	for b in [_load_button, _search_button, _prev_button, _next_button]:
+		if b != null and is_instance_valid(b):
+			b.disabled = busy
+	if not busy:
+		_update_paging()
+
+
+# -- Browser ---------------------------------------------------------------
+
+func _on_search_pressed() -> void:
+	_search(1)
+
+
+func _on_prev_pressed() -> void:
+	if _page > 1:
+		_search(_page - 1)
+
+
+func _on_next_pressed() -> void:
+	if _page < _page_count():
+		_search(_page + 1)
+
+
+func _page_count() -> int:
+	return int(max(ceil(float(_total) / float(PAGE_SIZE)), 1))
+
+
+func _update_paging() -> void:
+	if _page_label == null or not is_instance_valid(_page_label):
+		return
+	_page_label.text = " page %d of %d " % [_page, _page_count()] if _total > 0 else ""
+	_prev_button.disabled = _page <= 1
+	_next_button.disabled = _page >= _page_count()
+
+
+func _filter_query(page: int) -> String:
+	var parts = ["pageSize=%d" % PAGE_SIZE, "page=%d" % page]
+	var character = str(_char_opt.get_selected_metadata())
+	if character != "":
+		parts.push_back("character=" + character.percent_encode())
+	var difficulty = int(_diff_opt.get_selected_metadata())
+	if difficulty >= 0:
+		parts.push_back("difficulty=%d" % difficulty)
+	var zone = int(_zone_opt.get_selected_metadata())
+	if zone >= 0:
+		parts.push_back("zone=%d" % zone)
+	var outcome = str(_outcome_opt.get_selected_metadata())
+	if outcome != "":
+		parts.push_back("outcome=" + outcome)
+	return "&".join(parts)
+
+
+func _search(page: int) -> void:
+	if _state != S_IDLE:
+		return
+	_page = page
+	_state = S_LIST
+	_set_busy(true)
+	_set_status("searching page %d..." % page)
+	_request(API + "?" + _filter_query(page))
+
+
+func _on_list_received(data: Dictionary) -> void:
+	_total = int(data.get("total", 0))
+	_rows = []
+	_hidden_modded = 0
+	_list.clear()
+	for r in data.get("items", []):
+		if bool(r.get("moddedContent", false)):
+			_hidden_modded += 1     # limit 3: the API cannot filter these
+			continue
+		_rows.push_back(r)
+		_list.add_item(_row_text(r))
+	_list_header.text = "showing %d of %d run(s)%s" % [_rows.size(), _total,
+			" (%d modded hidden on this page)" % _hidden_modded if _hidden_modded > 0 else ""]
+	_set_status("%d run(s) match; select one, pick a wave, Load" % _total if _total > 0 else "no runs match")
+	_update_paging()
+	if _cli_query != "":
+		for r in _rows:
+			print("RUNLOADER ROW " + _row_text(r))
+		print("RUNLOADER LIST total=%d shown=%d hidden_modded=%d page=%d" % [
+			_total, _rows.size(), _hidden_modded, _page])
+		if _cli_quit:
+			get_tree().quit()
+
+
+func _row_text(r: Dictionary) -> String:
+	var flags = ""
+	if int(r.get("retries", 0)) > 0:
+		flags += "  retries %d" % int(r.get("retries", 0))
+	if str(r.get("gameMode", "")) == "endless":
+		flags += "  endless"
+	return "#%d  %s  %s  w%d/%d  lvl %d  %d kills%s" % [
+		int(r.get("id", 0)), str(r.get("playedAtUtc", "")).substr(0, 10),
+		str(r.get("playerName", "?")), int(r.get("waveReached", 0)),
+		int(r.get("nbOfWaves", 20)), int(r.get("level", 0)),
+		int(r.get("totalEnemiesKilled", 0)), flags]
+
+
+func _on_row_selected(index: int) -> void:
+	if index < 0 or index >= _rows.size():
+		return
+	var r = _rows[index]
+	_id_edit.text = str(int(r.get("id", 0)))
+	# Endless runs go past the zone's last wave; only waves up to it load (limit 7)
+	var last = min(int(r.get("waveReached", 1)), int(r.get("nbOfWaves", 20)))
+	_wave_spin.max_value = max(last, 1)
+	_wave_spin.value = max(last, 1)
+	_request_preview()
+
+
+func _on_wave_changed(_value: float) -> void:
+	_request_preview()
+
+
+func _request_preview() -> void:
+	var id = int(_id_edit.text.strip_edges())
+	if id <= 0:
+		return
+	if _state != S_IDLE:
+		_preview_pending = true
+		return
+	_preview_pending = false
+	_preview_key = "%d:%d" % [id, int(_wave_spin.value)]
+	_state = S_PREVIEW
+	_preview_label.text = "fetching wave %d of run %d..." % [int(_wave_spin.value), id]
+	_request("%s/%d/waves/%d" % [API, id, int(_wave_spin.value)])
+
+
+func _on_preview_received(data: Dictionary) -> void:
+	var rec = data.get("wave", {})
+	if rec.empty():
+		_preview_label.text = "no record for that wave"
+		_preview_rec = {}
+		return
+	_preview_rec = rec
+	var weapons = []
+	for w in rec.get("weapons", []):
+		weapons.push_back(str(w.get("weaponId", "")).replace("weapon_", ""))
+	var items = 0
+	for it in rec.get("items", []):
+		if not str(it.get("itemId", "")).begins_with("character_"):
+			items += int(it.get("count", 1))
+	_preview_label.text = "%s wave %d: %d HP, level %d, %d gold, weapons: %s, %d items" % [
+		str(rec.get("characterId", "")).replace("character_", ""), int(rec.get("waveNumber", 0)),
+		int(rec.get("maxHp", 0)), int(rec.get("level", 0)), int(rec.get("gold", 0)),
+		" ".join(weapons), items]
+
+
+func _apply_cli_query(spec: String) -> void:
+	var parts = spec.split(":")
+	if parts.size() != 4:
+		_set_status("--runloader-query expects <character|any>:<difficulty|any>:<zone|any>:<outcome|any>")
+		if _cli_quit:
+			get_tree().quit()
+		return
+	_select_metadata(_char_opt, parts[0] if parts[0] != "any" else "")
+	_select_metadata(_diff_opt, int(parts[1]) if parts[1] != "any" else -1)
+	_select_metadata(_zone_opt, int(parts[2]) if parts[2] != "any" else -1)
+	_select_metadata(_outcome_opt, parts[3] if parts[3] != "any" else "")
+	_search(1)
+
+
+func _select_metadata(opt: OptionButton, value) -> void:
+	for i in range(opt.get_item_count()):
+		if opt.get_item_metadata(i) == value:
+			opt.select(i)
+			return
+
+
+# -- Load ------------------------------------------------------------------
 
 func _on_load_pressed() -> void:
 	var id = int(_id_edit.text.strip_edges())
@@ -175,9 +471,12 @@ func _on_load_pressed() -> void:
 	_start(id, int(_wave_spin.value))
 
 
-# -- Fetch -----------------------------------------------------------------
-
 func _start(run_id: int, wave: int) -> void:
+	if _state == S_PREVIEW or _state == S_LIST:
+		# A preview (or a page) in flight must not swallow the Load: drop it.
+		_http.cancel_request()
+		_preview_pending = false
+		_state = S_IDLE
 	if _state != S_IDLE:
 		return
 	_run_id = run_id
@@ -186,8 +485,7 @@ func _start(run_id: int, wave: int) -> void:
 	_wave_rec = {}
 	_upgrades = {}
 	_upgrade_wave = 1
-	if _load_button != null:
-		_load_button.disabled = true
+	_set_busy(true)
 	_state = S_RUN
 	_set_status("fetching run %d..." % _run_id)
 	_request("%s/%d" % [API, _run_id])
@@ -209,6 +507,17 @@ func _on_request_completed(result: int, code: int, _headers: PoolStringArray, bo
 		return
 	var data = parsed.result
 	match _state:
+		S_LIST:
+			_state = S_IDLE
+			_set_busy(false)
+			_on_list_received(data)
+			if _preview_pending:
+				_request_preview()
+		S_PREVIEW:
+			_state = S_IDLE
+			_on_preview_received(data)
+			if _preview_pending:
+				_request_preview()
 		S_RUN:
 			_run = data
 			var reached = int(_run.get("waveReached", 20))
@@ -217,8 +526,13 @@ func _on_request_completed(result: int, code: int, _headers: PoolStringArray, bo
 				return
 			if bool(_run.get("moddedContent", false)):
 				_set_status("note: this run used mods; unknown ids will be skipped")
-			_state = S_WAVE
-			_request("%s/%d/waves/%d" % [API, _run_id, _wave])
+			if _preview_key == "%d:%d" % [_run_id, _wave] and not _preview_rec.empty():
+				_wave_rec = _preview_rec       # the preview already fetched this wave
+				_state = S_UPGRADES
+				_next_upgrade_wave()
+			else:
+				_state = S_WAVE
+				_request("%s/%d/waves/%d" % [API, _run_id, _wave])
 		S_WAVE:
 			_wave_rec = data.get("wave", {})
 			if _wave_rec.empty():
@@ -246,9 +560,12 @@ func _next_upgrade_wave() -> void:
 
 
 func _fail(why: String) -> void:
+	var was = _state
 	_state = S_IDLE
-	if _load_button != null:
-		_load_button.disabled = false
+	_set_busy(false)
+	if was == S_PREVIEW:
+		_preview_label.text = "preview failed: " + why
+		return
 	_set_status("failed: " + why)
 	if _cli_quit:
 		get_tree().quit()
@@ -281,6 +598,9 @@ func _build_and_enter() -> void:
 	RunData.enabled_dlcs = ProgressData.get_active_dlc_ids()
 	ZoneService.current_zone = ZoneService.get_zone_data(zone).duplicate()
 	RunData.nb_of_waves = ZoneService.current_zone.waves_data.size()
+	if _wave > RunData.nb_of_waves:
+		_fail("wave %d is past the zone's last wave (%d); endless waves are not supported" % [_wave, RunData.nb_of_waves])
+		return
 	RunData.reset_background()
 	RunData.add_character(character, 0)
 
@@ -354,8 +674,7 @@ func _build_and_enter() -> void:
 	RunData.reset_elites_spawn()
 	RunData.reset_events_nightmare()
 	var pool = ItemService.get_elites_from_zone(zone).duplicate()
-	var mods = _run.get("waveModifiers", [])
-	for m in mods:
+	for m in _run.get("waveModifiers", []):
 		var w = int(m.get("wave", 0))
 		var t = str(m.get("type", ""))
 		if t == "elite" or t == "horde":

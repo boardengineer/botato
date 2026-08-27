@@ -914,3 +914,63 @@ Fixed on the way (kept):
   only with a telegraph or dash inside 420 px, executed as the tap duty
   cycle (2 on / 2 off) for every row. Never the winner on the croc bed
   (pursuer pressure), longest time-to-death with it (mean ~30 s vs 17 s).
+
+## Tracker reproduction: Streamer, run #22113 (2026-08-26) — standing income
+
+Nightmare Abyss win, six slingshots, armour to 61, **12-75 steps a wave**, 630-1,130
+gold a wave from the standing tick. Game rule (player.gd): `NotMovingTimer`, 1 s,
+repeating, starts when movement is zero; each timeout pays `min(25, max(1, 3% x
+held gold))`; ANY moving frame stops it and the next stand starts from zero.
+
+Built `stand_income` (row key; `--arb-stand=<mult>`): the tick in the pickup unit
+(`per_sec x gold_value`) is paid to the standing candidate over the horizon, and a
+move pays back the progress of the current second; `--arb-standcommit` adds a whole
+tick to the price of BREAKING a stand (the one-frame flickers that reset the timer
+were priced at a fraction of a tick and never stopped). Telemetry: `stand=` (points/s),
+`ticks=` (full seconds stood per sample), `breaks=`; the watcher now prints `gain=`
+(gold at wave end minus wave start) because `mats=` counts pickups only and never
+saw the tick — the first reading of these arms on `mats=` was wrong.
+
+**Sweep (stand_income on): 60/60**, bosses at 20-22 s. Income per wave, gold gained
+(n=4 per arm; human = gold collected that wave):
+
+| wave | stand off | x1 | x3 | x1 + commit | human |
+|---|---|---|---|---|---|
+| 8 (315 held) | 127-225 | 216-300 | 301-658, **2/4 died** | 291-439 | 632 |
+| 10 (363 held) | 261-360 | 434-559 | 453-539 | 438-525 | 848 |
+| 13 (268 held) | 161-223 | 304-433 | 500-595 | | 865 |
+
+Row: `stand_income: true` (x1) + commit 1.0. x3 is the human's income on the safe
+waves and lethal on the 33-HP one; a `stand_w` per-wave phase is the obvious next
+step. `ticks=` shows a full second completes in ~60% of samples with the commit rule.
+
+## Scapegoat revive (2026-08-26)
+
+item_scapegoat (entities/units/pet/scapegoat): a pet that enemies target
+instead of the player; when it dies, a player inside its 100 px
+HealingTriggeringZone (20 px above the body) refills it over 3 s and it
+rises. Built as a HELD reward: a dead goat's zone is `[pos, REVIVE_VALUE 30,
+attracted=false, rim=100]`; the arbiter pays the value to every move that
+ENDS inside the rim (so standing there keeps earning and leaving costs the
+same), the approach is priced like any pickup. Row-independent; `--arb-revive`
+sweeps it (0 = off). Telemetry `BOTLOG GOAT died/revived after=Ns`.
+
+Bed: tracker run #33670 (Loud, six daggers, 133 HP) has the goat from wave
+18; snapshots `20260826-w18..20-loud-d6-hp*-tracker33670.json`. Revives
+observed: died 27 s -> revived 33 s (5.9 s dead), died 16 s -> 30 s. n=3:
+
+| wave | revive on: dmg | revive off: dmg | gain on / off |
+|---|---|---|---|
+| 18 | 15 / 86 / 22 (41) | 78 / 102 / 71 (84) | 1050 / 1032 |
+| 19 | 146 / 76 / 108 (110) | 129 / 171 / 123 (141) | 1858 / 1832 |
+| 20 | 38 / 38 / 0 | 0 / 38 / 38 | bosses dead at 21-29 s |
+
+9/9 either way; damage taken roughly halves on the elite wave and drops a
+quarter on wave 19, income unchanged. Kept.
+
+## ARBITER bed 2026-08-26 late (hop + dash fix + drop pricing + Streamer stand + scapegoat)
+
+loud-w11 3, gangster 10, w5-loud 10, w4-loud 10, sailor 10, renegade 10, fisherman 9,
+wildling 9, king 10, lucky 10 = **91/100** (previous full beds: 93 at b56c850, 89 with the
+adaptive interval on). loud-w11 sits at 3-7 across every bed this month; the two cancelled
+partial beds today had it at 6 and 6 on this same code.
