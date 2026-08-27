@@ -383,9 +383,13 @@ const CHARACTER_PROFILES = {
 	# on a 2164x1536 arena the "cheapest floor" was the wall band itself, and
 	# the live w3 log showed the lap running at edge 24-48 with the whole
 	# crowd in a conga line behind and every hit landing against a wall.
+	# caution 1.2 through w8, 1.0 from w9: the weaponless kit flees, and once
+	# the density peaks (~w9: 100+ threats, 46-114 live projectiles) fleeing
+	# EVERYTHING walks it into the wall. w9 arms n=8: caution 1.2 4/8, 1.0
+	# 6/8, 0.9 4/8; but w8 (40 HP) wants the 1.2 (1.0 -> 3/8), so it phases.
 	"character_pacifist": {"food": "none", "anchor": "perimeter", "orbit": 30.0, "pin": true, "pin_dwell": 60,
 			"anchor_inner": 340.0, "anchor_radius": 560.0, "still": "never",
-			"caution": 1.2,
+			"caution_phases": [[8, 1.2], [99, 1.0]],
 			"dps": 0.0, "loot_value": 0.0, "tree_value": 5.0,
 			"avoid_births": 160.0},
 	"character_creature": {"gold_phases": [[8, 1.8], [99, 0.9]],

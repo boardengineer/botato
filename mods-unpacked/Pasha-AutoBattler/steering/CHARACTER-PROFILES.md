@@ -1012,3 +1012,20 @@ fisherman 10, wildling 8, king 10, lucky 9 = **90/100** (prev 91). The -1 is
 noise on the fragile members (gangster/lucky -1 each, both usually 10;
 loud-w11 +1); the crowd runway is neutral on the bed and 9/12 vs 5/12 on the
 Pacifist w8/w9 waves it targets. Kept global at W_ROOM_FAR 3.
+
+## Pacifist caution phase (2026-08-27) — wave-9 herding
+
+The w9 death is the weaponless kit fleeing: it flees the nearest threats, and
+once density peaks (~w9: 100+ threats, 46-114 live projectiles) fleeing
+EVERYTHING is a walk to the wall. The human took 54 damage all wave (mostly one
+narwhal) and won; the bot takes 67-97 and died ~half -- a steering gap, not a
+build ceiling. Lower caution = flee less = stay off the wall.
+
+w9 arms (n=8): caution 1.2 (baseline) 4/8, 1.0 6/8, 0.9 4/8; anchor x2 5/8,
+roomfar x2 5/8, both 5/8 -- caution 1.0 is the only real lever, ~1.0 the sweet
+spot (0.9 over-commits). But w8 (40 HP) WANTS the 1.2 (1.0 -> 3/8), and w6 is
+8/8 at any caution, so it phases: `caution_phases [[8, 1.2], [99, 1.0]]`.
+
+Verification at the row default, n=12: w9 **8/12** (was 4/8), w8 4/12
+(unchanged -- the phase keeps 1.2 there; w8 is a genuinely weak wave, not a
+regression), w6 8/8. Kept.
