@@ -974,3 +974,41 @@ loud-w11 3, gangster 10, w5-loud 10, w4-loud 10, sailor 10, renegade 10, fisherm
 wildling 9, king 10, lucky 10 = **91/100** (previous full beds: 93 at b56c850, 89 with the
 adaptive interval on). loud-w11 sits at 3-7 across every bed this month; the two cancelled
 partial beds today had it at 6 and 6 on this same code.
+
+## Crowd runway (2026-08-27) — Pacifist w9 herding
+
+The w9 death mode (holds the annulus ~20 s, then 100 chasers walk it to the
+wall over a few seconds; every 0.8 s step locally right, the sum a corner)
+is a horizon problem: the wall runway prices the wall 2.4 s out, nothing
+priced the CROWD that far. Added W_ROOM_FAR: the same crowding measure taken
+at FAR_T (2 s) along the bearing, threats extrapolated the same way, moving
+candidates only (`--arb-roomfar`, `_p_far`). Pacifist w8+w9, n=6:
+
+| arm | w9 | w8 |
+|---|---|---|
+| off (--arb-roomfar=0) | 2/6 | 3/6 |
+| x1 (W_ROOM_FAR 3) | **4/6** | **5/6** |
+| x2 | 3/6 | 4/6 |
+
+9/12 at x1 vs 5/12 off. Kept at x1, GLOBAL (every row, like the wall
+runway). Income unchanged: the Pacifist's materials are `pacifist`
+living-enemy harvesting (gain= ~410 every arm), not pickups; its w9 pickup
+count was 9-16 before any of these changes too -- the "220 materials" I
+chased was the Explorer bed, not this one. No regression.
+
+### Streamer stand phase (2026-08-27)
+
+Row `stand_phases [[10,1.0],[99,3.0]], stand_below [0.5,1.0]` (x1 through w10,
+x3 from w11, x1 below half HP). Phased sweep 60/60, ends full HP from w11 on;
+gold gained per wave vs the original x1 sweep: w12 764-816 (was ~270), w13
+554-772, w14 823-926, w16 925-978, w17 728-863, w19 922-1058. x3 held survival
+at 36+ HP everywhere; w8/w10 stay x1 (x3 was 2/4 there). Human's per-wave gold
+was 615/739/559/939/828/952 on those waves -- now within reach.
+
+## ARBITER bed 2026-08-27 (+ crowd runway + Streamer stand phases)
+
+loud-w11 4, gangster 9, w5-loud 10, w4-loud 10, sailor 10, renegade 10,
+fisherman 10, wildling 8, king 10, lucky 9 = **90/100** (prev 91). The -1 is
+noise on the fragile members (gangster/lucky -1 each, both usually 10;
+loud-w11 +1); the crowd runway is neutral on the bed and 9/12 vs 5/12 on the
+Pacifist w8/w9 waves it targets. Kept global at W_ROOM_FAR 3.

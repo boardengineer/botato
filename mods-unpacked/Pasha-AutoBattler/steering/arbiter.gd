@@ -98,6 +98,19 @@ const W_REVERSE = 2.0            # extra cost for a full reversal
 
 # -- Terminal-state shaping --
 const ROOM_CAP = 260.0           # crowding beyond this distance is not crowding
+# -- Crowd runway --
+# The room term above looks 0.8 s ahead. On the tracker Pacifist w9 bed the
+# bot holds the annulus for ~20 s and is then walked from mid-arena to the
+# wall in a few seconds by 100 chasers: every 0.8 s step is locally right and
+# the sum of them is a corner (PHIST: anc 600 -> 1200, edge 12, then the hit
+# chain). The wall runway prices the WALL 2.4 s out; nothing priced the crowd
+# that far. This is the crowd's runway: the same crowding measure taken at
+# FAR_T along the bearing, threats extrapolated the same way, so a heading
+# that stays open beats one the pack will close. Moving candidates only:
+# standing is priced by the threat terms already. --arb-roomfar sweeps it.
+const FAR_T = 2.0
+const W_ROOM_FAR = 3.0
+const ROOM_FAR_CAP = 320.0
 const WALL_CAP = 220.0           # wall room beyond this is irrelevant
 const ENCLOSE_RADIUS = 340.0     # threats inside this ring shape the enclosure term
 const ENCLOSE_MIN = 3            # fewer than this cannot meaningfully surround us
@@ -408,6 +421,7 @@ var horizon = HORIZON
 # the strength -- at ROOM_CAP the term is already flat, so no weight can push
 # the standoff past it.
 var room_cap = ROOM_CAP
+var w_room_far = W_ROOM_FAR      # --arb-roomfar
 # Sweepable: --arb-scandist=0 collapses the clamp to the horizon for every
 # threat, reproducing the old fixed-window behaviour exactly, so it is a free
 # exact control arm rather than an approximation of one.
@@ -545,6 +559,7 @@ var _p_aimed = []                # true for KIND_PROJ / KIND_DASH: a thing that 
 var _p_start = []                # wind-up delay
 var _p_end = []                  # when it stops being dangerous, clamped to horizon
 var _p_future = []               # where it will be at the horizon
+var _p_far = []                  # where it will be at FAR_T (crowd runway)
 
 
 # Apply command-line weight overrides, e.g. {"dps": 9.0, "enclose": 0.0}.
@@ -568,6 +583,7 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("lethality"): lethality = float(d["lethality"])
 	if d.has("horizon"): horizon = float(d["horizon"])
 	if d.has("roomcap"): room_cap = float(d["roomcap"])
+	if d.has("roomfar"): w_room_far = float(d["roomfar"])
 	if d.has("scandist"): scan_distance = max(float(d["scandist"]), 0.0)
 	if d.has("pin"): pin_enable = float(d["pin"])
 	if d.has("pindwell"): pin_dwell_override = int(d["pindwell"])
@@ -863,6 +879,7 @@ func _prepare(p0: Vector2, speed: float, body_radius: float, threats: Array,
 	_p_start = []
 	_p_end = []
 	_p_future = []
+	_p_far = []
 
 	var inv_hp = 1.0 / max(current_hp, 1.0)
 	var reach = speed * horizon          # everything we could possibly walk to
@@ -944,6 +961,7 @@ func _prepare(p0: Vector2, speed: float, body_radius: float, threats: Array,
 		_p_start.push_back(t[T_START])
 		_p_end.push_back(t_end)
 		_p_future.push_back(pos + vel * span)
+		_p_far.push_back(pos + vel * max(FAR_T - t[T_START], 0.0))
 
 
 func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vector2,
@@ -976,6 +994,14 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 	var enc_sum = Vector2.ZERO
 	var enc_w = 0.0
 	var enclose_sq = ENCLOSE_RADIUS * ENCLOSE_RADIUS
+	# Crowd runway (see FAR_T): our position FAR_T out along this bearing,
+	# wall-clamped like p_end, against the threats extrapolated as far.
+	var far_room = ROOM_FAR_CAP
+	var far_sq = ROOM_FAR_CAP * ROOM_FAR_CAP
+	var p_far = p0 + v_eff * FAR_T
+	p_far.x = clamp(p_far.x, body_radius, far.x - body_radius)
+	p_far.y = clamp(p_far.y, body_radius, far.y - body_radius)
+	var want_far = w_room_far > 0.0 and d != Vector2.ZERO
 	# Crowding may be felt further out than enclosure is; scan to whichever
 	# reaches further so raising room_cap past ENCLOSE_RADIUS is not a no-op.
 	var scan_sq = max(enclose_sq, room_cap * room_cap)
@@ -1061,6 +1087,13 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 		# position gives crowding, and its direction gives enclosure.
 		if _p_mark[i]:
 			continue    # a spawn marker takes up no room and blocks no heading
+		if want_far:
+			var offf = _p_far[i] - p_far
+			var dff = offf.length_squared()
+			if dff < far_sq:
+				var edge_far = sqrt(dff) - _p_rad[i]
+				if edge_far < far_room:
+					far_room = edge_far
 		var off = _p_future[i] - p_end
 		var off_sq = off.length_squared()
 		if off_sq < scan_sq:
@@ -1082,6 +1115,8 @@ func _cost(d: Vector2, p0: Vector2, speed: float, body_radius: float, far: Vecto
 		elif _explode_trade and _engage > 0.0:
 			room_cost *= EXPLODE_CROWD       # the dive WANTS the crowd it ends in
 		total += room_cost
+	if want_far and far_room < ROOM_FAR_CAP:
+		total += w_room_far * (1.0 - max(far_room, 0.0) / ROOM_FAR_CAP)
 
 	# Enclosure: threats massed on one side leave an escape, threats spread
 	# evenly around us do not. The mean unit direction is long when they are

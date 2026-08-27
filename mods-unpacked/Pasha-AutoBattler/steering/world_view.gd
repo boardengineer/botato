@@ -222,6 +222,11 @@ const BIRTH_STEP_COST = 4.0      # avoid_births: a red X priced as a small stand
 #   stand_income  bool    Streamer: price standing by the game's own not-moving
 #                         material tick (3% of held gold per full second, min 1,
 #                         cap 25) and charge a move with the tick it throws away
+#   stand_w       float   multiplier on that price (default 1)
+#   stand_phases  Array   [[wave_upto, mult], ...] like caution_phases
+#   stand_below   Array   [hp_ratio, mult]: multiplier used below the ratio --
+#                         the x3 stand that matches the human's income also
+#                         killed the 33-HP bot twice on w8; hurt, it must move
 #   sweep         float   multiplier on material value while no enemy is inside
 #                         sweep_radius of the bot: the between-bursts drop walk
 #   sweep_radius  float   the quiet test's radius (default SWEEP_RADIUS)
@@ -351,8 +356,13 @@ const CHARACTER_PROFILES = {
 	# stand_income prices exactly that tick (player.gd NotMovingTimer, 1 s,
 	# repeating; handle_gold_stat pays min(cap, max(1, pct x held))): standing
 	# earns it, and a step forfeits the second already accumulated.
+	# stand x3 vs x1, gold gained (n=4): w10 613 vs 497 but 2/4 died at 33 HP,
+	# w13 701 vs 441, w15 497 vs 415, w17 763 vs 680, all 4/4. x1 through w10,
+	# x3 from w11, x1 whenever below half HP.
 	"character_streamer": {"anchor": "structures", "anchor_radius": 240.0,
-			"still": "prefer", "stand_income": true, "gold_end": 1.6, "end_secs": 6},
+			"still": "prefer", "stand_income": true,
+			"stand_phases": [[10, 1.0], [99, 3.0]], "stand_below": [0.5, 1.0],
+			"gold_end": 1.6, "end_secs": 6},
 	"character_multitasker": {"anchor": "structures", "anchor_radius": 320.0,
 			"caution": 0.75},
 	"character_mage": {"anchor": "away_structures", "anchor_inner": 500.0,
@@ -991,7 +1001,12 @@ func gather(main, player) -> void:
 				if ts.size() >= 3:
 					v = min(v, float(ts[2]))
 				per_sec += v
-		profile["stand_income"] = per_sec * gold_value
+		var stand_w = float(row.get("stand_w", 1.0))
+		if row.has("stand_phases"):
+			stand_w = _phase_value(row["stand_phases"], stand_w)
+		if row.has("stand_below") and current_hp / max_hp < float(row["stand_below"][0]):
+			stand_w = float(row["stand_below"][1])
+		profile["stand_income"] = per_sec * gold_value * stand_w
 		var progress = 0.0
 		if ("not_moving_bonuses_applied" in player) and player.not_moving_bonuses_applied 				and ("_not_moving_timer" in player) and player._not_moving_timer != null:
 			var t = player._not_moving_timer
