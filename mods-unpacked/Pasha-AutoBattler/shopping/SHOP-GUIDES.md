@@ -143,3 +143,27 @@ lightning shivs, torches (elemental, tiered up). Open: 1-2 stray non-elemental
 weapons still slip in via some crate path the discard does not catch -- minor,
 never blocks the win. Note: Mage kills slowly (burn DoT), so waves run their full
 length; runs take ~12-15 min at 2x (batch timeout raised to 18 min).
+
+### Chunky (#6) -- Danger 1: wins ~1/3 (borderline)
+Guide: brotato-builds.com/builds/Chunky. Tank: +25% max HP, every 3 Max HP = 1%
+damage (HP is survival AND offence), Spiky Shield scales with armour. -100%
+lifesteal, -50% HP regen and dodge (trap stats, excluded). Steering row already
+suits it (food:bank, caution 0.75).
+
+Plan: `weapon_type: melee`; max_hp 10 > armor 8 > percent_damage/attack_speed 6 >
+melee_damage/crit/luck 4 > speed 3. No phase_boost (high base HP).
+
+Batch (Danger 1, 2x, n=3): won 20 / died 14 / died 19 (1/3). The wins tank fine;
+the losses had weak low-tier weapons (plank_1, spoon_2, lute_1) -- Chunky's
+HP->damage still needs a real weapon, and the bot buys any melee weapon equally
+rather than seeking Rock/Spiky Shield. Same shape as Brawler.
+
+## Systemic finding after 6 characters
+Ranged/kiting characters (Well Rounded, Ranger) and high-DPS ones (Crazy) win
+3/3 easily -- kiting + any decent ranged weapon works. Fragile or damage-thin
+MELEE characters (Brawler, Chunky) are borderline (~1/3): the bot fills weapon
+slots with whatever on-type weapon appears, so unlucky runs get weak primitives.
+The clear next systemic lever is WEAPON PREFERENCE -- letting a plan seek its
+character's key weapons/sets by id (like weapon_set does for Mage's elemental
+class) -- e.g. Brawler->unarmed/Claw, Chunky->Rock/Spiky Shield. This would lift
+every melee character at once rather than per-character stat tweaks.

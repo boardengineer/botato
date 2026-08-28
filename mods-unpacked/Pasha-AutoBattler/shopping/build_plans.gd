@@ -196,6 +196,31 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #6. Guide: brotato-builds.com/builds/Chunky ("HP & Explosive"). Tank:
+	# +25% max HP and every 3 Max HP grants 1% damage, so Max HP is both survival
+	# AND offence. Armour is defence + Spiky Shield damage. -100% lifesteal, -50%
+	# HP regen and dodge => those are trap stats (excluded). High base HP, no
+	# early fragility, so no phase_boost. Melee (Rock/Spiky Shield/Chopper).
+	"character_chunky": {
+		"weapon_type": "melee",
+		"stats": {
+			"stat_max_hp": 10.0,
+			"stat_armor": 8.0,
+			"stat_percent_damage": 6.0,
+			"stat_attack_speed": 6.0,
+			"stat_melee_damage": 4.0,
+			"stat_crit_chance": 4.0,
+			"stat_luck": 4.0,
+			"stat_speed": 3.0,
+		},
+		"harvest_cap": 0,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):
