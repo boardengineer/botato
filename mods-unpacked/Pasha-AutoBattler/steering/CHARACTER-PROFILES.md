@@ -1044,3 +1044,24 @@ HP-proportional panic. Added a `lethality` row key (default const 4;
 w8 lethality n=20: default(4) 9/20, 3 -> 13/20, 2 -> 10/20. Row set to
 lethality 3.0. Verify at the row default (caution phase + lethality 3), n=12:
 w6 10/12, w7 9/12, w8 7/12 (was ~45%), w9 8/12 (holds), w10 12/12. Kept.
+
+## Tracker reproduction: Lich, run #30861 (2026-08-28)
+
+Nightmare Abyss win, six spiky shields (contact weapon, damages on touch),
+lifesteal 10-23, regen 10-34, armour to 32 -- a heal-by-contact facetank.
+Schedule is bullet-hell heavy (w1/3/6/8/11/13/14), horde 12/15, elites 18.
+
+**Baseline sweep (row `{gold 2.0, caution 0.6, engage 12, engage_hp 0.66}`):
+59/60** -- only the w20 double-boss dropped one (2/3). Survival is basically
+solved; the Lich facetanks everything. The one weakness: `eng=0` at low HP on
+the boss (engage disarms below 66%), so the heal-by-contact kit STOPS fighting
+exactly when it needs the lifesteal, and bleeds against bosses that give no
+trash to walk into.
+
+Fix: **engage_hp 0.4** (was 0.66) -- the bot heals by contact, so it should
+fight deeper than the human's manual "hold 50-66%". w15 horde + w20 boss, n=6:
+engage_hp 0.66 6/12, 0.4 8/12 (w15 3->5/6, w20 3/6 neutral), 0.25 8/12; 0.4
+kept (safer). Re-sweep at 0.4: bullet-hell waves all 3/3 (no over-commit),
+survivors end much healthier everywhere (w16 100/99, w18 117-146 HP). The w20
+double-boss stays ~50% -- a projectile-dodging ceiling (death = orbiter +
+scaled_stargazer, same family as the Jack croc bed), not an engage problem.

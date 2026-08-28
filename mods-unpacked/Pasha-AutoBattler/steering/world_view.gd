@@ -286,7 +286,11 @@ const CHARACTER_PROFILES = {
 			"still": "never"},
 	"character_buccaneer": {"gold_mode": "metered", "gold": 2.0, "still": "never"},
 	"character_sailor": {"gold": 1.8, "caution": 1.05},
-	"character_lich": {"gold": 2.0, "caution": 0.6, "engage": 12.0, "engage_hp": 0.66},
+	# engage_hp 0.4, not the human's "hold 50-66%": the bot HEALS by contact
+	# (lifesteal 10-23 + spiky shield damages on touch), so fighting deeper
+	# sustains where disengaging bleeds. w15 horde + w20 boss n=6: engage_hp
+	# 0.66 -> 6/12, 0.4 -> 8/12 (survivors end near full HP), 0.25 -> 8/12.
+	"character_lich": {"gold": 2.0, "caution": 0.6, "engage": 12.0, "engage_hp": 0.4},
 	"character_chef": {"food": "bomb"},
 	"character_glutton": {"food": "bomb", "anchor": "center", "anchor_radius": 560.0,
 			"caution_phases": [[5, 1.4], [99, 1.0]]},
