@@ -24,6 +24,10 @@ buy / reroll / go / level-up decisions; two UI extensions execute them
   shop buys everything scoring above `min_buy`, then rerolls (down to a small
   `reroll_keep` buffer, up to `max_rerolls`) to surface more items and combines,
   then leaves. Reroll price rises per paid roll, so cost self-limits it.
+- **phase_boost** (optional): before `until_wave`, the named stats' weights are
+  multiplied. Lets a fragile kit front-load survival (dodge/HP) through the
+  opening, then revert to its offence weights -- the shop analogue of the
+  steering caution_phases. Applies to level-up picks too.
 
 ## Testing
 `--wavelab-run=<character>:<danger>` (WaveLab) starts a fresh run at wave 1 and
@@ -58,3 +62,26 @@ Tuning found (Danger 1, 2x, then confirmed at speed 1):
 - Open: late defence (armor/dodge) scales a little light -- wave 19 spiked to
   ~198 damage taken (survived from a 149 HP buffer). A candidate refinement is
   to lift armor/dodge weight in the late game.
+
+### Brawler (#2) -- Danger 1: wins ~1/3, floor lifted from wave 8 to 15
+Guide: brotato-builds.com/builds/Brawler ("Speed Demon"). Melee, Claw/unarmed:
+attack speed + melee damage + crit lead; cap dodge fast; HP regen + some HP/armor
+to survive the short range. Steering already suits it (world_view row
+caution 0.5, engage 8 -- it closes to melee).
+
+Plan: `weapon_type: melee`; offence weights attack_speed 9 > melee_damage 8 >
+crit 7 > dodge 7 > hp_regen 6 ...; `harvest_cap 0` (no economy).
+
+Tuning found (Danger 1, 2x, batch of 3 per config -- single runs are too noisy):
+- **Offence-first**: died waves 8 / 16 / 18 (0/3). The 10-HP opening collapses
+  when RNG gives a slow start.
+- **Defence-first** (whole run): died wave 16 -- WORSE. Kill speed is a melee
+  kit's real defence; over-weighting dodge/armor killed enemies too slowly.
+- **phase_boost** (survival early, offence late): before wave 7, x2.2 max_hp,
+  x1.8 dodge, x1.8 hp_regen, x1.5 armor. Died 15 / 18 / **won 20** (1/3). The
+  floor jumped 8 -> 15 (the early collapse is gone) and it produced the first
+  full clear. Not a reliable win yet, but a clear, correct improvement.
+- Open: still dies mid/late (~15-18) on the unlucky runs -- a fragile melee kit
+  under the bot is genuinely harder than a ranged one (Well Rounded took ~0
+  damage; Brawler takes some every wave). More consistency would need mid-game
+  defence or better weapon-combine sequencing.

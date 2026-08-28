@@ -27,6 +27,13 @@ static func stat_score(effects, plan, player_index):
 	var s = 0.0
 	var weights = plan["stats"]
 	var harvest_now = current_stat("stat_harvesting", player_index)
+	# Optional early-game re-weighting: before phase_boost.until_wave, multiply
+	# the named stats' weights (e.g. a fragile melee kit front-loads dodge/HP so
+	# it survives the opening, then reverts to its offence weights). Mirrors the
+	# steering caution_phases idea for the shop.
+	var boost = plan.get("phase_boost", {})
+	var boosting = boost.has("until_wave") and RunData.current_wave < int(boost["until_wave"])
+	var boost_stats = boost.get("stats", {}) if boosting else {}
 	for e in effects:
 		if e == null:
 			continue
@@ -34,6 +41,8 @@ static func stat_score(effects, plan, player_index):
 		if not weights.has(key):
 			continue
 		var w = float(weights[key])
+		if boost_stats.has(key):
+			w *= float(boost_stats[key])
 		if key == "stat_harvesting" and harvest_now >= plan["harvest_cap"]:
 			w *= 0.15
 		# The plan weight carries the priority; value only breaks ties within a

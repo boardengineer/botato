@@ -35,6 +35,9 @@ const DEFAULT = {
 	},
 	"harvest_cap": 40,
 	"item_bonus": {},
+	# phase_boost: before until_wave, multiply the named stats' weights (early
+	# survival for fragile kits, etc.). Empty = no phasing.
+	"phase_boost": {},
 	"max_weapons": 6,
 	# Brotato pays no interest, so banked gold is wasted damage/defence. Spend it:
 	# keep only a small buffer and reroll freely to surface items and weapon
@@ -63,6 +66,41 @@ const PLANS = {
 			"stat_hp_regeneration": 2.0,
 		},
 		"harvest_cap": 40,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
+
+	# --- #2. Guide: brotato-builds.com/builds/Brawler ("Speed Demon"). Melee,
+	# Claw/unarmed: rush attack speed + melee damage + crit, cap dodge fast, take
+	# HP regen and some HP to survive the short range. Not an economy character.
+	"character_brawler": {
+		"weapon_type": "melee",
+		# Fragile 10-HP kit. Offence leads (kill speed is a melee kit's real
+		# defence -- a defence-first pass killed enemies slower and died EARLIER),
+		# with dodge and HP regen as the survival stats the guide calls for.
+		"stats": {
+			"stat_attack_speed": 9.0,
+			"stat_melee_damage": 8.0,
+			"stat_crit_chance": 7.0,
+			"stat_dodge": 7.0,
+			"stat_hp_regeneration": 6.0,
+			"stat_percent_damage": 6.0,
+			"stat_crit_damage": 5.0,
+			"stat_max_hp": 5.0,
+			"stat_armor": 4.0,
+			"stat_lifesteal": 4.0,
+		},
+		# The offence weights win late, but the 10-HP opening is where the bot
+		# collapses (a batch died wave 8). Front-load survival through wave 6 so
+		# it reaches the point its kill speed can carry it.
+		"phase_boost": {"until_wave": 7, "stats": {
+			"stat_max_hp": 2.2, "stat_dodge": 1.8,
+			"stat_hp_regeneration": 1.8, "stat_armor": 1.5,
+		}},
+		"harvest_cap": 0,
 		"item_bonus": {},
 		"max_weapons": 6,
 		"reroll_keep": 5,
