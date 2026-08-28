@@ -85,3 +85,18 @@ Tuning found (Danger 1, 2x, batch of 3 per config -- single runs are too noisy):
   under the bot is genuinely harder than a ranged one (Well Rounded took ~0
   damage; Brawler takes some every wave). More consistency would need mid-game
   defence or better weapon-combine sequencing.
+
+### Crazy (#3) -- Danger 1: WON 3/3
+Guide: brotato-builds.com/builds/Crazy ("Knife Pro"). Precise weapons + crit.
+Crazy starts with a knife, gets +100% Precise class bonus, +25% attack speed,
+but -30% dodge (dodge is a TRAP stat here -- excluded from the plan). Knife/melee
+route fits its start and its melee steering row (caution 0.7, engage 6); the high
+attack speed kills fast enough that the fragility never bites.
+
+Plan: `weapon_type: melee`; crit_chance 10 > melee_damage 8 > attack_speed 8 >
+crit_damage 7 > percent_damage 6.5 > max_hp 6 > armor 5 (no dodge). Early
+phase_boost (until wave 6: x1.8 max_hp, x1.5 armor/regen) for the squishy start.
+
+Batch (Danger 1, 2x, n=3): WON 20 / WON 20 / WON 20. All-melee precise builds
+(knives to tier 4, hatchets, spears, sharp teeth). Far more consistent than
+Brawler -- the attack-speed + precise-bonus DPS is the difference.

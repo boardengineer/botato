@@ -107,6 +107,37 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #3. Guide: brotato-builds.com/builds/Crazy ("Knife Pro"). Precise
+	# weapons + crit. Crazy STARTS with a knife, gets +100% Precise class bonus
+	# and +25% attack speed but -30% dodge (so dodge is a trap stat -- excluded).
+	# Melee knife route fits its start + the melee-leaning steering row
+	# (caution 0.7, engage 6); its high attack speed kills fast enough to survive.
+	"character_crazy": {
+		"weapon_type": "melee",
+		"stats": {
+			"stat_crit_chance": 10.0,
+			"stat_melee_damage": 8.0,
+			"stat_attack_speed": 8.0,
+			"stat_crit_damage": 7.0,
+			"stat_percent_damage": 6.5,
+			"stat_max_hp": 6.0,
+			"stat_armor": 5.0,
+			"stat_lifesteal": 4.0,
+			"stat_hp_regeneration": 3.0,
+		},
+		# -30% base dodge => no dodge weight; survival comes from HP/armor, with
+		# an early phase_boost since it is squishy (like Brawler).
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.8, "stat_armor": 1.5, "stat_hp_regeneration": 1.5,
+		}},
+		"harvest_cap": 0,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):
