@@ -1099,3 +1099,11 @@ Croc still ~25% though: the ring was one of three simultaneous threats
 a near build ceiling even with correct modeling. Unlike the Lich boss (an
 engage-disarm bug, fully fixed), the croc bed is a real fragility ceiling; the
 modeling fix is a genuine correctness win that helps every pillar/ring wave.
+
+## ARBITER bed 2026-08-28 (+ Lich engage_boss + AoE footprint + Pacifist lethality)
+
+loud-w11 5, gangster 10, w5-loud 10, w4-loud 10, sailor 10, renegade 10,
+fisherman 8, wildling 10, king 10, lucky 9 = **92/100** (prev 90). The AoE
+footprint fix HELPED the bed -- loud-w11 (has a croc) 3->5, wildling 8->10 --
+confirming it is a net-positive correctness fix globally, not just on the
+diagnostic beds. No regression.
