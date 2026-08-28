@@ -1077,3 +1077,25 @@ human tanked 1003 and lived. Data: human w20 dmgTaken 1003 (eel 287, dead_whale
 (keep farming boss-wave trash, like the Bull). n=10: w20 **9/10** (was ~50%,
 survivors 86-180 HP), w18 elite **10/10**. Lesson: check eblk=/eng= before
 calling a boss wave a dodging problem -- engage_boss defaults OFF.
+
+## Jack croc bed + AoE footprint (2026-08-28)
+
+The 0/35 croc bed was PARTLY a modeling bug. A circular telegraph's modeled
+radius was `(_projectile_radius + base.length()) * 2.2`: base.length() (the
+hitbox offset, ~20) double-counts (it already shifts the centre), and 2.2 was
+tuned for a wider-than-collision telegraph. For a croc ring pillar (23 px hit
+collision, offset 20) that gave ~110 px -- and with pillars 157 px apart on the
+ring, two adjacent modeled discs fully overlap: the model showed a SOLID WALL,
+no threadable gap, so every heading through the ring scored as a full pillar
+hit (PCHOICE: bearing 11 deg off a pillar was the cheapest exit).
+
+Fix: drop base.length() from the radius, default mult 2.2 -> 1.5 (--arb-aoemult).
+Croc aoemult sweep n=8: 2.2(fixed) 0/8, 1.5 1/8, 1.0 2/8. Regression n=8:
+butcher 8/8 both (blade uses the RectangleShape2D path, untouched), colossus
+6/8 -> 7/8 at 1.0. So opening the ring is safe on the pillar beds.
+
+Croc still ~25% though: the ring was one of three simultaneous threats
+(boosting pursuers 25 dmg, chain dashes, 700 px/s slashes) on a 31 HP kiter --
+a near build ceiling even with correct modeling. Unlike the Lich boss (an
+engage-disarm bug, fully fixed), the croc bed is a real fragility ceiling; the
+modeling fix is a genuine correctness win that helps every pillar/ring wave.
