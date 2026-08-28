@@ -221,6 +221,32 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #7. Guide: brotato-builds.com/builds/Old ("Small Map Engineer"). Old's
+	# traits make it EASY -- enemies -25% speed and -10 count, map -33%, +10
+	# harvesting -- and it has NO weapon restriction. The guide's optimal is an
+	# engineering/turret build, but turrets need turret-aware steering + tool
+	# seeking (not built yet), so this uses a bot-reliable RANGED kite build that
+	# rides Old's easy traits, with harvesting economy and a tanky/defensive lean.
+	"character_old": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_ranged_damage": 8.0,
+			"stat_attack_speed": 7.0,
+			"stat_harvesting": 7.0,
+			"stat_percent_damage": 6.5,
+			"stat_max_hp": 6.0,
+			"stat_armor": 6.0,
+			"stat_crit_chance": 4.5,
+			"stat_dodge": 4.0,
+		},
+		"harvest_cap": 40,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

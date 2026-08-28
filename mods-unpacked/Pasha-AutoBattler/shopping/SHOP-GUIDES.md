@@ -167,3 +167,20 @@ The clear next systemic lever is WEAPON PREFERENCE -- letting a plan seek its
 character's key weapons/sets by id (like weapon_set does for Mage's elemental
 class) -- e.g. Brawler->unarmed/Claw, Chunky->Rock/Spiky Shield. This would lift
 every melee character at once rather than per-character stat tweaks.
+
+### Old (#7) -- Danger 1: wins ~2/3
+Guide: brotato-builds.com/builds/Old ("Small Map Engineer"). Old's traits make it
+easy (enemies -25% speed / -10 count, map -33%, +10 harvesting) and it has no
+weapon restriction. The guide's optimal is engineering/turrets, but that needs
+turret-aware steering + tool-weapon seeking (not built), so this uses a
+bot-reliable ranged kite build riding the easy traits.
+
+Plan: `weapon_type: ranged`; ranged_damage 8 > attack_speed 7 > harvesting 7
+(cap 40) > percent_damage 6.5 > max_hp/armor 6 > crit 4.5 > dodge 4.
+
+Batch (Danger 1, 2x, n=3): won 20 / died 19 / won 20 (2/3). The loss leaned into
+MEDICAL GUNS (ranged but low-damage healers) -- the bot scores all on-type
+weapons equally, so low-damage support weapons get bought like real damage
+weapons. Reinforces the weapon-preference/quality need (now seen on ranged too,
+not just melee). The engineering/turret build is the guide's optimal, revisitable
+once tool-seeking + turret-aware steering exist.
