@@ -1029,3 +1029,18 @@ spot (0.9 over-commits). But w8 (40 HP) WANTS the 1.2 (1.0 -> 3/8), and w6 is
 Verification at the row default, n=12: w9 **8/12** (was 4/8), w8 4/12
 (unchanged -- the phase keeps 1.2 there; w8 is a genuinely weak wave, not a
 regression), w6 8/8. Kept.
+
+## Pacifist wave-8 lethality (2026-08-27)
+
+w8 is bullet_hell (human took 54 dmg, won; bot 67-97, died ~half). Not the w9
+herding -- 78% of deaths ARE at the wall, but the leaky-dwell corner escape was
+a measured WASH (A/B both 6/10; kept only as --arb-pinleak knob). The lever is
+LETHALITY: the default 4 makes a low-HP weaponless kit read every hit as
+certain death and spiral into flight; lowering it keeps methodical dodging.
+Unlike caution (uniform threat cut, hurt w8), lethality targets only the
+HP-proportional panic. Added a `lethality` row key (default const 4;
+--arb-lethality still wins for sweeps).
+
+w8 lethality n=20: default(4) 9/20, 3 -> 13/20, 2 -> 10/20. Row set to
+lethality 3.0. Verify at the row default (caution phase + lethality 3), n=12:
+w6 10/12, w7 9/12, w8 7/12 (was ~45%), w9 8/12 (holds), w10 12/12. Kept.

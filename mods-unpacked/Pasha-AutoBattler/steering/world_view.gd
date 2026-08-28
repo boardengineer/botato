@@ -217,6 +217,9 @@ const BIRTH_STEP_COST = 4.0      # avoid_births: a red X priced as a small stand
 #   engage_end_hp float   in the final end_secs the HP band drops to this
 #   caution_below Array   [hp_ratio, caution]: caution used below the ratio
 #   dps           float   multiplier on the kill reward (0 for weaponless kits)
+#   lethality     float   HP-proportional panic multiplier (default 4); lower it
+#                         for a weaponless kit that can't trade a hit, so a low-HP
+#                         hit does not read as certain death and spiral into flight
 #   loot_value    float   reward for a loot alien (0 if it cannot be caught)
 #   tree_value    float   reward for a living tree (pacifist's only kills)
 #   stand_income  bool    Streamer: price standing by the game's own not-moving
@@ -389,7 +392,7 @@ const CHARACTER_PROFILES = {
 	# 6/8, 0.9 4/8; but w8 (40 HP) wants the 1.2 (1.0 -> 3/8), so it phases.
 	"character_pacifist": {"food": "none", "anchor": "perimeter", "orbit": 30.0, "pin": true, "pin_dwell": 60,
 			"anchor_inner": 340.0, "anchor_radius": 560.0, "still": "never",
-			"caution_phases": [[8, 1.2], [99, 1.0]],
+			"caution_phases": [[8, 1.2], [99, 1.0]], "lethality": 3.0,
 			"dps": 0.0, "loot_value": 0.0, "tree_value": 5.0,
 			"avoid_births": 160.0},
 	"character_creature": {"gold_phases": [[8, 1.8], [99, 0.9]],
@@ -1029,6 +1032,8 @@ func gather(main, player) -> void:
 			profile["pin"] = true
 		if row.has("dps"):
 			profile["dps"] = float(row["dps"])
+		if row.has("lethality"):
+			profile["lethality"] = float(row["lethality"])
 		if row.has("fight_room"):
 			profile["fight_room"] = float(row["fight_room"])
 		if row.get("explode_trade", false):

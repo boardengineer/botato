@@ -414,6 +414,7 @@ var last_aoe_n = 0               # KIND_AOE threats priced this decision (teleme
 var _pickup_radius = 0.0         # profile pickup_radius: the attract area's rim
 var w_hyst = W_HYST
 var lethality = LETHALITY
+var lethality_override = -1.0    # --arb-lethality wins over the row's lethality key
 var horizon = HORIZON
 # Separated from w_room on purpose: the weight sets how hard crowding is
 # punished, this sets how far out it is felt at all. A bot that keeps a 136 px
@@ -536,6 +537,12 @@ var tick_step = 1                # physics ticks this choose() call stands for (
                                  # counter advances by it so the frame constants keep
                                  # meaning frames when decisions are skipped
 var pin_dwell_override = 0       # --arb-pindwell: force the dwell limit for any pin row
+var pin_leak = 0.0               # --arb-pinleak: wall-dwell decay when off the wall. Default
+                                 # 0 = hard reset (dwell needs continuous wall time). Leaky
+                                 # (1) lets a bot dodging in/out of the wall band accumulate
+                                 # net dwell -- intuitive for bullet-hell corner deaths, but
+                                 # A/B measured a WASH (Pacifist w8 6/6, w9 6/8, Soldier w12
+                                 # 6/4, w4 7/?): kept as a knob only, not the default.
 var _pin_ticks = 0               # frames of escape left to run
 
 # Per-frame prepared threat data. Everything here is candidate-independent, so
@@ -580,13 +587,14 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("stand"): stand_mult = float(d["stand"])
 	if d.has("standcommit"): stand_commit = float(d["standcommit"])
 	if d.has("hyst"): w_hyst = float(d["hyst"])
-	if d.has("lethality"): lethality = float(d["lethality"])
+	if d.has("lethality"): lethality_override = float(d["lethality"])
 	if d.has("horizon"): horizon = float(d["horizon"])
 	if d.has("roomcap"): room_cap = float(d["roomcap"])
 	if d.has("roomfar"): w_room_far = float(d["roomfar"])
 	if d.has("scandist"): scan_distance = max(float(d["scandist"]), 0.0)
 	if d.has("pin"): pin_enable = float(d["pin"])
 	if d.has("pindwell"): pin_dwell_override = int(d["pindwell"])
+	if d.has("pinleak"): pin_leak = float(d["pinleak"])
 	if d.has("orbit"): orbit_override = float(d["orbit"])
 	if d.has("orbitfrom"): orbit_from_override = float(d["orbitfrom"])
 	if d.has("pinthreat"): pin_threat = float(d["pinthreat"])
@@ -645,6 +653,9 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 	_anchor_inner = float(profile.get("anchor_inner", 0.0))
 	_anchor_w = w_anchor * float(profile.get("anchor_w", 1.0))
 	_pickup_radius = float(profile.get("pickup_radius", 0.0))
+	lethality = float(profile.get("lethality", LETHALITY))
+	if lethality_override >= 0.0:
+		lethality = lethality_override
 	_stand_income = float(profile.get("stand_income", 0.0)) * stand_mult
 	_stand_progress = float(profile.get("stand_progress", 0.0))
 	last_stand = _stand_income
@@ -852,8 +863,10 @@ func _update_pin(p0: Vector2, speed: float, edge: float) -> bool:
 	# sets pin_dwell (see the note above PIN_TICKS).
 	if _pin_dwell_limit > 0 and edge < PIN_EDGE:
 		_pin_dwell += tick_step
-	else:
-		_pin_dwell = 0
+	elif _pin_dwell_limit > 0:
+		# Leaky, not a hard reset: a bot dodging in and out of the wall band
+		# still accumulates net dwell (see pin_leak).
+		_pin_dwell = max(_pin_dwell - int(ceil(pin_leak * tick_step)), 0)
 
 	if _pin_frames >= PIN_CONFIRM or (_pin_dwell_limit > 0 and _pin_dwell >= _pin_dwell_limit):
 		_pin_frames = 0
