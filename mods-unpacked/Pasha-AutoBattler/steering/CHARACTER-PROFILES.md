@@ -1107,3 +1107,46 @@ fisherman 8, wildling 10, king 10, lucky 9 = **92/100** (prev 90). The AoE
 footprint fix HELPED the bed -- loud-w11 (has a croc) 3->5, wildling 8->10 --
 confirming it is a net-positive correctness fix globally, not just on the
 diagnostic beds. No regression.
+
+## Explorer early kill rate -- a fragility ceiling, not a tunable defect (tracker #27048)
+
+The Explorer (#27048, two `weapon_taser_1`: 200 px range, 7 dmg, 45-frame
+cooldown, on a +33% map with -40% damage and +25% enemies) survives every
+reproduced wave (w2 3/3, w4 6/6) but its early kill count trails the human
+badly: w2 the bot kills ~11 while the human killed 50; by w4 the bot kills ~80
+vs the human's 134. "Look into the kill rate" -> a full lever sweep, all at
+speed 1, n=6 on w2 + w4:
+
+- **Distance is NOT the cause.** Capture telemetry: the bot is within the 200 px
+  taser firing radius **84%** of w2. It is close enough to fire almost always.
+- **Raw engage does nothing.** `--arb-engage=2` (engage 12) and `=3` (18):
+  w2 ~11 kills, w4 ~82 -- flat, only damage-taken rises. Pull-to-nearest just
+  parks the bot at one enemy's edge; it does not add targets.
+- **Lower caution costs survival for no kills.** `--arb-caution=0.54` (0.7):
+  w2 5/6 (a death), ~10 kills; w4 fine but no gain. Rejected.
+- **Cluster mode is neutral, and net-negative when pushed.** Added `--arb-cluster`
+  (override for the existing `engage_cluster` reward, which prices bodies within
+  ENGAGE_BLAST=170 px instead of nearest distance -- a good taser-range proxy).
+  `--arb-cluster=1`: w2 ~11, w4 ~83 -- no change. `--arb-cluster=1 --arb-engage=1.5`:
+  damage rises (the bot DOES dive more) but kills stay flat AND w4 goes 5/6 (a
+  death). The code's own note predicts this: 3 bodies cost ~48 to stand against
+  while the cluster reward tops out near 24, so the fragile 11-HP kit will not
+  hold the pile -- and forcing it to costs survival.
+
+**Why kills are invariant to aggression (the `alive=` telemetry, added to the
+watcher RESULT line).** At wave end the bot leaves a large standing pile of
+enemies un-engaged: **w2 ~40 alive** (kills ~11), **w4 ~50 alive** (kills ~80).
+The kills it gets are the enemies that passively wander into the 200 px ring
+while it kites a conga line -- a count set by **enemy density**, not by the
+bot's willingness to fight. Sparse early w2 -> few enter range -> ~11 kills;
+dense w4 -> many enter passively -> ~80. Tasers fire while moving, so kiting
+does not cost fire time; the ceiling is targets-in-range.
+
+Matching the human means standing inside a 40-enemy pile at 11 HP and tanking
+contact hits -- exactly what the human did (heavy damage taken) and what every
+"be more aggressive" arm reproduced as a death here. This is the same shape as
+the **Jack croc** ceiling: the bot trades farm throughput for survival because
+the kit cannot safely do both, and the WaveLab verdict (survival at speed 1)
+correctly rejects the trade. **No Explorer row change** -- there is no safe
+lever. Kept as permanent infrastructure: the `--arb-cluster` A/B knob and the
+`alive=` watcher field.

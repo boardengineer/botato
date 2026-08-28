@@ -466,6 +466,7 @@ var orbit_override = -1.0        # --arb-orbit
 var _orbit_from = 0.0            # radius the orbit ramp starts at (row "orbit_from";
                                  # default the outer anchor_radius)
 var orbit_from_override = -1.0   # --arb-orbitfrom
+var cluster_override = -1         # --arb-cluster: -1 unset, 0 force off, 1 force on
 var last_anchor_dist = -1.0      # distance to the anchor this frame, for telemetry
 var _engage = 0.0
 var _never_still = false
@@ -610,6 +611,7 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("aimedfull"): aimed_full = float(d["aimedfull"])
 	if d.has("neverstill"): never_still_scan = float(d["neverstill"])
 	if d.has("cnear"): cluster_near = float(d["cnear"])
+	if d.has("cluster"): cluster_override = int(d["cluster"])
 	if not d.empty():
 		print("ARBITER weights: proj=%.2f contact=%.2f dash=%.2f aoe=%.2f latent=%.2f room=%.2f roomcap=%.0f wall=%.2f enclose=%.2f dps=%.2f pickup=%.2f hyst=%.2f lethality=%.2f horizon=%.2f pin=%.2f pinthreat=%.2f predict=%.2f predsecs=%.2f tangent=%.2f swerve=%.2f anchor=%.2f" % [
 			w_proj, w_contact, w_dash, w_aoe, w_latent, w_room, room_cap, w_wall,
@@ -669,6 +671,8 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 	_engage = float(profile.get("engage", 0.0)) * engage_mult
 	last_engage = _engage        # public mirror for telemetry (get() on _engage returns null)
 	_engage_cluster = profile.get("engage_cluster", false)
+	if cluster_override >= 0:
+		_engage_cluster = cluster_override == 1
 	_fight_room = float(profile.get("fight_room", 0.0))
 	_explode_trade = profile.get("explode_trade", false)
 	_damage_dive = profile.get("damage_dive", false)
