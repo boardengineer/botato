@@ -34,7 +34,14 @@ const STATIONARY_SPEED_SQ = 100.0
 const AOE_ARM_FALLBACK = 0.54
 const AOE_DISARM_FALLBACK = 0.68
 const INF_TIME = 1e9             # "does not stop being a threat inside any horizon"
-const AOE_RADIUS_MULT = 2.2      # telegraph footprint is wider than the rest-pose collision
+const AOE_RADIUS_MULT = 1.5      # disc widening for a circular telegraph over its hit
+                                 # collision. Was 2.2, which -- with the base.length()
+                                 # double-count now removed -- modeled a croc ring pillar
+                                 # (23 px hit) as ~110 px, closing the 157 px ring into a
+                                 # solid wall (Jack croc 0/35). 1.5 opens it; measured
+                                 # neutral+ on the pillar beds (butcher 8/8=8/8 via the
+                                 # blade path, colossus 6/8->7/8 at 1.0), croc 0->1-2/8.
+var aoe_mult = AOE_RADIUS_MULT   # --arb-aoemult
 const AOE_RADIUS_MAX = 320.0
 
 # -- Blade decomposition --
@@ -763,6 +770,9 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("aoeclock"):
 		aoe_clock = float(d["aoeclock"])
 		print("WORLDVIEW aoe_clock=%.0f" % aoe_clock)
+	if d.has("aoemult"):
+		aoe_mult = float(d["aoemult"])
+		print("WORLDVIEW aoe_mult=%.2f" % aoe_mult)
 	if d.has("blade"):
 		blade_split = float(d["blade"])
 		print("WORLDVIEW blade_split=%.0f" % blade_split)
@@ -1741,9 +1751,14 @@ func _stationary_segments(p, profile: Dictionary) -> Array:
 
 	# Circles (pillars) keep the old footprint inflation: their rest-pose
 	# collision genuinely understates the telegraph they draw on the ground.
-	var reach = _projectile_radius(p) + base.length()
+	# reach is the danger RADIUS; base only shifts the CENTRE (done above), so
+	# adding base.length() here double-counted the hitbox offset -- for a croc
+	# ring pillar (offset 20, collision ~23) that inflated a 23 px hit to ~50
+	# before the mult, then 2.2x closed the 157 px pillar spacing into a solid
+	# wall (0/35 on the Jack croc bed: no threadable gap existed in the model).
+	var reach = _projectile_radius(p)
 	return [[p.position + base.rotated(p.rotation),
-			min(reach * AOE_RADIUS_MULT, AOE_RADIUS_MAX)]]
+			min(reach * aoe_mult, AOE_RADIUS_MAX)]]
 
 
 func _projectile_radius(p) -> float:
