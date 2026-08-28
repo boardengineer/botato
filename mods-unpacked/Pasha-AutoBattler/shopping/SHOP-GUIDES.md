@@ -100,3 +100,16 @@ phase_boost (until wave 6: x1.8 max_hp, x1.5 armor/regen) for the squishy start.
 Batch (Danger 1, 2x, n=3): WON 20 / WON 20 / WON 20. All-melee precise builds
 (knives to tier 4, hatchets, spears, sharp teeth). Far more consistent than
 Brawler -- the attack-speed + precise-bonus DPS is the difference.
+
+### Ranger (#4) -- Danger 1: WON 3/3
+Guide: brotato-builds.com/builds/Ranger ("SMG Range Scaler"). Pure ranged
+(cannot use melee), +50 range, +50% ranged damage, -25% max HP. Kiting -- suits
+the arbiter like Well Rounded; needs no phase_boost.
+
+Plan: `weapon_type: ranged`; ranged_damage 10 > attack_speed 8 > harvesting 8
+(cap 35, economy start) > percent_damage 7 > crit 6 > range 5 > armor/dodge 5;
+max_hp only 3 (the -25% penalty makes HP items weak).
+
+Batch (Danger 1, 2x, n=3): WON / WON / WON. All-ranged builds (pistols, revolvers,
+laser guns, shredders, double barrel, shuriken). Ranged kiters are the arbiter's
+strong suit.

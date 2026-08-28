@@ -138,6 +138,33 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #4. Guide: brotato-builds.com/builds/Ranger ("SMG Range Scaler"). Pure
+	# ranged (CANNOT use melee), +50 range, +50% ranged damage, -25% max HP from
+	# upgrades. Kiting -- "delete enemies before they get close" -- so it takes
+	# little damage and needs no early phase_boost (like Well Rounded). HP is
+	# deprioritised (the -25% penalty); armour/dodge carry defence.
+	"character_ranger": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_ranged_damage": 10.0,
+			"stat_attack_speed": 8.0,
+			"stat_harvesting": 8.0,
+			"stat_percent_damage": 7.0,
+			"stat_crit_chance": 6.0,
+			"stat_range": 5.0,
+			"stat_armor": 5.0,
+			"stat_dodge": 5.0,
+			"stat_max_hp": 3.0,
+			"stat_lifesteal": 3.0,
+		},
+		"harvest_cap": 35,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):
