@@ -22,6 +22,11 @@
 						"default": false,
 						"tooltip": "ENABLE_AUTOBATTLER_TOOLTIP"
 					},
+					"ENABLE_AUTOSHOP" : {
+						"type": "boolean",
+						"default": true,
+						"tooltip": "ENABLE_AUTOSHOP_TOOLTIP"
+					},
 					"ENABLE_AI_VISUALS" : {
 						"type": "boolean",
 						"default": false,

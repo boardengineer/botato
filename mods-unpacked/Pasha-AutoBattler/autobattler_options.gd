@@ -6,6 +6,11 @@ signal setting_changed(setting_name, value, mod_name)
 var enable_autobattler : bool = false
 const ENABLE_AUTOBATTLER_OPTION_NAME = "ENABLE_AUTOBATTLER"
 
+# Automatic shopping: when the bot is enabled, also let it shop and pick
+# level-up upgrades on its own. Off => bot fights but the human shops.
+var enable_autoshop : bool = true
+const ENABLE_AUTOSHOP_OPTION_NAME = "ENABLE_AUTOSHOP"
+
 var enable_ai_visuals : bool = false
 const ENABLE_AI_VISUALS_OPTION_NAME = "ENABLE_AI_VISUALS"
 
@@ -122,6 +127,8 @@ func setting_changed(key:String, value, mod) -> void:
 	
 	if key == ENABLE_AUTOBATTLER_OPTION_NAME:
 		enable_autobattler = value
+	elif key == ENABLE_AUTOSHOP_OPTION_NAME:
+		enable_autoshop = value
 	elif key == ENABLE_AI_VISUALS_OPTION_NAME:
 		enable_ai_visuals = value
 	elif key == ENABLE_AI_MARKER_OPTION_NAME:
@@ -164,6 +171,9 @@ func load_mod_options():
 	
 	enable_autobattler = config.get_value(CONFIG_SECTION, ENABLE_AUTOBATTLER_OPTION_NAME, false)
 	mod_configs_interface.on_setting_changed(ENABLE_AUTOBATTLER_OPTION_NAME, enable_autobattler, MOD_NAME)
+
+	enable_autoshop    = config.get_value(CONFIG_SECTION, ENABLE_AUTOSHOP_OPTION_NAME, true)
+	mod_configs_interface.on_setting_changed(ENABLE_AUTOSHOP_OPTION_NAME, enable_autoshop, MOD_NAME)
 	
 	enable_ai_visuals  = config.get_value(CONFIG_SECTION, ENABLE_AI_VISUALS_OPTION_NAME, false)
 	mod_configs_interface.on_setting_changed(ENABLE_AI_VISUALS_OPTION_NAME, enable_ai_visuals, MOD_NAME)
@@ -203,6 +213,7 @@ func save_configs() -> void:
 	var config = ConfigFile.new()
 	
 	config.set_value(CONFIG_SECTION, ENABLE_AUTOBATTLER_OPTION_NAME, enable_autobattler)
+	config.set_value(CONFIG_SECTION, ENABLE_AUTOSHOP_OPTION_NAME    , enable_autoshop)
 	config.set_value(CONFIG_SECTION, ENABLE_AI_VISUALS_OPTION_NAME , enable_ai_visuals)
 	config.set_value(CONFIG_SECTION, ENABLE_AI_MARKER_OPTION_NAME  , enable_ai_marker)
 	config.set_value(CONFIG_SECTION, ENABLE_SMOOTHING_OPTION_NAME  , enable_smoothing)
@@ -220,6 +231,7 @@ func save_configs() -> void:
 
 func reset_defaults() -> void:
 	enable_autobattler = false
+	enable_autoshop = true
 	enable_ai_marker = true
 	enable_ai_visuals = false
 	enable_smoothing = true

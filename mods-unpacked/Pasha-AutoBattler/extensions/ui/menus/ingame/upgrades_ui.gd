@@ -13,7 +13,7 @@ var _plan_cache = null
 
 func _ab_enabled() -> bool:
 	var opts = get_node_or_null("/root/AutobattlerOptions")
-	return opts != null and opts.enable_autobattler
+	return opts != null and opts.enable_autobattler and opts.enable_autoshop
 
 func _plan_for(player_index):
 	if _plan_cache == null:

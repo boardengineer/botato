@@ -19,7 +19,7 @@ func _ready() -> void:
 
 func _ab_enabled() -> bool:
 	var opts = get_node_or_null("/root/AutobattlerOptions")
-	return opts != null and opts.enable_autobattler
+	return opts != null and opts.enable_autobattler and opts.enable_autoshop
 
 func _auto_shop() -> void:
 	var pi = 0
