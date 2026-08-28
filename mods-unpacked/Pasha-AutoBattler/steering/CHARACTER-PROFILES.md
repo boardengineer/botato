@@ -1065,3 +1065,15 @@ kept (safer). Re-sweep at 0.4: bullet-hell waves all 3/3 (no over-commit),
 survivors end much healthier everywhere (w16 100/99, w18 117-146 HP). The w20
 double-boss stays ~50% -- a projectile-dodging ceiling (death = orbiter +
 scaled_stargazer, same family as the Jack croc bed), not an engage problem.
+
+## Lich boss ceiling was a bug (2026-08-28)
+
+The w20 ~50% "projectile-dodging ceiling" was not a ceiling. Capture showed
+`eng=0` for the WHOLE wave at full HP -- engage disarms on any boss/elite wave
+by the default rule (`engage_boss` false), so the heal-by-contact Lich never
+ran its spiky-shield/lifesteal loop and died to attrition at 636 dmg though the
+human tanked 1003 and lived. Data: human w20 dmgTaken 1003 (eel 287, dead_whale
+188, mad_dragonfish 174 -- "orbiter" = eel_pivots). Fix: `engage_boss: "trash"`
+(keep farming boss-wave trash, like the Bull). n=10: w20 **9/10** (was ~50%,
+survivors 86-180 HP), w18 elite **10/10**. Lesson: check eblk=/eng= before
+calling a boss wave a dodging problem -- engage_boss defaults OFF.

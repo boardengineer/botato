@@ -290,7 +290,13 @@ const CHARACTER_PROFILES = {
 	# (lifesteal 10-23 + spiky shield damages on touch), so fighting deeper
 	# sustains where disengaging bleeds. w15 horde + w20 boss n=6: engage_hp
 	# 0.66 -> 6/12, 0.4 -> 8/12 (survivors end near full HP), 0.25 -> 8/12.
-	"character_lich": {"gold": 2.0, "caution": 0.6, "engage": 12.0, "engage_hp": 0.4},
+	# engage_boss "trash": WITHOUT it engage disarms on every boss/elite wave
+	# (default rule), so the heal-by-contact Lich spent all of w20 at eng=0,
+	# never triggering its spiky-shield/lifesteal heal loop, and died to
+	# attrition at 636 dmg though the human tanked 1003 and lived. With it,
+	# the Lich keeps farming the boss-wave trash and heals through the fight.
+	"character_lich": {"gold": 2.0, "caution": 0.6, "engage": 12.0,
+			"engage_hp": 0.4, "engage_boss": "trash"},
 	"character_chef": {"food": "bomb"},
 	"character_glutton": {"food": "bomb", "anchor": "center", "anchor_radius": 560.0,
 			"caution_phases": [[5, 1.4], [99, 1.0]]},
