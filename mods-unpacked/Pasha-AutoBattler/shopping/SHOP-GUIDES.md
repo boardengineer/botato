@@ -28,6 +28,11 @@ buy / reroll / go / level-up decisions; two UI extensions execute them
   multiplied. Lets a fragile kit front-load survival (dodge/HP) through the
   opening, then revert to its offence weights -- the shop analogue of the
   steering caution_phases. Applies to level-up picks too.
+- **weapon_set** (optional): lock weapon buys to one weapon class by set id
+  (e.g. `set_elemental` for Mage, whose -100% ranged/melee means only elemental
+  weapons deal damage). A weapon outside the set scores negative even if it would
+  combine. Off-plan weapons offered by crates/level-ups are recycled for gold
+  rather than kept (they would waste a slot).
 
 ## Testing
 `--wavelab-run=<character>:<danger>` (WaveLab) starts a fresh run at wave 1 and
@@ -113,3 +118,28 @@ max_hp only 3 (the -25% penalty makes HP items weak).
 Batch (Danger 1, 2x, n=3): WON / WON / WON. All-ranged builds (pistols, revolvers,
 laser guns, shredders, double barrel, shuriken). Ranged kiters are the arbiter's
 strong suit.
+
+### Mage (#5) -- Danger 1: WON 3/3 (with fixes)
+Guide: brotato-builds.com/builds/Mage ("Taser Wizard"). Mage does damage ONLY
+through elemental weapons: -100% ranged AND melee damage gains, +elemental.
+
+Plan: `weapon_set: set_elemental` (taser/wand/flamethrower/torch/lightning shiv);
+elemental_damage 10 > attack_speed 8 > percent_damage 6.5 > luck 5.5 (find burn
+items) > armour/hp_regen/max_hp 5; early phase_boost for the squishy start.
+
+Two fixes were needed and are why the first pass was inconsistent:
+1. **Wand start.** Mage has no forced starting weapon, so the harness gave it a
+   pistol -- which does ~0 (the -100% ranged). On unlucky runs it couldn't kill
+   -> couldn't earn -> couldn't buy wands -> death spiral (died wave 6). The
+   harness now starts elemental-only characters with a wand (explicit list: the
+   penalties are effect_reduce_stat_gains keyed by custom_key hash, not a
+   readable stat_ranged_damage, so an effect scan cannot detect them).
+2. **Recycle off-plan crate weapons.** Crates/level-ups offer random weapons;
+   auto-taking a plank etc. wastes a slot on a 0-damage weapon. The level-up
+   auto-take now discards (recycles) any weapon scoring negative for the plan.
+
+Batch (Danger 1, 2x, n=3, both fixes): WON / WON / WON. Builds are wands, tasers,
+lightning shivs, torches (elemental, tiered up). Open: 1-2 stray non-elemental
+weapons still slip in via some crate path the discard does not catch -- minor,
+never blocks the win. Note: Mage kills slowly (burn DoT), so waves run their full
+length; runs take ~12-15 min at 2x (batch timeout raised to 18 min).

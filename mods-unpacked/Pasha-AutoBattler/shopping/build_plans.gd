@@ -165,6 +165,37 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #5. Guide: brotato-builds.com/builds/Mage ("Taser Wizard"). Mage does
+	# damage ONLY through elemental weapons: -100% ranged AND melee damage mods,
+	# +elemental. So weapon_set locks buys to the elemental class (set_elemental
+	# = taser/wand/flamethrower/torch/lightning shiv); a pistol etc. would do 0.
+	# Elemental damage leads, then attack speed and luck (find burn items) with
+	# armour/HP-regen defence. The harness gives it a wand start (not a pistol).
+	"character_mage": {
+		"weapon_type": "any",
+		"weapon_set": "set_elemental",
+		"stats": {
+			"stat_elemental_damage": 10.0,
+			"stat_attack_speed": 8.0,
+			"stat_percent_damage": 6.5,
+			"stat_luck": 5.5,
+			"stat_armor": 5.0,
+			"stat_hp_regeneration": 5.0,
+			"stat_max_hp": 5.0,
+			"stat_crit_chance": 4.0,
+			"stat_dodge": 4.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.6, "stat_armor": 1.5, "stat_hp_regeneration": 1.5,
+		}},
+		"harvest_cap": 0,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

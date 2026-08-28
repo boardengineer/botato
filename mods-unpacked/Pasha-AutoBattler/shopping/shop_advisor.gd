@@ -73,7 +73,22 @@ static func would_combine(wdata, player_index):
 static func weapon_type_str(wdata):
 	return "ranged" if wdata.type == WeaponData.Type.RANGED else "melee"
 
+# Does the weapon belong to the named set (e.g. "set_elemental" for Mage)?
+static func weapon_in_set(wdata, set_id):
+	if wdata.sets == null:
+		return false
+	for s in wdata.sets:
+		if s != null and s.my_id == set_id:
+			return true
+	return false
+
 static func score_weapon(wdata, plan, player_index):
+	# A weapon-set plan (Mage: only elemental weapons do damage) trumps the
+	# melee/ranged type gate: a weapon outside the set is worthless even if it
+	# would combine.
+	var want_set = plan.get("weapon_set", "")
+	if want_set != "" and not weapon_in_set(wdata, want_set):
+		return -1.0
 	if would_combine(wdata, player_index):
 		return COMBINE_SCORE + float(wdata.tier) * 5.0
 	var has_slot = RunData.has_weapon_slot_available(wdata, player_index)
@@ -81,6 +96,8 @@ static func score_weapon(wdata, plan, player_index):
 		return -1.0   # board full and it will not combine -> not buyable/useful
 	if RunData.get_player_weapons(player_index).size() >= plan["max_weapons"]:
 		return -1.0
+	if want_set != "":
+		return NEW_WEAPON_MATCH + float(wdata.tier) * 3.0   # in-set already verified
 	var type_ok = plan["weapon_type"] == "any" or weapon_type_str(wdata) == plan["weapon_type"]
 	if not type_ok:
 		return -1.0   # a typed plan never fills a slot with the wrong damage type

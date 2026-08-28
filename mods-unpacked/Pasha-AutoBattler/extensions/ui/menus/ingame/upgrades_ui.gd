@@ -50,7 +50,15 @@ func _auto_pick_loop() -> void:
 					container._on_choose_button_pressed(ups[idx])
 					acted = true
 			elif container._items_container.visible:
-				container._on_TakeButton_pressed()   # take the crate item / consumable
+				# A crate/consumable item is shown. Items are free stats -- take
+				# them. But an off-plan WEAPON (wrong set/type, e.g. a plank for
+				# elemental Mage) does ~0 damage and would waste a weapon slot, so
+				# recycle it for gold instead.
+				var idata = container._item_data
+				if idata is WeaponData and ShopAdvisor.score_weapon(idata, _plan_for(pi), pi) < 0.0:
+					container._on_DiscardButton_pressed()
+				else:
+					container._on_TakeButton_pressed()
 				acted = true
 		if not acted:
 			break
