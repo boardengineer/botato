@@ -611,6 +611,63 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #20. Guide: brotato-builds.com/builds/Speedy. +30 speed, speed CONVERTS
+	# TO MELEE DAMAGE (the gimmick), -100 armor WHILE STILL + -3 base (armor is a
+	# trap -> weight 0; steering row "still: never" keeps it moving). Melee to
+	# leverage speed->damage (jousting lance/captain's sword). Speed is a damage
+	# stat here so it leads; max HP for defence (guide: avoid early deaths).
+	"character_speedy": {
+		"weapon_type": "melee",
+		"stats": {
+			"stat_speed": 9.0,
+			"stat_melee_damage": 8.0,
+			"stat_attack_speed": 7.0,
+			"stat_max_hp": 7.0,
+			"stat_percent_damage": 6.5,
+			"stat_crit_chance": 5.0,
+			"stat_dodge": 5.0,
+			"stat_lifesteal": 3.5,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.7, "stat_dodge": 1.4,
+		}},
+		"harvest_cap": 0,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
+
+	# --- #21. Guide: brotato-builds.com/builds/Entrepreneur. Economy monster
+	# (-25% item prices, +50% stat gains, +25% recycling) but -50% to ALL damage
+	# mods (flat AND %). Baseline: ranged, lean hard on the economy (harvesting)
+	# to out-buy the damage penalty by stacking damage + attack speed. (Deeper
+	# route the bot can't do well: engineering/turrets bypass the damage penalty.)
+	# min_buy low since -25% prices makes items cheap.
+	"character_entrepreneur": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_harvesting": 9.0,
+			"stat_ranged_damage": 8.5,
+			"stat_attack_speed": 8.0,
+			"stat_percent_damage": 7.5,
+			"stat_max_hp": 6.5,
+			"stat_armor": 5.5,
+			"stat_crit_chance": 5.0,
+			"stat_dodge": 4.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.6, "stat_armor": 1.4,
+		}},
+		"harvest_cap": 50,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 1.5,
+	},
 }
 
 static func get_plan(character_id):

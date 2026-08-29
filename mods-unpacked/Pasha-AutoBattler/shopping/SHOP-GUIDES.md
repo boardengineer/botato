@@ -367,3 +367,10 @@ Like Mage, Ghost has no forced start, so the harness pistol + set_ethereal ->
 weaponless -> died wave 4. Added ghost_axe to the harness start map. Result:
 WON / WON / WON with pure ethereal boards (ghost axes/flints/scepters to tier 4).
 The dodge-cap tank is a strong bot fit once it has its weapon.
+
+### Speedy (#20) -- Danger 1: 0/3 baseline (14/18/18, borderline)
+Guide: brotato-builds.com/builds/Speedy. +30 speed CONVERTS TO MELEE DAMAGE,
+-100 armor while still (+ -3 base) = armor trap (weight 0); steering row
+"still: never" keeps it moving. Melee, speed as a damage stat (weight 9),
+stick harness start. Batch: died 14/18/18 -- borderline melee, w18-19 wall.
+Baseline; retune later.
