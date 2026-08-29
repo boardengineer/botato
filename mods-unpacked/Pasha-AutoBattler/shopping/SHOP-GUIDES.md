@@ -416,3 +416,11 @@ Batch (Danger 1, 2x, n=3): WON / died 17 / died 18 -- all full medical-gun board
 The heal-DPS engine works; the bottleneck is uneven combining on a single-family
 board (run 3 had three tier-1 medical guns). A future combine-sequencing pass
 for single-family builds would help.
+
+### Hunter (#25) -- Danger 1: 1/3 (16/15/WON)
+Guide: brotato-builds.com/builds/Hunter ("Crossbow Setup"). +100 range, +1% dmg
+per 10 range, +25% crit mods, -100% harvesting (trap). Crit-range ranged plan
+(crit 10 > ranged_damage 8 > range 7 > crit_damage 7). Batch: died 16 / 15 /
+WON. The win was a generic ranged snowball (53 items); Hunter's real power is
+concentrated in the CROSSBOW (crit + pierce), which the generic ranged plan
+doesn't specifically seek. A crossbow/precise-set bias is a future optimization.

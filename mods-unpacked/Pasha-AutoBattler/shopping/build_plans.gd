@@ -789,6 +789,35 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #26. Guide: brotatodex.com/character/character_artificer ("Explosive").
+	# +175% explosion damage, +4% explosion size per 1 elemental damage, -100%
+	# base damage, -50% armor. Damage via EXPLOSIONS: weapon_set set_explosive
+	# (plank/shredder), elemental damage (bigger blasts) + attack speed (more
+	# blasts, the guide's best stat) lead. Glass cannon: armor useless (-50%),
+	# dodge/regen/lifesteal near-useless -> weights low, HP only for a floor.
+	# Plank harness start. Steering row already engages packs for AoE.
+	"character_artificer": {
+		"weapon_type": "any",
+		"weapon_set": "set_explosive",
+		"stats": {
+			"stat_attack_speed": 9.0,
+			"stat_elemental_damage": 9.0,
+			"stat_max_hp": 7.0,
+			"stat_range": 6.0,
+			"stat_percent_damage": 5.5,
+			"stat_crit_chance": 4.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.7,
+		}},
+		"harvest_cap": 0,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):
