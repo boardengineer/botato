@@ -993,6 +993,35 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+	# --- #33. Guide: thegamer.com/brotato-best-apprentice-build,
+	# brotatodex.com/character/character_apprentice. Glass-cannon SCALER: every
+	# level pumps ALL FOUR offensive stats but PERMANENTLY shaves Max HP. So the
+	# levels supply the damage for free -- the shop must buy what the character
+	# LACKS: Max HP (to survive the accumulating penalty) + dodge, then attack
+	# speed to convert the free damage into hits. Ranged (Slingshot/SMG start).
+	"character_apprentice": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_max_hp": 10.0,
+			"stat_attack_speed": 8.0,
+			"stat_dodge": 7.0,
+			"stat_ranged_damage": 6.0,
+			"stat_armor": 6.0,
+			"stat_percent_damage": 5.0,
+			"stat_crit_chance": 5.0,
+			"stat_lifesteal": 4.0,
+			"stat_hp_regeneration": 4.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.6, "stat_dodge": 1.5,
+		}},
+		"harvest_cap": 30,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

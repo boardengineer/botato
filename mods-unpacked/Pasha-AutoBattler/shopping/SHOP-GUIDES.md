@@ -475,3 +475,11 @@ Ranged (revolver/laser); crit + ranged damage + attack speed lead, dodge for
 defence. Batch: WON / died 19 / WON with revolver/laser boards + medical-gun
 sustain. Better than the tracker's croc-ceiling read -- the single-target crit
 plan + dodge + the boss-engage steering fix handle the tanky-enemy modifiers.
+
+### Lich (#32) -- Danger 1: wins 2/3
+Guide: brotatodex.com/character/character_lich. Heal-damage: deals damage equal
+to a share of healing, so max HP core + lifesteal + HP regen fuel the damage.
+hitrate_pref favours fast weapons (SMG/shredder/lightning-shiv/sharp-tooth) --
+more hits = more lifesteal = more heal-damage. Batch: died 18 / WON / WON with
+fast mixed boards. The w18-19 near-miss is the usual Danger-1 wall, not a
+structural gap.
