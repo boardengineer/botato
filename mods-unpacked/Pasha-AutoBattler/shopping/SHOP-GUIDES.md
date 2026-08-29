@@ -424,3 +424,12 @@ per 10 range, +25% crit mods, -100% harvesting (trap). Crit-range ranged plan
 WON. The win was a generic ranged snowball (53 items); Hunter's real power is
 concentrated in the CROSSBOW (crit + pierce), which the generic ranged plan
 doesn't specifically seek. A crossbow/precise-set bias is a future optimization.
+
+### Artificer (#26) -- Danger 1: WON 3/3
+Guide: brotatodex.com/character/character_artificer ("Explosive"). +175%
+explosion damage, +4% explosion size per elemental damage, -100% base damage,
+-50% armor. weapon_set set_explosive (plank/shredder), plank harness start,
+elemental + attack speed lead (blast size + rate), glass cannon (armor/dodge/
+regen low). Batch: WON / WON / WON with pure plank+shredder boards (tier 4).
+The explosion damage bypasses the -100% base, and the steering row's pack-engage
+lands AoE well -- a strong bot fit.

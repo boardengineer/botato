@@ -818,6 +818,36 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #27. Guide: brotato-builds.com/builds/Arms-Dealer ("Rich Fast").
+	# Weapons -95% price and DESTROYED entering each shop (min 1 offered) -> the
+	# board resets every wave and the bot rebuys 6 cheap ones (the buy loop does
+	# this on the emptied board). Power goes into PERMANENT items/stats: economy
+	# (harvesting) + % damage (boosts whatever's rebought) + survival. weapon_type
+	# any (grab whatever's cheap). min_buy low since weapons cost ~nothing.
+	"character_arms_dealer": {
+		"weapon_type": "any",
+		"stats": {
+			"stat_percent_damage": 8.0,
+			"stat_harvesting": 8.0,
+			"stat_ranged_damage": 7.0,
+			"stat_attack_speed": 7.0,
+			"stat_max_hp": 7.0,
+			"stat_armor": 6.5,
+			"stat_hp_regeneration": 5.0,
+			"stat_melee_damage": 5.0,
+			"stat_crit_chance": 4.5,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.6, "stat_armor": 1.4,
+		}},
+		"harvest_cap": 40,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 1.5,
+	},
 }
 
 static func get_plan(character_id):
