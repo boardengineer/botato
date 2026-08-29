@@ -273,3 +273,22 @@ row is already an aggressive melee engager.
 Batch (Danger 1, 2x, n=3): died 19 / WON 20 / died 18 -- every run a clean
 all-primitive board. The set's weapons are cheap and cap out low (boards sat at
 tier 1-2), so the late waves are tight. Borderline, same w18-19 wall.
+
+### Pacifist (#14) -- Danger 1: 0/3, HARD (needs steering, not shopping)
+Guide: brotatodex.com/character/character_pacifist ("Peaceful Hand"). -100%
+damage + -100 engineering: ALL damage stats are trap stats. Income is 0.65
+mats+XP per enemy ALIVE at wave end -- the kill-everything logic is INVERTED.
+weapon_set set_support (Hand/taser utility), harvesting first, defence second.
+Harness gives it a Hand start (the pistol does nothing at -100% damage).
+
+Batch (Danger 1, 2x, n=3): died 10 / 8 / 6 -- up from the first pass's 4/7/5
+(Hand start + a hard defensive phase_boost roughly doubled early survival) but
+nowhere near a clear. Pacifist's real lever is the HERDING STEERING (row was
+tuned at Danger 6 in the tracker project on developed builds); the shop cannot
+carry a character that does no damage. Left as a documented hard case -- future
+work is on the steering side, not the plan.
+
+### gold_floor (plan key)
+Saver-style permanent hold: keep min(gold_floor, half the shop's bank) in
+reserve because the materials THEMSELVES are a damage stat (Saver: +1% dmg per
+25 kept). Default 0 = the usual spend-everything economy for every other char.

@@ -445,6 +445,13 @@ const PLANS = {
 			"stat_attack_speed": 3.0,
 			"stat_luck": 3.0,
 		},
+		# First pass died waves 4 and 7: with zero damage the whole early game is
+		# dodging with a naked HP pool (the tuned herding steering assumes the
+		# HP/dodge of a developed build). Front-load defence HARD.
+		"phase_boost": {"until_wave": 8, "stats": {
+			"stat_dodge": 2.0, "stat_max_hp": 1.8,
+			"stat_armor": 1.7, "stat_speed": 1.5,
+		}},
 		"harvest_cap": 60,
 		"item_bonus": {},
 		"max_weapons": 6,
@@ -473,6 +480,65 @@ const PLANS = {
 		},
 		"phase_boost": {"until_wave": 6, "stats": {
 			"stat_max_hp": 1.6, "stat_armor": 1.4,
+		}},
+		"harvest_cap": 0,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
+
+	# --- #16. Guide: brotatodex.com/character/character_saver ("Piggy Bank
+	# Economy") + number13.de spear build. +15 harvesting, +1% damage per 25
+	# materials HELD, Piggy Bank pays +20% of kept materials each wave -- the
+	# one character where hoarding IS the damage stat, so gold_floor 400 breaks
+	# the universal spend-down (+16% damage held, guide targets ~800-1000 by
+	# wave 10 but the floor must not starve early items). +50% item prices like
+	# Mutant => min_buy 3. Spear start: melee primitive; survival stats lead.
+	"character_saver": {
+		"weapon_type": "melee",
+		"stats": {
+			"stat_attack_speed": 7.5,
+			"stat_melee_damage": 7.0,
+			"stat_harvesting": 7.0,
+			"stat_max_hp": 6.5,
+			"stat_dodge": 6.0,
+			"stat_hp_regeneration": 5.5,
+			"stat_armor": 5.5,
+			"stat_crit_chance": 4.0,
+		},
+		"gold_floor": 400,
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.6, "stat_armor": 1.4,
+		}},
+		"harvest_cap": 60,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 3.0,
+	},
+
+	# --- #17. Guide: brotato-builds.com/builds/Sick ("SMG Setup"). +25%
+	# lifesteal, loses 1 HP/second, -100% HP regen (trap stat -- excluded, and
+	# the guide says skip extra lifesteal too: the innate 25% is the sustain).
+	# High-hit-count ranged (SMG) so every wave is a lifesteal stream; ranged
+	# damage + attack speed + armour lead; keep moving and shooting.
+	"character_sick": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_ranged_damage": 8.5,
+			"stat_attack_speed": 8.5,
+			"stat_max_hp": 6.5,
+			"stat_armor": 6.5,
+			"stat_percent_damage": 6.0,
+			"stat_crit_chance": 4.5,
+			"stat_dodge": 4.5,
+			"stat_speed": 3.5,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.5, "stat_armor": 1.4,
 		}},
 		"harvest_cap": 0,
 		"item_bonus": {},

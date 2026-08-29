@@ -32,7 +32,13 @@ func _auto_shop() -> void:
 	var rerolls = 0
 	var buys = 0
 	var bought = []
-	var save_floor = 0        # gold reserved for a locked weapon we are saving for
+	# Permanent per-character hold: Saver gains +1% damage per 25 materials KEPT
+	# (and Piggy Bank pays interest on them), so its plan floors the spend-down.
+	# RAMPED: a hard floor above the current bank would block ALL early buying,
+	# so keep half of each shop's bank until the plan's cap is reached. Default
+	# 0 = the usual spend-everything economy.
+	var gold_floor = int(min(float(plan.get("gold_floor", 0)), 0.5 * gold_in))
+	var save_floor = gold_floor   # gold reserved: floor + any locked weapon's price
 	var saved_note = ""
 	var tried = {}   # ShopItem instance_id -> true, so a failed buy is not retried
 	var actions = 0
@@ -67,7 +73,7 @@ func _auto_shop() -> void:
 			tried[best_node.get_instance_id()] = true
 			if best_node.locked:
 				best_node.change_lock_status(false)   # clear the lock registration before buying
-				save_floor = 0                         # target acquired -> stop reserving
+				save_floor = gold_floor                # target acquired -> back to the plan's floor
 			bought.push_back("%s@%d(%.0f)" % [best_node.item_data.my_id, int(best_node.value), best_score])
 			buys += 1
 			container.on_shop_item_buy_button_pressed(best_node)
@@ -77,12 +83,12 @@ func _auto_shop() -> void:
 		# afford yet, LOCK it and save for it (locked items survive rerolls and
 		# carry to the next wave's shop), then stop -- do not reroll it away or
 		# spend the saved gold.
-		if save_floor == 0:
+		if save_floor == gold_floor:
 			var target = _weapon_to_save_for(nodes, gold, plan, pi)
 			if target != null:
 				if not target.locked:
 					target.change_lock_status(true)
-				save_floor = int(target.value)
+				save_floor = gold_floor + int(target.value)
 				saved_note = " lock=%s@%d" % [target.item_data.my_id, int(target.value)]
 				continue   # re-loop: keep shopping with the rest of the gold
 		# Keep shopping even while saving: reroll if free, or affordable while
