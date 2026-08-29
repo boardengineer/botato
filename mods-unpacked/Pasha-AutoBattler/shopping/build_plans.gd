@@ -905,6 +905,37 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #30. Guide: brotatodex.com/character/character_glutton ("Explosive
+	# Eating"). +50 luck, +1% explosion damage per consumable eaten AT MAX HP
+	# (permanent), fruit explodes on pickup (steering row food:bomb does this
+	# AoE), +25% price, -25% XP. Guide route Pruners(support)->explosives spans
+	# two sets, so weapon_type any. Max HP weighted high (must be at 100% to gain
+	# the passive), luck + melee + explosion (elemental) lead; the food-bomb
+	# steering supplies AoE. Steering anchors center for the fruit/enemy overlap.
+	"character_glutton": {
+		"weapon_type": "any",
+		"stats": {
+			"stat_max_hp": 8.5,
+			"stat_luck": 8.0,
+			"stat_melee_damage": 7.5,
+			"stat_elemental_damage": 7.0,
+			"stat_percent_damage": 6.5,
+			"stat_armor": 6.0,
+			"stat_attack_speed": 6.0,
+			"stat_hp_regeneration": 5.0,
+			"stat_crit_chance": 4.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.7, "stat_armor": 1.4,
+		}},
+		"harvest_cap": 30,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

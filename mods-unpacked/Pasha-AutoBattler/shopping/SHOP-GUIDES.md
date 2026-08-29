@@ -451,3 +451,11 @@ by standing. Shopping baseline: ranged, armour + HP early, harvesting. Batch:
 died 13/16/18 -- item-poor (12-27 items). Likely the stand-to-farm behaviour
 trades combat uptime for materials, slowing the build at Danger 1; a shop/steering
 income-vs-DPS balance is a future tune. Borderline, climbing.
+
+### Cyborg (#29) -- Danger 1: 1/3 (16/11/WON)
+Guide: brotatodex.com/character/character_cyborg ("Minigun Ranged-Engi Hybrid").
++200% ranged damage that CONVERTS to engineering mid-wave -> ranged_damage is the
+core stat. Ranged plan (ranged_damage 10 leads, + engineering + lifesteal +
+defence); minigun is tier-3+ only so pistol start then buy up. Batch: died 16 /
+11 / WON -- the win rode a minigun_4 + shredder board. Ranged->engi works; the
+run that drifted into icicles/wands (off-plan) died early. Baseline.
