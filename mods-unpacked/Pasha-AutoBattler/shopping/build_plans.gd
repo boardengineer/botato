@@ -1056,28 +1056,61 @@ const PLANS = {
 	},
 	# --- #35. Guide: commonsensegamer.com/brotato-best-fisherman-build,
 	# metabrotato.com/blog/fisherman-smg-build. -50% materials dropped, BUT every
-	# shop offers a free Bait that PERMANENTLY boosts harvesting -- so the economy
-	# recovers by stacking baits, unlike Farmer (which has no such offset and went
-	# 0/3). High harvest_cap keeps the bot buying baits deep into the run; ranged
-	# (Shredder/Shotgun stack) for safe clearing + movement speed to dodge. Weight
-	# harvesting hard early, then ranged damage / attack speed / speed / armor.
+	# shop offers a free Bait that PERMANENTLY boosts harvesting. LESSON (v1 died
+	# wave 1-2): weighting harvesting ABOVE damage/survival + boosting it early
+	# starved the build -- the bot dumped gold into baits and thin tier-1 weapons
+	# with no defensive stats. Baits give harvesting for FREE, so the shop must
+	# fund SURVIVAL + damage first; harvesting is a mid weight (and collapses past
+	# harvest_cap anyway). Ranged (Shredder/Shotgun stack) + movement speed.
 	"character_fisherman": {
 		"weapon_type": "ranged",
 		"stats": {
-			"stat_harvesting": 9.0,
-			"stat_ranged_damage": 8.0,
+			"stat_ranged_damage": 9.0,
 			"stat_attack_speed": 7.0,
-			"stat_speed": 6.0,
-			"stat_max_hp": 5.0,
-			"stat_armor": 5.0,
+			"stat_max_hp": 7.0,
+			"stat_armor": 6.0,
+			"stat_harvesting": 5.0,
+			"stat_speed": 5.0,
 			"stat_percent_damage": 5.0,
 			"stat_lifesteal": 4.0,
 			"stat_crit_chance": 4.0,
 		},
-		"phase_boost": {"until_wave": 8, "stats": {
-			"stat_harvesting": 1.5, "stat_max_hp": 1.4,
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.6, "stat_armor": 1.4,
 		}},
-		"harvest_cap": 80,
+		"harvest_cap": 45,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
+	# --- #36. Guide: commonsensegamer.com/brotato-best-golem-build,
+	# brotatodex.com/character/character_golem. Unkillable armor/HP tank: +40%
+	# attack speed & +20% speed below 50% HP, but CANNOT HEAL (lifesteal / HP
+	# regen / consumables do NOTHING -- omitted entirely from the weights). Damage
+	# comes from Spiky Shield (Blunt weapons deal damage FROM armor & grant
+	# armor+HP), NOT melee_damage (guide: avoid it -- shields don't use it). So
+	# lock to set_blunt (hammer/rock/spiky_shield) and pour everything into armor
+	# then max HP. weapon_set needs a set-matched harness start (golem ->
+	# spiky_shield_1, added to wavelab start_map).
+	"character_golem": {
+		"weapon_type": "melee",
+		"weapon_set": "set_blunt",
+		"stats": {
+			"stat_armor": 10.0,
+			"stat_max_hp": 9.0,
+			"stat_attack_speed": 6.0,
+			"stat_percent_damage": 5.0,
+			"stat_ranged_damage": 3.0,
+			"stat_dodge": 3.0,
+			"stat_luck": 3.0,
+			"stat_crit_chance": 3.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_armor": 1.5, "stat_max_hp": 1.4,
+		}},
+		"harvest_cap": 30,
 		"item_bonus": {},
 		"max_weapons": 6,
 		"reroll_keep": 5,

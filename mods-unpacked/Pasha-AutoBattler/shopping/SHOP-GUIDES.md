@@ -505,3 +505,15 @@ plan buys too much survival and can't out-DPS wave-18's HP-inflated enemies
 (trees kept alive fine, 11-12 standing). OPTIMIZE-LATER LEVER: shift weight from
 dodge -> melee_damage/crit (the survival headroom is already there). Baseline
 recorded per the breadth-first pass.
+
+### Fisherman (#35) -- Danger 1: wins 0/3 (economy-starved, v2)
+Guide: metabrotato.com/blog/fisherman-smg-build. Kit (from data): +5 HP, +20
+harvesting, 2 free Baits/shop, harvesting scaling, -50% ENEMY GOLD DROPS (not
+materials). v1 (harvesting weighted 9.0 ABOVE damage + boosted early) died wave
+1/2/1 -- harvest-first starved survival. v2 (ranged damage + max HP + armor
+first, harvesting demoted to 5.0, survival phase_boost) improved to died 1/4/2.
+Root cause is now economy starvation (Farmer-class): -50% gold + the bot filling
+all 6 weapon slots with tier-1s leaves no gold for survival stats -> swarmed
+early. Free baits fix harvesting, not the gold shortfall. OPTIMIZE-LATER LEVERS:
+lower max_weapons (~4) to force consolidation + free gold for armor/HP items;
+possibly reroll harder for combines. Baseline recorded.
