@@ -848,6 +848,34 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 1.5,
 	},
+
+	# --- #28. Guide: brotato-builds.com/builds/Streamer ("Material Slingshot").
+	# Materials income while NOT MOVING; +2 armor. The STEERING (tracker work:
+	# stand_income, stand_phases, still: prefer) already farms by standing, so the
+	# shop just needs a ranged damage + early-defence build (guide: slingshot/
+	# revolver/SMG, early armour + HP). Ranged, armour weighted up.
+	"character_streamer": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_ranged_damage": 8.5,
+			"stat_attack_speed": 7.5,
+			"stat_armor": 7.0,
+			"stat_max_hp": 7.0,
+			"stat_percent_damage": 6.5,
+			"stat_harvesting": 6.0,
+			"stat_crit_chance": 5.0,
+			"stat_dodge": 4.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.6, "stat_armor": 1.5,
+		}},
+		"harvest_cap": 40,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

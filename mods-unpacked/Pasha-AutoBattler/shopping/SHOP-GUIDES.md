@@ -433,3 +433,13 @@ elemental + attack speed lead (blast size + rate), glass cannon (armor/dodge/
 regen low). Batch: WON / WON / WON with pure plank+shredder boards (tier 4).
 The explosion damage bypasses the -100% base, and the steering row's pack-engage
 lands AoE well -- a strong bot fit.
+
+### Arms Dealer (#27) -- Danger 1: 0/3 baseline (8/18/18)
+Guide: brotato-builds.com/builds/Arms-Dealer ("Rich Fast"). Weapons -95% price,
+DESTROYED entering each shop, min 1 offered -> power goes into PERMANENT items/
+stats; the board resets every wave. Plan: weapon_type any, % damage + harvesting
++ survival, min_buy 1.5. Batch: died 8 / 18 / 18. The rebuy works (runs 2-3 had
+full 6-weapon boards + 47-50 items); run 1 was a bad early refill. Note: the
+per-wave wpn= heartbeat often reads 0 (mid-shop-transition snapshot) -- cosmetic,
+it kills fine (435 kills/wave). Borderline; a "force-rebuy 6 weapons each shop"
+behaviour would firm up the early game.
