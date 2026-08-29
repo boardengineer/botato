@@ -356,3 +356,14 @@ Still 0/3: the -50% gold drops keeps it ITEM-POOR (13-14 items vs the usual
 Danger-1 mid-waves kill it. When the economy does ignite it reaches w18-19 with
 real builds (shredder_4, double barrels). Borderline; phase_boost kept for the
 floor.
+
+### Ghost (#19) -- Danger 1: WON 3/3 (after ghost_axe start fix)
+Guide: brotatodex.com/character/character_ghost ("Ethereal Axe Dodge"). +30
+dodge, DODGE CAP 90 (vs usual 60), -100 armor. Survival is ENTIRELY dodge:
+weight it 12 (far above all), armor weight ZERO (a trap: -100 base amplifies
+hits). weapon_set set_ethereal (ghost axe/flint/scepter).
+
+Like Mage, Ghost has no forced start, so the harness pistol + set_ethereal ->
+weaponless -> died wave 4. Added ghost_axe to the harness start map. Result:
+WON / WON / WON with pure ethereal boards (ghost axes/flints/scepters to tier 4).
+The dodge-cap tank is a strong bot fit once it has its weapon.
