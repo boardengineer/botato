@@ -262,3 +262,14 @@ Batch (Danger 1, 2x, n=3): WON 20 (full 12 board, mixed tiers) / died 9 (a full
 board of tier-1s and only 13 items -- filling 12 slots early spreads gold too
 thin for stats) / died 19. The volume build works once tiers develop; the
 early-game slot-fill vs stat-depth tension is its real weakness.
+
+### Wildling (#13) -- Danger 1: ~1/3 (borderline)
+Guide: brotato-builds.com/builds/Wildling ("Lifesteal Setup"). +30% lifesteal
+with Primitive weapons (stick start); weapon_set set_primitive locks the board
+to stick/rock/spear/hatchet/sharp tooth/cactus mace/slingshot/torch. Offence
+leads; lifesteal/regen weights low (the class bonus IS the sustain). Steering
+row is already an aggressive melee engager.
+
+Batch (Danger 1, 2x, n=3): died 19 / WON 20 / died 18 -- every run a clean
+all-primitive board. The set's weapons are cheap and cap out low (boards sat at
+tier 1-2), so the late waves are tight. Borderline, same w18-19 wall.

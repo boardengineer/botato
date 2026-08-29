@@ -452,6 +452,35 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #15. Guide: brotato-builds.com/builds/Gladiator ("Multi Weapon").
+	# +20% attack speed per UNIQUE melee weapon, +5 melee damage, no ranged
+	# weapons, -40% attack speed base, -30 luck. Six different melee weapons is
+	# the engine (shop variety supplies distinct ids on its own; a duplicate
+	# combine on a full board frees a slot for a new unique). Attack speed +
+	# melee damage lead, then armour/HP/regen so it can live inside packs.
+	"character_gladiator": {
+		"weapon_type": "melee",
+		"stats": {
+			"stat_attack_speed": 9.0,
+			"stat_melee_damage": 8.5,
+			"stat_percent_damage": 6.5,
+			"stat_max_hp": 6.5,
+			"stat_armor": 6.0,
+			"stat_hp_regeneration": 5.0,
+			"stat_crit_chance": 4.0,
+			"stat_lifesteal": 4.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.6, "stat_armor": 1.4,
+		}},
+		"harvest_cap": 0,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):
