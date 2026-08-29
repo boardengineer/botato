@@ -33,6 +33,15 @@ buy / reroll / go / level-up decisions; two UI extensions execute them
   weapons deal damage). A weapon outside the set scores negative even if it would
   combine. Off-plan weapons offered by crates/level-ups are recycled for gold
   rather than kept (they would waste a slot).
+- **Lock-and-save**: when a strong ON-PLAN weapon (tier 2+/combine, reachable
+  next wave) is on offer but unaffordable, the shop LOCKS it (locked items
+  survive rerolls and carry to the next wave), reserves its price, keeps shopping
+  with the rest of the gold, and buys it next wave. Two rules keep it from
+  hurting the aggressive-spend economy: save only for ON-PLAN weapons (an early
+  version reserved gold for off-plan pistol combines and regressed Ranger
+  3/3 -> 0/3), and keep shopping while saving (don't leave the shop early). With
+  both, Ranger is back to 3/3 and it reliably secures key weapons (e.g. Chunky's
+  Spiky Shield).
 
 ## Testing
 `--wavelab-run=<character>:<danger>` (WaveLab) starts a fresh run at wave 1 and

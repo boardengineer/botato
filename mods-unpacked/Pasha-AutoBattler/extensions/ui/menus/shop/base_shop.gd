@@ -11,6 +11,8 @@ const BUY_WAIT = 0.09     # container enforces a 0.05s buy lockout; clear it
 const REROLL_WAIT = 0.12
 const GO_WAIT = 0.15
 const MAX_ACTIONS = 150   # hard stop against any pathological loop (buys + up to ~15 rerolls)
+const LOCK_MIN_SCORE = 28.0  # only save for a weapon at least this good (tier 2+ on-plan, or a combine)
+const LOCK_REACH = 70        # only save if its price is within ~one wave's income of current gold
 
 func _ready() -> void:
 	._ready()
@@ -30,6 +32,8 @@ func _auto_shop() -> void:
 	var rerolls = 0
 	var buys = 0
 	var bought = []
+	var save_floor = 0        # gold reserved for a locked weapon we are saving for
+	var saved_note = ""
 	var tried = {}   # ShopItem instance_id -> true, so a failed buy is not retried
 	var actions = 0
 	while actions < MAX_ACTIONS:
@@ -37,31 +41,58 @@ func _auto_shop() -> void:
 		var gold = RunData.get_player_gold(pi)
 		var container = _get_shop_items_container(pi)
 		var nodes = container._shop_items
-		# Pick the best affordable, buyable, not-yet-tried node.
+		# Pick the best affordable, buyable, not-yet-tried node -- but never dip
+		# below save_floor (the gold held for a weapon we locked to buy later).
+		# Locked nodes ARE considered here: a weapon we locked (this wave or a past
+		# one) should be bought once affordable. A locked buy is exempt from
+		# save_floor -- it IS the thing we were saving for.
 		var best_node = null
 		var best_score = plan["min_buy"]
 		for node in nodes:
-			if node == null or not node.active or node.locked:
+			if node == null or not node.active:
 				continue
 			if tried.has(node.get_instance_id()):
 				continue
 			if node.value > gold:
 				continue
+			if not node.locked and gold - int(node.value) < save_floor:
+				continue
 			var sc = ShopAdvisor.score_shop_entry([node.item_data, node.wave_value], plan, pi)
+			if node.locked:
+				sc += 1000.0   # buy what we committed to first
 			if sc > best_score:
 				best_score = sc
 				best_node = node
 		if best_node != null:
 			tried[best_node.get_instance_id()] = true
+			if best_node.locked:
+				best_node.change_lock_status(false)   # clear the lock registration before buying
+				save_floor = 0                         # target acquired -> stop reserving
 			bought.push_back("%s@%d(%.0f)" % [best_node.item_data.my_id, int(best_node.value), best_score])
 			buys += 1
 			container.on_shop_item_buy_button_pressed(best_node)
 			yield(get_tree().create_timer(BUY_WAIT), "timeout")
 			continue
-		# Nothing worth buying. Reroll if it is free, or affordable within budget.
+		# Nothing affordable to buy. If a strong weapon is on offer that we cannot
+		# afford yet, LOCK it and save for it (locked items survive rerolls and
+		# carry to the next wave's shop), then stop -- do not reroll it away or
+		# spend the saved gold.
+		if save_floor == 0:
+			var target = _weapon_to_save_for(nodes, gold, plan, pi)
+			if target != null:
+				if not target.locked:
+					target.change_lock_status(true)
+				save_floor = int(target.value)
+				saved_note = " lock=%s@%d" % [target.item_data.my_id, int(target.value)]
+				continue   # re-loop: keep shopping with the rest of the gold
+		# Keep shopping even while saving: reroll if free, or affordable while
+		# still preserving save_floor (the gold held for the locked weapon).
 		var price = _reroll_price[pi]
 		var free = price <= 0 or _free_rerolls[pi] > 0 or _has_bonus_free_reroll[pi]
-		var can_pay = gold - price >= plan["reroll_keep"] and rerolls < plan["max_rerolls"]
+		var keep = plan["reroll_keep"]
+		if save_floor > keep:
+			keep = save_floor
+		var can_pay = gold - price >= keep and rerolls < plan["max_rerolls"]
 		if _reroll_price.size() > pi and (free or can_pay):
 			rerolls += 1
 			tried.clear()   # a reroll replaces the offering
@@ -69,8 +100,42 @@ func _auto_shop() -> void:
 			yield(get_tree().create_timer(REROLL_WAIT), "timeout")
 			continue
 		break
-	print("BOTLOG SHOP wave=%d gold_in=%d gold_out=%d buys=%d rerolls=%d bought=%s" % [
-		RunData.current_wave, gold_in, RunData.get_player_gold(pi), buys, rerolls, str(bought)])
+	print("BOTLOG SHOP wave=%d gold_in=%d gold_out=%d buys=%d rerolls=%d bought=%s%s" % [
+		RunData.current_wave, gold_in, RunData.get_player_gold(pi), buys, rerolls, str(bought), saved_note])
 	yield(get_tree().create_timer(GO_WAIT), "timeout")
 	if _ab_enabled():
 		_on_GoButton_pressed(pi)
+
+# The weapon on offer worth saving for: a strong weapon (tier 2+ / combine) we
+# cannot afford this wave but could next wave. Already-locked weapons always
+# qualify (we committed to them last wave and must keep reserving), and are
+# exempt from the reach cap. Returns the ShopItem node, or null.
+func _weapon_to_save_for(nodes, gold, plan, pi):
+	var best = null
+	var best_sc = LOCK_MIN_SCORE
+	for node in nodes:
+		if node == null or not node.active:
+			continue
+		if not (node.item_data is WeaponData):
+			continue
+		if node.value <= gold:
+			continue   # affordable now -> the buy loop handles it
+		if not node.locked and node.value > gold + LOCK_REACH:
+			continue   # a NEW lock must be reachable next wave; a kept one is not dropped
+		if not node.locked and not _on_plan_weapon(node.item_data, plan, pi):
+			continue   # only save for on-plan weapons -- never hold gold for an off-plan combine
+		var sc = ShopAdvisor.score_weapon(node.item_data, plan, pi)
+		if node.locked:
+			sc += 1000.0
+		if sc > best_sc:
+			best_sc = sc
+			best = node
+	return best
+
+# Does the weapon match this plan's weapon class (set, or melee/ranged type)?
+func _on_plan_weapon(wdata, plan, pi):
+	var want_set = plan.get("weapon_set", "")
+	if want_set != "":
+		return ShopAdvisor.weapon_in_set(wdata, want_set)
+	var wt = plan.get("weapon_type", "any")
+	return wt == "any" or ShopAdvisor.weapon_type_str(wdata) == wt
