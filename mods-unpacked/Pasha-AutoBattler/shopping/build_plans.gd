@@ -338,6 +338,32 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #11. Guide: brotatodex.com/character/character_loud ("Enemy Overload
+	# Farmer") + metabrotato.com best-loud-build. +30% damage, +50% enemies (the
+	# extra kills ARE the economy), harvesting -3 per wave (a decaying trap stat
+	# -- excluded). Kill-focused: attack speed + damage to clear the denser
+	# waves, max HP emphasized (guide: critical), lifesteal sustains through the
+	# horde. Ranged kiting -- the arbiter's strength suits +50% enemy density.
+	"character_loud": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_attack_speed": 9.0,
+			"stat_ranged_damage": 8.0,
+			"stat_max_hp": 7.5,
+			"stat_percent_damage": 7.0,
+			"stat_crit_chance": 5.5,
+			"stat_lifesteal": 5.0,
+			"stat_armor": 5.0,
+			"stat_dodge": 4.0,
+		},
+		"harvest_cap": 0,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

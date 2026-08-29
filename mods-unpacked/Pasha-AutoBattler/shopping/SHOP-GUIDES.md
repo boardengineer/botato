@@ -209,3 +209,17 @@ speed produced the first full clear: 1/3 (won 20 / died 12 / died 19). A
 character's plan must weight what it LACKS, not what its gimmick names.
 Remaining variance is the real handicap pair (slow kills + slow levels) --
 borderline like Brawler/Chunky.
+
+### Mutant (#9) -- Danger 1: ~1/3, near-misses (borderline)
+Guide: brotato-builds.com/builds/Mutant ("XP Scaling"). Real traits: -66% XP
+needed (levels ~3x faster; hit lvl 32-35 by run end) and +50% item prices
+(item-poor: ~30 items vs the usual ~45-50). Ranged kiting, balanced weights,
+min_buy 3 against the inflated prices.
+
+Batch (Danger 1, 2x, n=3): died 19 / WON 20 / died on the final boss (w20).
+The XP engine works exactly as intended; both deaths were near-misses. Run 1
+stacked THREE medical_gun_3 (the low-DPS healer) -- vs run 2's three shredders
+which won. Note the tension with Old: blanket medical-gun avoidance regressed
+Old 2/3->0/3 (its healing matters), so any fix here should be per-character
+avoid_weapons or a one-support-weapon cap, not a global rule. Left as-is for
+now -- the deaths are boundary-line, not systematic.
