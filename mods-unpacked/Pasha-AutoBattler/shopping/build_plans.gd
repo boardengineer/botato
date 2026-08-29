@@ -364,6 +364,35 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #12. Guide: brotatodex.com/character/character_multitasker ("12-Stick
+	# DPS"). 12 weapon slots, +20% damage, -5% damage per extra weapon -- volume
+	# wins. Melee stick route: melee damage + percent damage + attack speed +
+	# max HP. max_weapons 12 fills the board; combines only trigger at 12/12
+	# (the scorer's would_combine needs a full board), which matches the guide's
+	# "don't combine until full" automatically.
+	"character_multitasker": {
+		"weapon_type": "melee",
+		"stats": {
+			"stat_melee_damage": 9.0,
+			"stat_percent_damage": 8.0,
+			"stat_attack_speed": 7.5,
+			"stat_max_hp": 7.0,
+			"stat_armor": 5.0,
+			"stat_crit_chance": 4.5,
+			"stat_lifesteal": 4.0,
+			"stat_hp_regeneration": 3.5,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.6, "stat_armor": 1.4,
+		}},
+		"harvest_cap": 0,
+		"item_bonus": {},
+		"max_weapons": 12,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

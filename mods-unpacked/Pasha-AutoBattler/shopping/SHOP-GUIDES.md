@@ -223,3 +223,18 @@ which won. Note the tension with Old: blanket medical-gun avoidance regressed
 Old 2/3->0/3 (its healing matters), so any fix here should be per-character
 avoid_weapons or a one-support-weapon cap, not a global rule. Left as-is for
 now -- the deaths are boundary-line, not systematic.
+
+### Generalist (#10) -- Danger 1: ~1/3, both deaths at wave 19 (borderline)
+Guide: brotatodex.com/character/character_generalist ("Cactus & Slingshot
+Hybrid"). Must run 3 melee + 3 ranged; melee damage boosts ranged and vice
+versa. NO advisor change needed for the split: the game's max_melee/ranged
+weapons caps flow through the scorer's has_weapon_slot_available check, and
+every batch run produced a clean 3/3 build (rocks/cacti clubs/fists + pistols/
+javelins) -- including the guide's cactus route once.
+
+Plan: `weapon_type: any`; melee_damage 8 = ranged_damage 8 > max_hp/attack_speed
+6.5 > percent_damage 6 > armor 5.5 > crit/harvesting 5 > luck 4.
+
+Batch (Danger 1, 2x, n=3): died 19 / WON 20 / died 19. Boundary-line: the
+structure is right, both losses were one wave short. Same near-miss shape as
+Mutant.
