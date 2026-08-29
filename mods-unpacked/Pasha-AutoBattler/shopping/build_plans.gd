@@ -468,6 +468,7 @@ const PLANS = {
 	# melee damage lead, then armour/HP/regen so it can live inside packs.
 	"character_gladiator": {
 		"weapon_type": "melee",
+		"unique_weapons": true,   # +20% attack speed per DISTINCT family -> variety, no dupes/combines
 		"stats": {
 			"stat_attack_speed": 9.0,
 			"stat_melee_damage": 8.5,

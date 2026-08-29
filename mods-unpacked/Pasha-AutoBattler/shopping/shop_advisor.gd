@@ -89,6 +89,14 @@ static func score_weapon(wdata, plan, player_index):
 	var want_set = plan.get("weapon_set", "")
 	if want_set != "" and not weapon_in_set(wdata, want_set):
 		return -1.0
+	# Gladiator: +attack speed per UNIQUE weapon family, so it wants 6 DIFFERENT
+	# weapons. Combines still tier a family up WITHOUT losing uniqueness (3 -> 1
+	# of the same family) so they stay valuable; but a NON-combining duplicate of
+	# a family already held just wastes a slot that a new family should take.
+	if plan.get("unique_weapons", false) and not would_combine(wdata, player_index):
+		for w in RunData.get_player_weapons(player_index):
+			if w.weapon_id == wdata.weapon_id:
+				return -1.0
 	if would_combine(wdata, player_index):
 		return COMBINE_SCORE + float(wdata.tier) * 5.0
 	var has_slot = RunData.has_weapon_slot_available(wdata, player_index)

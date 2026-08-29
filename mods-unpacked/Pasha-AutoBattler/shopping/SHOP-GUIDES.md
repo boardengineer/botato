@@ -292,3 +292,26 @@ work is on the steering side, not the plan.
 Saver-style permanent hold: keep min(gold_floor, half the shop's bank) in
 reserve because the materials THEMSELVES are a damage stat (Saver: +1% dmg per
 25 kept). Default 0 = the usual spend-everything economy for every other char.
+
+### Gladiator (#15) -- Danger 1: ~1/3, first clear after two fixes
+Guide: brotato-builds.com/builds/Gladiator ("Multi Weapon"). +20% attack speed
+per UNIQUE melee family, no ranged, -40% attack speed base, -30 luck. Two fixes:
+1. **Systemic melee starter** (harness): a melee-plan character with no forced
+   start now begins with a Stick, not a pistol it can barely use. Reads the
+   plan's weapon_type via load(build_plans). Helps every no-forced-start melee
+   char (Brawler/Chunky/Multitasker/Gladiator).
+2. **unique_weapons plan flag** (Gladiator only): reject a NON-combining
+   duplicate of a family already held (wastes a unique slot) but KEEP combines
+   (they tier a family up without losing uniqueness). A first version rejected
+   ALL held families incl. combines -> 6 families stuck at tier 1 (died 14),
+   which the fix corrected.
+
+Batch (Danger 1, 2x, n=3): died 17 / WON 20 / died 14 -- up from 0/3 (19/15/17
+with the wasted pistol + duplicate families). Every run now builds 6 distinct
+families with real tiers (claw_4, hatchet_4, ...). Borderline but structurally
+correct.
+
+### unique_weapons (plan key) + systemic melee start
+unique_weapons: for per-distinct-family bonuses -- keep combines, reject
+non-combining held-family duplicates. Harness: melee-plan chars start with a
+Stick (reads weapon_type), after the explicit map (Mage->wand, Pacifist->hand).
