@@ -9,6 +9,7 @@ const BuildPlans = preload("res://mods-unpacked/Pasha-AutoBattler/shopping/build
 
 const COMBINE_SCORE = 100.0   # combining upgrades a weapon's tier -- almost always take it
 const NEW_WEAPON_MATCH = 22.0 # an empty slot filled with an on-type weapon
+const HITRATE_W = 1.6         # hitrate_pref: weight per hit/sec (SMG ~15 clamped 12 -> ~+19)
 
 static func get_plan(character_id):
 	return BuildPlans.get_plan(character_id)
@@ -105,11 +106,26 @@ static func score_weapon(wdata, plan, player_index):
 	if RunData.get_player_weapons(player_index).size() >= plan["max_weapons"]:
 		return -1.0
 	if want_set != "":
-		return NEW_WEAPON_MATCH + float(wdata.tier) * 3.0   # in-set already verified
+		return NEW_WEAPON_MATCH + float(wdata.tier) * 3.0 + hitrate_bonus(wdata, plan)  # in-set verified
 	var type_ok = plan["weapon_type"] == "any" or weapon_type_str(wdata) == plan["weapon_type"]
 	if not type_ok:
 		return -1.0   # a typed plan never fills a slot with the wrong damage type
-	return NEW_WEAPON_MATCH + float(wdata.tier) * 3.0
+	return NEW_WEAPON_MATCH + float(wdata.tier) * 3.0 + hitrate_bonus(wdata, plan)
+
+# Sick's lifesteal (and any hit-count kit) scales with HITS, not damage: prefer
+# fast, multi-projectile weapons (SMG cd 4 vs pistol/wand cd 40-60). Returns a
+# bonus proportional to hits/sec, or 0 when the plan does not ask for it.
+static func hitrate_bonus(wdata, plan):
+	if not plan.get("hitrate_pref", false) or wdata.stats == null:
+		return 0.0
+	var cd = int(wdata.stats.cooldown)
+	if cd <= 0:
+		return 0.0
+	var nproj = wdata.stats.get("nb_projectiles")
+	if nproj == null:
+		nproj = 1
+	var hits_per_sec = float(nproj) * 60.0 / float(cd)
+	return min(hits_per_sec, 12.0) * HITRATE_W
 
 # entry is the shop tuple [item_data, wave_value].
 static func score_shop_entry(entry, plan, player_index):

@@ -528,6 +528,7 @@ const PLANS = {
 	# damage + attack speed + armour lead; keep moving and shooting.
 	"character_sick": {
 		"weapon_type": "ranged",
+		"hitrate_pref": true,   # innate 25% lifesteal scales with HITS -> favour fast weapons (SMG)
 		"stats": {
 			"stat_ranged_damage": 8.5,
 			"stat_attack_speed": 8.5,
@@ -542,6 +543,32 @@ const PLANS = {
 			"stat_max_hp": 1.5, "stat_armor": 1.4,
 		}},
 		"harvest_cap": 0,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
+
+	# --- #18. Guide: metabrotato.com farmer-build-pruner-guide ("Material
+	# Hoarder"). +20 harvesting, harvesting grows +3/wave, -50% gold drops (the
+	# economy IS the growth, not enemy drops). Economy-first then convert to
+	# damage/defence. Ranged kiting (Circular Saw/Chainsaw are tool weapons but
+	# the arbiter handles ranged best; pistol start is fine here). Harvesting
+	# leads with a high cap since it compounds, then damage + defence.
+	"character_farmer": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_harvesting": 10.0,
+			"stat_ranged_damage": 7.5,
+			"stat_attack_speed": 7.0,
+			"stat_max_hp": 6.5,
+			"stat_percent_damage": 6.0,
+			"stat_armor": 6.0,
+			"stat_dodge": 4.5,
+			"stat_crit_chance": 4.0,
+		},
+		"harvest_cap": 60,
 		"item_bonus": {},
 		"max_weapons": 6,
 		"reroll_keep": 5,

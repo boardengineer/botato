@@ -329,3 +329,18 @@ wave 5, then +5%/wave of the bank capped at 35% and 250 absolute. Result:
 16/17/17, gold held down to ~330-530, healthier early HP, better tiers. Still
 0/3 but every death a late-wave near-miss -- borderline like the others. The
 gold_floor mechanism is validated as a safe tunable (default 0 = unchanged).
+
+### Sick (#17) -- Danger 1: wins 2/3 (hitrate_pref fixed it)
+Guide: brotato-builds.com/builds/Sick ("SMG Setup"). +25% lifesteal, -1 HP/sec,
+-100% HP regen (trap, excluded). The sustain scales with HIT COUNT, so a generic
+ranged plan that bought wands/single-shots starved it: baseline 0/3 (died
+11/14/16). Added hitrate_pref: score weapons by hits/sec (nb_projectiles * 60 /
+cooldown, clamped, x1.6) -- SMG cd 4 -> ~+19, pistol cd 60 -> ~+1. Result: 2/3
+(died 16 / WON / WON) with SMG/shredder/double-barrel/shuriken boards. (Run 3
+won WITH medical guns -- for a hit-rate lifesteal kit their sustain is fine,
+unlike Old, which is why weapon avoidance must stay per-character.)
+
+### hitrate_pref (plan key)
+For hit-count kits (lifesteal/on-hit procs): bonus per hit/sec from
+wdata.stats (nb_projectiles * 60 / cooldown). Favours SMG/minigun/multi-shot
+over slow single-shots. Off by default.
