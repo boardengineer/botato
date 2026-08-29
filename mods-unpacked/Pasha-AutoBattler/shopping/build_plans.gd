@@ -728,6 +728,37 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #24. Guide: brotatodex.com/character/character_doctor ("Medical Gun
+	# Medic"). +200% attack speed with MEDICAL weapons but -100% with all -> only
+	# medical weapons are usable (the INVERSE of Old, where medical guns were a
+	# trap -- proof weapon prefs must be per-character). weapon_set set_medical
+	# (medical gun / scissors; stack medical guns and combine). Ranged damage +
+	# attack speed scale the medical guns; +5 HP regen (doubled scaling) is the
+	# sustain (no lifesteal, low armor per guide). Medical-gun harness start.
+	"character_doctor": {
+		"weapon_type": "any",
+		"weapon_set": "set_medical",
+		"stats": {
+			"stat_ranged_damage": 9.0,
+			"stat_attack_speed": 8.0,
+			"stat_hp_regeneration": 7.0,
+			"stat_max_hp": 6.5,
+			"stat_percent_damage": 6.5,
+			"stat_harvesting": 6.0,
+			"stat_crit_chance": 4.0,
+			"stat_dodge": 4.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.5, "stat_hp_regeneration": 1.4,
+		}},
+		"harvest_cap": 40,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

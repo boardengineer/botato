@@ -396,3 +396,12 @@ while turrets kill (no turret model needed in steering). IMPLICATION: the
 engineering route (set_tool + engineering) is a viable future optimization for
 the OTHER turret/economy chars the guides point there -- Old, Explorer,
 Entrepreneur -- which are borderline on direct-damage plans.
+
+### Explorer (#23) -- Danger 1: wins 2/3
+Guide: brotatodex.com/character/character_explorer. Large map +33%, +12 trees,
++10 speed, +50 pickup, -40% damage. Steering tuned in the tracker project.
+Shopping baseline: ranged, economy (harvesting) + stacked damage to offset -40%,
+speed 5. Batch: died 10 / WON / WON -- bimodal: a slow economy start collapsed
+(wave 10) but two runs' tree/crate economy ignited into shredder builds (56-60
+items). Better than the tracker's pure-fragility read; the shop's economy focus
+helps.
