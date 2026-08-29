@@ -698,6 +698,36 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #23. Guide: brotatodex.com/character/character_explorer. Large map
+	# (+33%), +12 trees, +10 speed, +50 pickup range, -40% damage. Its STEERING
+	# was tuned in the tracker project (fragility ceiling: taser kit on the big
+	# map). Shopping baseline: ranged, economy (trees/crates) + stacked damage to
+	# offset -40%, some speed for the map. Kill rate is a known kit ceiling the
+	# shop cannot fully fix.
+	"character_explorer": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_ranged_damage": 8.5,
+			"stat_attack_speed": 8.0,
+			"stat_percent_damage": 7.0,
+			"stat_harvesting": 7.0,
+			"stat_max_hp": 6.5,
+			"stat_armor": 5.5,
+			"stat_speed": 5.0,
+			"stat_crit_chance": 4.5,
+			"stat_dodge": 4.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.6, "stat_armor": 1.4,
+		}},
+		"harvest_cap": 45,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

@@ -383,3 +383,16 @@ harvesting-heavy, stacked damage/attack speed to fight the penalty, min_buy 1.5
 tier-4 board, reached the final boss) but -50% damage caps kill speed.
 Borderline; the guide's engineering route (turrets bypass the penalty) is the
 deeper fix the bot can't do well.
+
+### Engineer (#22) -- Danger 1: WON 3/3 (turrets work!)
+Guide: brotato-builds.com/builds/Engineer ("Turret Setup"). Damage from
+STRUCTURES: +10 engineering, wrench start, -50% a damage mod. weapon_set
+set_tool (wrench/screwdriver), engineering weight 12, survival stats.
+
+Batch (Danger 1, 2x, n=3): WON / WON / WON with full wrench+screwdriver boards
+(tier 3-4). SURPRISE: the turret build works well under the bot -- the tools
+auto-place structures and engineering scales them, so the arbiter just survives
+while turrets kill (no turret model needed in steering). IMPLICATION: the
+engineering route (set_tool + engineering) is a viable future optimization for
+the OTHER turret/economy chars the guides point there -- Old, Explorer,
+Entrepreneur -- which are borderline on direct-damage plans.
