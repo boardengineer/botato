@@ -483,3 +483,14 @@ hitrate_pref favours fast weapons (SMG/shredder/lightning-shiv/sharp-tooth) --
 more hits = more lifesteal = more heal-damage. Batch: died 18 / WON / WON with
 fast mixed boards. The w18-19 near-miss is the usual Danger-1 wall, not a
 structural gap.
+
+### Apprentice (#33) -- Danger 1: wins 1/3
+Guide: thegamer.com/brotato-best-apprentice-build. Glass-cannon scaler: every
+level pumps all four offensive stats but shaves Max HP (starts at 10 HP). Plan
+buys what it LACKS -- Max HP + dodge + attack speed -- and lets levels supply the
+damage. Batch: died 16 / WON / died 18. The winning run had a pistol-stack +
+shredder board; the wave-16 death was the medical-gun DPS-overrank drifting the
+build into 3 healing guns with too little kill power (the known base-DPS scoring
+noise -- per-char avoid_weapons was reverted earlier as it regressed Old/Doctor).
+RUN 3's wave-18 death is the usual Danger-1 wall. Baseline recorded; a
+glass-cannon-specific medical-gun demotion is a candidate future optimization.

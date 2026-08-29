@@ -1022,6 +1022,38 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+	# --- #34. Guide: commonsensegamer.com/brotato-best-cryptid-build,
+	# gamerdiscovery.com/brotato-cryptid-build-guide. Living-tree scaler: each
+	# tree kept alive gives materials/XP/HP-regen at wave end, so the kit sustains
+	# via dodge + regen at close range. Melee (Claw/Stick + Thief Daggers -- fast
+	# precise crit). hitrate_pref favours the fast daggers. Weight dodge + attack
+	# speed + melee damage + crit + regen; the bot can't steer around trees, so
+	# lean on the stat sustain. (Turrets bad -- they'd destroy trees -- so no
+	# weapon_set for tools.)
+	"character_cryptid": {
+		"weapon_type": "melee",
+		"hitrate_pref": true,
+		"stats": {
+			"stat_dodge": 9.0,
+			"stat_attack_speed": 8.0,
+			"stat_melee_damage": 8.0,
+			"stat_crit_chance": 6.0,
+			"stat_hp_regeneration": 6.0,
+			"stat_max_hp": 6.0,
+			"stat_lifesteal": 5.0,
+			"stat_luck": 4.0,
+			"stat_armor": 4.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_dodge": 1.5, "stat_max_hp": 1.5,
+		}},
+		"harvest_cap": 40,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):
