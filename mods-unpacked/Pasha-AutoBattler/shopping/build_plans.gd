@@ -1054,6 +1054,36 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+	# --- #35. Guide: commonsensegamer.com/brotato-best-fisherman-build,
+	# metabrotato.com/blog/fisherman-smg-build. -50% materials dropped, BUT every
+	# shop offers a free Bait that PERMANENTLY boosts harvesting -- so the economy
+	# recovers by stacking baits, unlike Farmer (which has no such offset and went
+	# 0/3). High harvest_cap keeps the bot buying baits deep into the run; ranged
+	# (Shredder/Shotgun stack) for safe clearing + movement speed to dodge. Weight
+	# harvesting hard early, then ranged damage / attack speed / speed / armor.
+	"character_fisherman": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_harvesting": 9.0,
+			"stat_ranged_damage": 8.0,
+			"stat_attack_speed": 7.0,
+			"stat_speed": 6.0,
+			"stat_max_hp": 5.0,
+			"stat_armor": 5.0,
+			"stat_percent_damage": 5.0,
+			"stat_lifesteal": 4.0,
+			"stat_crit_chance": 4.0,
+		},
+		"phase_boost": {"until_wave": 8, "stats": {
+			"stat_harvesting": 1.5, "stat_max_hp": 1.4,
+		}},
+		"harvest_cap": 80,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

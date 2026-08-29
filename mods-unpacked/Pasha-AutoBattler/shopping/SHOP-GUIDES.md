@@ -494,3 +494,14 @@ build into 3 healing guns with too little kill power (the known base-DPS scoring
 noise -- per-char avoid_weapons was reverted earlier as it regressed Old/Doctor).
 RUN 3's wave-18 death is the usual Danger-1 wall. Baseline recorded; a
 glass-cannon-specific medical-gun demotion is a candidate future optimization.
+
+### Cryptid (#34) -- Danger 1: wins 0/3 (damage-ceiling, not fragility)
+Guide: commonsensegamer.com/brotato-best-cryptid-build. Living-tree melee
+dodge/regen: Claw/Stick + fast Thief Daggers (hitrate_pref). Plan led dodge +
+attack speed + melee damage + crit + regen. Batch: died 17 / 17 / 17 -- ALL THREE
+at the identical wave-17->18 wall, and RUN 3 was hp 83 at wave 15 (very healthy).
+Clean diagnosis: this is a DAMAGE ceiling, not a survival gap -- the dodge-heavy
+plan buys too much survival and can't out-DPS wave-18's HP-inflated enemies
+(trees kept alive fine, 11-12 standing). OPTIMIZE-LATER LEVER: shift weight from
+dodge -> melee_damage/crit (the survival headroom is already there). Baseline
+recorded per the breadth-first pass.
