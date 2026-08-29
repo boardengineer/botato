@@ -467,3 +467,11 @@ Guide: brotatodex.com/character/character_glutton ("Explosive Eating"). +50 luck
 weapon_type any; max HP 8.5 + luck 8 + melee/elemental lead. Batch: died 18/16/16
 -- reaches mid-late but the `any` type lets boards drift off the explosion plan.
 Baseline; an explosion-set focus (or Pruner->explosive phasing) is a future tune.
+
+### Jack (#31) -- Danger 1: wins 2/3
+Guide: brotatodex.com/character/character_jack. +125% boss dmg, -70% enemies,
++175% enemy HP, +35% enemy dmg -> fewer/tankier enemies = single-target crit.
+Ranged (revolver/laser); crit + ranged damage + attack speed lead, dodge for
+defence. Batch: WON / died 19 / WON with revolver/laser boards + medical-gun
+sustain. Better than the tracker's croc-ceiling read -- the single-target crit
+plan + dodge + the boss-engage steering fix handle the tanky-enemy modifiers.

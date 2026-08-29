@@ -964,6 +964,35 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #32. Guide: brotato-builds.com/builds/Lich. Damage comes from HEALING
+	# (scales with Max HP), -50% direct damage -> Max HP is core damage AND
+	# survival; lifesteal + HP regen fuel the heal-damage. hitrate_pref: fast
+	# weapons (SMG/minigun/scissors) = more hits = more lifesteal = more damage.
+	# Steering tuned in the tracker project (engage 12, engage_boss trash).
+	"character_lich": {
+		"weapon_type": "any",
+		"hitrate_pref": true,
+		"stats": {
+			"stat_max_hp": 10.0,
+			"stat_lifesteal": 8.0,
+			"stat_hp_regeneration": 8.0,
+			"stat_armor": 7.0,
+			"stat_attack_speed": 7.0,
+			"stat_percent_damage": 5.0,
+			"stat_ranged_damage": 5.0,
+			"stat_dodge": 4.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.6, "stat_armor": 1.5,
+		}},
+		"harvest_cap": 0,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):
