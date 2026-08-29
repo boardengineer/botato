@@ -247,6 +247,97 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #8. Guides: brotatodex.com/character/character_lucky ("Luck Damage") +
+	# metabrotato.com lucky-slingshot-build. +100 Luck, +25% stat gains, bonus
+	# damage on gold pickup (luck-scaled) -- but -60% attack speed (slow fragile
+	# early game) and -50% XP (shop is the scaling path, not levels). Steering
+	# row already gold-seeks and never stands still, which feeds the pickup
+	# damage. Luck first, attack speed to dig out of the -60, tank HP/armor,
+	# ranged kiting weapons.
+	"character_lucky": {
+		"weapon_type": "ranged",
+		# First pass (luck 10 > atkspd 8) went 0/3 (w19/10/17): Lucky already
+		# STARTS at +100 luck, so buying more is diminishing returns while the
+		# -60% attack speed starves DPS the whole run. Attack speed leads now.
+		"stats": {
+			"stat_attack_speed": 10.0,
+			"stat_ranged_damage": 8.0,
+			"stat_percent_damage": 7.0,
+			"stat_max_hp": 7.0,
+			"stat_armor": 6.0,
+			"stat_harvesting": 5.0,
+			"stat_luck": 4.0,
+			"stat_crit_chance": 4.0,
+			"stat_dodge": 4.0,
+		},
+		# The -60% attack speed makes the opening slow AND fragile: boost kill
+		# speed and HP until the build comes online.
+		"phase_boost": {"until_wave": 7, "stats": {
+			"stat_attack_speed": 1.8, "stat_max_hp": 1.6,
+		}},
+		"harvest_cap": 35,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
+
+	# --- #9. Guide: brotato-builds.com/builds/Mutant ("XP Scaling"). Real traits
+	# are simple: -66% XP needed (levels ~3x faster -- level-ups ARE the scaling
+	# engine) and +50% item prices (the shop is expensive). No weapon or damage
+	# penalties, so proven ranged kiting. Balanced damage/defence weights so the
+	# frequent level-ups build a rounded potato; harvesting funds the inflated
+	# shop; min_buy raised so it does not overpay for marginal items at +50%.
+	"character_mutant": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_ranged_damage": 8.0,
+			"stat_attack_speed": 7.0,
+			"stat_max_hp": 6.5,
+			"stat_percent_damage": 6.5,
+			"stat_harvesting": 6.0,
+			"stat_armor": 5.5,
+			"stat_dodge": 5.0,
+			"stat_crit_chance": 4.5,
+			"stat_lifesteal": 3.0,
+		},
+		"harvest_cap": 40,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 3.0,
+	},
+
+	# --- #10. Guide: brotatodex.com/character/character_generalist ("Cactus &
+	# Slingshot Hybrid"). Must run 3 melee + 3 ranged -- the GAME enforces the
+	# split via max_melee/ranged_weapons in has_weapon_slot_available, which the
+	# scorer already consults, so weapon_type "any" fills 3+3 on its own. Melee
+	# damage boosts ranged and vice versa: weight both flat damages high, then
+	# HP/armour, attack speed + crit, with the guide's early luck + harvesting.
+	"character_generalist": {
+		"weapon_type": "any",
+		"stats": {
+			"stat_melee_damage": 8.0,
+			"stat_ranged_damage": 8.0,
+			"stat_max_hp": 6.5,
+			"stat_attack_speed": 6.5,
+			"stat_percent_damage": 6.0,
+			"stat_armor": 5.5,
+			"stat_crit_chance": 5.0,
+			"stat_harvesting": 5.0,
+			"stat_luck": 4.0,
+			"stat_dodge": 3.5,
+		},
+		"harvest_cap": 35,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

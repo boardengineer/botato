@@ -193,3 +193,19 @@ weapons equally, so low-damage support weapons get bought like real damage
 weapons. Reinforces the weapon-preference/quality need (now seen on ranged too,
 not just melee). The engineering/turret build is the guide's optimal, revisitable
 once tool-seeking + turret-aware steering exist.
+
+### Lucky (#8) -- Danger 1: wins ~1/3 (borderline)
+Guides: brotatodex.com/character/character_lucky + metabrotato.com
+lucky-slingshot-build. +100 Luck, +25% stat gains, luck-scaled damage on gold
+pickup -- but -60% attack speed and -50% XP. Steering row already gold-seeks
+and never stands still (feeds the pickup damage).
+
+Plan (tuned): attack_speed 10 > ranged_damage 8 > percent_damage/max_hp 7 >
+armor 6 > harvesting 5 > luck only 4; phase_boost until wave 7 (x1.8 attack
+speed, x1.6 HP). KEY LESSON: the first pass led with luck 10 and went 0/3
+(w19/10/17) -- Lucky already STARTS at +100 luck, so buying more is diminishing
+returns while the -60% attack speed starves DPS all run. Leading with attack
+speed produced the first full clear: 1/3 (won 20 / died 12 / died 19). A
+character's plan must weight what it LACKS, not what its gimmick names.
+Remaining variance is the real handicap pair (slow kills + slow levels) --
+borderline like Brawler/Chunky.
