@@ -424,6 +424,34 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #14. Guide: brotatodex.com/character/character_pacifist ("Peaceful
+	# Hand"). -100% damage and -100 engineering: EVERY damage stat is a trap
+	# stat (all weights zero). Income is 0.65 mats+XP per enemy ALIVE at wave
+	# end -- economy first, defence second. Weapons are pure utility knockback/
+	# slow (guide: 6 Hands + taser utility) = the support set. The steering row
+	# is the deeply tuned herding kit from the tracker work (perimeter orbit,
+	# dps 0, lethality 3) -- it survives, the shop just has to fund it.
+	"character_pacifist": {
+		"weapon_type": "any",
+		"weapon_set": "set_support",
+		"stats": {
+			"stat_harvesting": 10.0,
+			"stat_dodge": 7.0,
+			"stat_armor": 6.5,
+			"stat_max_hp": 6.0,
+			"stat_hp_regeneration": 5.5,
+			"stat_speed": 4.5,
+			"stat_attack_speed": 3.0,
+			"stat_luck": 3.0,
+		},
+		"harvest_cap": 60,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

@@ -251,3 +251,14 @@ percent_damage 7 > crit 5.5 > lifesteal/armor 5; no harvesting.
 Batch (Danger 1, 2x, n=3): died 19 / WON / WON -- the last win with an
 all-tier-4 board (2x shredder_4 + 4x pistol_4) and single-wave kill counts up
 to ~950. The extra-enemy income funds a monster build; one wave-19 near-miss.
+
+### Multitasker (#12) -- Danger 1: ~1/3 (borderline)
+Guide: brotatodex.com/character/character_multitasker ("12-Stick DPS"). 12
+weapon slots, +20% damage, -5% per extra weapon -- volume wins. max_weapons 12;
+combines self-defer to a full board (would_combine needs no free slot), which
+matches the guide's "don't combine until full" for free.
+
+Batch (Danger 1, 2x, n=3): WON 20 (full 12 board, mixed tiers) / died 9 (a full
+board of tier-1s and only 13 items -- filling 12 slots early spreads gold too
+thin for stats) / died 19. The volume build works once tiers develop; the
+early-game slot-fill vs stat-depth tension is its real weakness.
