@@ -568,7 +568,43 @@ const PLANS = {
 			"stat_dodge": 4.5,
 			"stat_crit_chance": 4.0,
 		},
+		# Bimodal without this: economy-late runs reach w19, but a slow start
+		# (thin HP, -50% gold drops delays the shop) collapsed at w10/w12. Buy
+		# survival early while harvesting compounds.
+		"phase_boost": {"until_wave": 7, "stats": {
+			"stat_max_hp": 1.7, "stat_armor": 1.5, "stat_attack_speed": 1.4,
+		}},
 		"harvest_cap": 60,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
+
+	# --- #19. Guide: brotatodex.com/character/character_ghost ("Ethereal Axe
+	# Dodge"). +10 ethereal bonus, +30 dodge, DODGE CAP 90 (vs the usual 60),
+	# -100 armor. Survival is ENTIRELY dodge -> weight it far above anything
+	# (each point matters up to 90, and armor is a trap: -100 base amplifies
+	# every hit, so armor weight is ZERO). weapon_set set_ethereal (ghost axe/
+	# flint/scepter). Then max HP + healing; no armor.
+	"character_ghost": {
+		"weapon_type": "any",
+		"weapon_set": "set_ethereal",
+		"stats": {
+			"stat_dodge": 12.0,
+			"stat_max_hp": 8.0,
+			"stat_lifesteal": 6.0,
+			"stat_hp_regeneration": 6.0,
+			"stat_percent_damage": 6.0,
+			"stat_attack_speed": 6.0,
+			"stat_melee_damage": 5.0,
+			"stat_crit_chance": 4.0,
+		},
+		"phase_boost": {"until_wave": 7, "stats": {
+			"stat_dodge": 1.6, "stat_max_hp": 1.6,
+		}},
+		"harvest_cap": 0,
 		"item_bonus": {},
 		"max_weapons": 6,
 		"reroll_keep": 5,

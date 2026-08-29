@@ -344,3 +344,15 @@ unlike Old, which is why weapon avoidance must stay per-character.)
 For hit-count kits (lifesteal/on-hit procs): bonus per hit/sec from
 wdata.stats (nb_projectiles * 60 / cooldown). Favours SMG/minigun/multi-shot
 over slow single-shots. Off by default.
+
+### Farmer (#18) -- Danger 1: 0/3, economy-slow (borderline)
+Guide: metabrotato.com farmer-build-pruner-guide ("Material Hoarder"). +20
+harvesting, +3 harvesting/wave, -50% GOLD DROPS. Economy-first ranged.
+
+Batch (Danger 1, 2x, n=3): baseline died 10/19/12; + early phase_boost (HP/armor/
+attack speed to wave 7) -> died 18/12/12 (floor lifted on the collapse runs).
+Still 0/3: the -50% gold drops keeps it ITEM-POOR (13-14 items vs the usual
+30-45) -- harvesting compounds too slowly to out-farm the drop penalty before
+Danger-1 mid-waves kill it. When the economy does ignite it reaches w18-19 with
+real builds (shredder_4, double barrels). Borderline; phase_boost kept for the
+floor.
