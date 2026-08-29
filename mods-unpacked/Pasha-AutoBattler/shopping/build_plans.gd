@@ -509,7 +509,7 @@ const PLANS = {
 			"stat_armor": 5.5,
 			"stat_crit_chance": 4.0,
 		},
-		"gold_floor": 400,
+		"gold_floor": 250,
 		"phase_boost": {"until_wave": 6, "stats": {
 			"stat_max_hp": 1.6, "stat_armor": 1.4,
 		}},

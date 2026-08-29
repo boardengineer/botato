@@ -315,3 +315,17 @@ correct.
 unique_weapons: for per-distinct-family bonuses -- keep combines, reject
 non-combining held-family duplicates. Harness: melee-plan chars start with a
 Stick (reads weapon_type), after the explicit map (Mage->wand, Pacifist->hand).
+
+### Saver (#16) -- Danger 1: 0/3 (near-misses 16/17/17), gold_floor validated
+Guide: brotatodex.com/character/character_saver ("Piggy Bank Economy"). +1%
+damage per 25 materials KEPT, Piggy Bank interest, +50% item prices. The one
+character where hoarding is a damage stat -> gold_floor. Spear/melee, survival
+stats lead.
+
+gold_floor tuning: a flat "hold half the bank up to 400" from wave 1 OVER-held
+-- died 15/18/18 with 774-913 gold banked but only 22-36 items and low tiers
+(starved the build the guide says to fund first). RAMPED fix: nothing before
+wave 5, then +5%/wave of the bank capped at 35% and 250 absolute. Result:
+16/17/17, gold held down to ~330-530, healthier early HP, better tiers. Still
+0/3 but every death a late-wave near-miss -- borderline like the others. The
+gold_floor mechanism is validated as a safe tunable (default 0 = unchanged).

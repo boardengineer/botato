@@ -32,12 +32,15 @@ func _auto_shop() -> void:
 	var rerolls = 0
 	var buys = 0
 	var bought = []
-	# Permanent per-character hold: Saver gains +1% damage per 25 materials KEPT
-	# (and Piggy Bank pays interest on them), so its plan floors the spend-down.
-	# RAMPED: a hard floor above the current bank would block ALL early buying,
-	# so keep half of each shop's bank until the plan's cap is reached. Default
-	# 0 = the usual spend-everything economy.
-	var gold_floor = int(min(float(plan.get("gold_floor", 0)), 0.5 * gold_in))
+	# Permanent per-character hold: Saver gains +1% damage per 25 materials KEPT,
+	# a SOFT bonus that must not starve the build (the guide funds survival first
+	# and keeps the rest). So the hold ramps in: nothing before wave 5, then a
+	# modest slice of the bank rising with the waves, capped by the plan's floor.
+	# Default 0 = the usual spend-everything economy.
+	var gold_floor = 0
+	if int(plan.get("gold_floor", 0)) > 0:
+		var ramp = clamp((RunData.current_wave - 4) * 0.05, 0.0, 0.35)
+		gold_floor = int(min(float(plan["gold_floor"]), ramp * gold_in))
 	var save_floor = gold_floor   # gold reserved: floor + any locked weapon's price
 	var saved_note = ""
 	var tried = {}   # ShopItem instance_id -> true, so a failed buy is not retried
