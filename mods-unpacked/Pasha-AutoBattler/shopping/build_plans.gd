@@ -393,6 +393,37 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #13. Guide: brotato-builds.com/builds/Wildling ("Lifesteal Setup").
+	# +30% lifesteal with Primitive weapons (stick start), so weapon_set locks
+	# buys to set_primitive (stick/rock/spear/hatchet/cactus mace/sharp tooth/
+	# slingshot/torch). Offence-forward -- the innate lifesteal IS the sustain
+	# (guide: skip healing items; base lifesteal suffices), so hp_regen/lifesteal
+	# weights stay low and melee damage + attack speed lead. Steering row is
+	# already an aggressive melee engager (caution 0.55, engage 8).
+	"character_wildling": {
+		"weapon_type": "any",
+		"weapon_set": "set_primitive",
+		"stats": {
+			"stat_melee_damage": 8.5,
+			"stat_attack_speed": 8.0,
+			"stat_percent_damage": 7.0,
+			"stat_max_hp": 6.0,
+			"stat_ranged_damage": 5.0,
+			"stat_crit_chance": 5.0,
+			"stat_armor": 4.5,
+			"stat_lifesteal": 3.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.6, "stat_armor": 1.4,
+		}},
+		"harvest_cap": 0,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

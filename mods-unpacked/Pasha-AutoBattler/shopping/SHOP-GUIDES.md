@@ -238,3 +238,16 @@ Plan: `weapon_type: any`; melee_damage 8 = ranged_damage 8 > max_hp/attack_speed
 Batch (Danger 1, 2x, n=3): died 19 / WON 20 / died 19. Boundary-line: the
 structure is right, both losses were one wave short. Same near-miss shape as
 Mutant.
+
+### Loud (#11) -- Danger 1: wins ~2/3
+Guides: brotatodex.com/character/character_loud ("Enemy Overload Farmer") +
+metabrotato.com best-loud-build. +30% damage, +50% enemies (the kills ARE the
+economy), harvesting decays -3/wave (trap stat, excluded). Steering row already
+gold-seeks and never stands still.
+
+Plan: `weapon_type: ranged`; attack_speed 9 > ranged_damage 8 > max_hp 7.5 >
+percent_damage 7 > crit 5.5 > lifesteal/armor 5; no harvesting.
+
+Batch (Danger 1, 2x, n=3): died 19 / WON / WON -- the last win with an
+all-tier-4 board (2x shredder_4 + 4x pistol_4) and single-wave kill counts up
+to ~950. The extra-enemy income funds a monster build; one wave-19 near-miss.
