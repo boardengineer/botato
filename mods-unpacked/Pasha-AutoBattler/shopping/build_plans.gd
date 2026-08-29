@@ -936,6 +936,34 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #31. Guide: brotatodex.com/character/character_jack. +125% boss damage,
+	# -70% enemies, +175% enemy HP, +35% enemy damage -> FEWER but TANKIER enemies
+	# = single-target crit DPS. Ranged (revolver/laser); crit + ranged damage +
+	# attack speed lead, dodge for defence (Jack is fragile -- the tracker croc
+	# ceiling). No economy focus (few enemies).
+	"character_jack": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_ranged_damage": 9.0,
+			"stat_crit_chance": 8.5,
+			"stat_attack_speed": 8.5,
+			"stat_percent_damage": 8.0,
+			"stat_crit_damage": 6.5,
+			"stat_dodge": 6.0,
+			"stat_max_hp": 6.0,
+			"stat_armor": 5.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.7, "stat_dodge": 1.5,
+		}},
+		"harvest_cap": 0,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

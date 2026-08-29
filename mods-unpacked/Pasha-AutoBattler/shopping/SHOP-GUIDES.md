@@ -459,3 +459,11 @@ core stat. Ranged plan (ranged_damage 10 leads, + engineering + lifesteal +
 defence); minigun is tier-3+ only so pistol start then buy up. Batch: died 16 /
 11 / WON -- the win rode a minigun_4 + shredder board. Ranged->engi works; the
 run that drifted into icicles/wands (off-plan) died early. Baseline.
+
+### Glutton (#30) -- Danger 1: 0/3 baseline (18/16/16)
+Guide: brotatodex.com/character/character_glutton ("Explosive Eating"). +50 luck,
++1% explosion dmg per consumable at MAX HP (permanent), fruit explodes on pickup
+(steering food:bomb AoE). Route spans two sets (Pruners->explosives) so
+weapon_type any; max HP 8.5 + luck 8 + melee/elemental lead. Batch: died 18/16/16
+-- reaches mid-late but the `any` type lets boards drift off the explosion plan.
+Baseline; an explosion-set focus (or Pruner->explosive phasing) is a future tune.
