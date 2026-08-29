@@ -443,3 +443,11 @@ full 6-weapon boards + 47-50 items); run 1 was a bad early refill. Note: the
 per-wave wpn= heartbeat often reads 0 (mid-shop-transition snapshot) -- cosmetic,
 it kills fine (435 kills/wave). Borderline; a "force-rebuy 6 weapons each shop"
 behaviour would firm up the early game.
+
+### Streamer (#28) -- Danger 1: 0/3 baseline (13/16/18)
+Guide: brotato-builds.com/builds/Streamer ("Material Slingshot"). Materials while
+NOT MOVING. Steering (tracker work) stand_income/stand_phases/still:prefer farms
+by standing. Shopping baseline: ranged, armour + HP early, harvesting. Batch:
+died 13/16/18 -- item-poor (12-27 items). Likely the stand-to-farm behaviour
+trades combat uptime for materials, slowing the build at Danger 1; a shop/steering
+income-vs-DPS balance is a future tune. Borderline, climbing.

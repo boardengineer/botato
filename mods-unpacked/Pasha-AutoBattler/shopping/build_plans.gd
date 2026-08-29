@@ -876,6 +876,35 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #29. Guide: brotatodex.com/character/character_cyborg ("Minigun
+	# Ranged-Engi Hybrid"). +200% ranged damage that CONVERTS to engineering
+	# mid-wave, so ranged_damage is the core stat (feeds both halves). Ranged
+	# (minigun is tier-3+ only, so pistol start then buy up); ranged_damage
+	# leads, engineering + lifesteal (guide healing) + defence. Some stats are
+	# -75/-100% trapped but not readable (custom_key hash) -- left to the weights.
+	"character_cyborg": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_ranged_damage": 10.0,
+			"stat_attack_speed": 8.0,
+			"stat_max_hp": 7.0,
+			"stat_percent_damage": 6.5,
+			"stat_lifesteal": 6.0,
+			"stat_engineering": 6.0,
+			"stat_armor": 6.0,
+			"stat_dodge": 4.5,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.6, "stat_armor": 1.4,
+		}},
+		"harvest_cap": 0,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):
