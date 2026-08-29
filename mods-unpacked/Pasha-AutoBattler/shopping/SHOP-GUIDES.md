@@ -405,3 +405,14 @@ speed 5. Batch: died 10 / WON / WON -- bimodal: a slow economy start collapsed
 (wave 10) but two runs' tree/crate economy ignited into shredder builds (56-60
 items). Better than the tracker's pure-fragility read; the shop's economy focus
 helps.
+
+### Doctor (#24) -- Danger 1: 1/3 near-misses (WON/17/18)
+Guide: brotatodex.com/character/character_doctor ("Medical Gun Medic"). +200%
+attack speed with MEDICAL weapons, -100% with all others -> only medical weapons
+work (the INVERSE of Old -- proof weapon prefs must be per-character). weapon_set
+set_medical, medical-gun harness start, ranged damage + attack speed + HP regen.
+
+Batch (Danger 1, 2x, n=3): WON / died 17 / died 18 -- all full medical-gun boards.
+The heal-DPS engine works; the bottleneck is uneven combining on a single-family
+board (run 3 had three tier-1 medical guns). A future combine-sequencing pass
+for single-family builds would help.

@@ -759,6 +759,36 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+
+	# --- #25. Guide: brotato-builds.com/builds/Hunter ("Crossbow Setup"). +100
+	# range, +1% damage per 10 range, +25% CRIT mods, -100% harvesting (economy
+	# trap -> weight 0). Crit-focused ranged (crossbow scales with crit + pierces
+	# on crit). Crit leads, then ranged damage + range (amplifies the passive) +
+	# crit damage, then defence. A clean ranged kiter -- should suit the arbiter.
+	"character_hunter": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_crit_chance": 10.0,
+			"stat_ranged_damage": 8.0,
+			"stat_range": 7.0,
+			"stat_crit_damage": 7.0,
+			"stat_attack_speed": 7.0,
+			"stat_percent_damage": 6.5,
+			"stat_max_hp": 6.0,
+			"stat_armor": 5.5,
+			"stat_luck": 4.0,
+			"stat_dodge": 4.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.5, "stat_armor": 1.4,
+		}},
+		"harvest_cap": 0,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):
