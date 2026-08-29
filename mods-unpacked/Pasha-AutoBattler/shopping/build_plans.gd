@@ -668,6 +668,36 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 1.5,
 	},
+
+	# --- #22. Guide: brotato-builds.com/builds/Engineer ("Turret Setup").
+	# Damage comes from STRUCTURES, not weapons: +10 engineering, wrench start,
+	# -50% to a damage mod. weapon_set set_tool (wrench/screwdriver -- scale with
+	# engineering + place turrets). Engineering leads by far; then survival
+	# (armour/regen/dodge/HP) since the player just weaves while turrets fight.
+	# (Bot caveat: the arbiter has no turret model, so this is a rough baseline.)
+	"character_engineer": {
+		"weapon_type": "any",
+		"weapon_set": "set_tool",
+		"stats": {
+			"stat_engineering": 12.0,
+			"stat_armor": 7.0,
+			"stat_max_hp": 6.5,
+			"stat_hp_regeneration": 6.0,
+			"stat_dodge": 6.0,
+			"stat_attack_speed": 5.5,
+			"stat_percent_damage": 5.0,
+			"stat_harvesting": 4.0,
+		},
+		"phase_boost": {"until_wave": 7, "stats": {
+			"stat_max_hp": 1.6, "stat_armor": 1.5,
+		}},
+		"harvest_cap": 30,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

@@ -374,3 +374,12 @@ Guide: brotato-builds.com/builds/Speedy. +30 speed CONVERTS TO MELEE DAMAGE,
 "still: never" keeps it moving. Melee, speed as a damage stat (weight 9),
 stick harness start. Batch: died 14/18/18 -- borderline melee, w18-19 wall.
 Baseline; retune later.
+
+### Entrepreneur (#21) -- Danger 1: 0/3 baseline (16/10/19)
+Guide: brotato-builds.com/builds/Entrepreneur. Economy monster (-25% prices,
++50% stat gains, +25% recycle) but -50% to ALL damage mods. Baseline: ranged,
+harvesting-heavy, stacked damage/attack speed to fight the penalty, min_buy 1.5
+(cheap items). Batch: died 16/10/19 -- the economy delivers (run 3: 53 items,
+tier-4 board, reached the final boss) but -50% damage caps kill speed.
+Borderline; the guide's engineering route (turrets bypass the penalty) is the
+deeper fix the bot can't do well.
