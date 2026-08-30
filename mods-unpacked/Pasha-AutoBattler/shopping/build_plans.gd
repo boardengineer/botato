@@ -1368,6 +1368,14 @@ const PLANS = {
 		"reroll_keep": 5,
 		"max_rerolls": 15,
 		"min_buy": 2.0,
+		# NOTE: a shop-side HP-currency buffer (reserve_frac 0.4 AND flat reserve_min
+		# 25) was tried to stop Demon over-spending its Max HP to a wave-5 death.
+		# Both tested 0/3 (worse than the no-reserve 1/3): the fraction starved the
+		# spend-to-win snowball; the flat reserve gave one great run (w19, 110 items)
+		# but Demon still died wave 8 twice. Root cause is a COMBAT issue -- HP is
+		# currency AND health, so an enemy hit reduces both and spirals -- which a
+		# shop buffer can't fix. Reverted to no reserve; a steering fix (keep Demon's
+		# HP higher) is the real lever.
 	},
 	# --- #45. Guide: brotatodex.com/character/character_baby (Mass Stick XP).
 	# Snowballs by STACKING WEAPONS (up to 24 slots) instead of level-up stats --
