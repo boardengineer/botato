@@ -596,3 +596,14 @@ is overrun; the one run that got space to stand ramped fine to the w18 wall
 (triple shredder + tier-4 pistols, 44 items). The shopping plan is correct -- the
 failure is STEERING (Soldier needs a stand-and-shoot bias early), like Pacifist/
 partial. Optimize-later lever: steering, not shopping.
+
+### Masochist (#42) -- Danger 1: wins 1/3
+Guide: number13.de/brotato-masochist-build. Ramps +5% damage (until wave end)
+each time it TAKES damage; starts -100% damage, +20 regen, 8 armor. Plan: HP
+regen + armor + max HP lead (survive enemy hits AND the self-damage while the
+ramp builds), then melee damage / attack speed; dodge weighted LOW (dodging denies
+the ramp trigger, like Bull -- high regen makes the hits safe). Harness rock start
+(rock = primitive + blunt bonuses). Batch: died 17 / died 17 / WON (dual rock_4 +
+pruner + sharp tooth). The regen-tank absorbs hits (hp 94 after 123 dmg at w14)
+while the damage-ramp builds; two w17 near-misses are the wall. Low-dodge tank
+plan validated.

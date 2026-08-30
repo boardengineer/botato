@@ -1306,6 +1306,35 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+	# --- #43. Guide: brotato-builds.com/builds/Knight, brotatodex.com/character/
+	# character_knight. +2 MELEE DAMAGE per 1 ARMOR, MELEE-ONLY, cannot find tier-1
+	# weapons in shops (tier-2+ only, game-enforced). So ARMOR is both defence AND
+	# the primary damage stat -- stack it hard, then melee damage / crit / dodge /
+	# HP / lifesteal. AVOID attack speed + harvesting (guide: Knight's modifiers
+	# make them inefficient -- omitted). Sword is the core weapon (harness sword_2
+	# start, tier-2 like King). No set lock (blade synergy is broad; armor scaling
+	# carries any melee weapon here).
+	"character_knight": {
+		"weapon_type": "melee",
+		"stats": {
+			"stat_armor": 10.0,
+			"stat_melee_damage": 8.0,
+			"stat_crit_chance": 6.0,
+			"stat_dodge": 6.0,
+			"stat_max_hp": 6.0,
+			"stat_lifesteal": 5.0,
+			"stat_percent_damage": 5.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_armor": 1.5, "stat_max_hp": 1.4,
+		}},
+		"harvest_cap": 0,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):
