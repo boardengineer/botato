@@ -1117,6 +1117,36 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+	# --- #37. Guide: gamepressure.com/brotato-king-build, number13.de. S-tier
+	# scaler: +50 Luck and a tier-II start; every TIER IV weapon grants big
+	# %damage + attack speed, so the passive already explodes those two -- the
+	# shop should instead pour into ranged damage + crit (guide) and RUSH high
+	# tiers. The combine scorer (COMBINE_SCORE + tier*5) already favours tier-ups,
+	# which is exactly King's rush-to-tier-IV plan; luck 50 finds high-tier pistols
+	# fast. Ranged. Keep some HP/dodge for survival while the offence snowballs.
+	"character_king": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_ranged_damage": 9.0,
+			"stat_crit_chance": 8.0,
+			"stat_attack_speed": 6.0,
+			"stat_max_hp": 6.0,
+			"stat_percent_damage": 5.0,
+			"stat_range": 5.0,
+			"stat_armor": 5.0,
+			"stat_dodge": 4.0,
+			"stat_lifesteal": 3.0,
+		},
+		"phase_boost": {"until_wave": 5, "stats": {
+			"stat_max_hp": 1.5, "stat_dodge": 1.4,
+		}},
+		"harvest_cap": 25,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

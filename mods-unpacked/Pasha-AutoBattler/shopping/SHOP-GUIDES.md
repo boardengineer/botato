@@ -517,3 +517,15 @@ all 6 weapon slots with tier-1s leaves no gold for survival stats -> swarmed
 early. Free baits fix harvesting, not the gold shortfall. OPTIMIZE-LATER LEVERS:
 lower max_weapons (~4) to force consolidation + free gold for armor/HP items;
 possibly reroll harder for combines. Baseline recorded.
+
+### Golem (#36) -- Danger 1: wins 1/3 (set-lock works; spoon leak dilutes it)
+Guide: commonsensegamer.com/brotato-best-golem-build. Unkillable armor tank,
+CANNOT HEAL (lifesteal/regen omitted). Damage from Spiky Shield (armor-scaling),
+NOT melee_damage. Locked to set_blunt (hammer/rock/spiky_shield); harness starts
+spiky_shield_1. Batch: WON (4 shields + 2 rocks, pure blunt, face-tanked at
+hp 65-96 / dmg 4-9!) / died 18 / died 17. The set-lock + no-heal weights are
+clearly right -- RUN 1 is a textbook blunt board. BUT runs 2-3 accumulated 2-3
+SPOONS (off-set weapons that leak in as LEVEL-UP weapon rewards, not shop buys
+which the lock blocks); they combined and diluted the blunt count. SYSTEMIC BUG:
+off-set level-up weapons aren't discarded -- also a latent risk to the other
+set-locked winners (Mage/Ghost/Artificer/Doctor). Fix pending.
