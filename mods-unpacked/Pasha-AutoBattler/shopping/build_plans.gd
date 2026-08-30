@@ -1530,6 +1530,34 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+	# --- #50 (last). Guide: brotato.wiki.fextralife.com/Wounded. DIES IN ONE HIT;
+	# starts +5% speed, +8 harvesting, 1 Tardigrade. Its shop/crates are CLEARED of
+	# Max HP / HP regen / lifesteal / armor items (useless at 1 HP) -- so those are
+	# omitted here; the ONLY defence is DODGE (avoid the fatal hit) + SPEED (kite).
+	# The bot's clean kiting (many dmg=0 waves) actually suits Wounded -- if it
+	# takes zero hits it never dies. Then kill fast: Jousting Lance (guide pick,
+	# melee, long reach) + melee/attack speed/crit. High dodge, high speed.
+	"character_wounded": {
+		"weapon_type": "melee",
+		"stats": {
+			"stat_dodge": 10.0,
+			"stat_speed": 9.0,
+			"stat_melee_damage": 8.0,
+			"stat_attack_speed": 7.0,
+			"stat_crit_chance": 6.0,
+			"stat_percent_damage": 6.0,
+			"stat_harvesting": 5.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_dodge": 1.6, "stat_speed": 1.4,
+		}},
+		"harvest_cap": 35,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

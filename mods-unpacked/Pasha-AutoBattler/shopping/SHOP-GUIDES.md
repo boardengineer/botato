@@ -678,3 +678,16 @@ low maximizes the lifesteal/armor scaling but one big hit at low HP ends the run
 so it can't bank a survival buffer the way other tanks do. Boundary 0/3 (RUN 3
 reached w18), not structural. Optimize-later: the bot has no notion of "stay at
 the sweet-spot HP" -- that is steering/sustain, not shopping.
+
+### Beast Master (#49) -- Danger 1: wins 2/3 (pet item_bonus was the fix)
+Guide: brotato-builds.com/builds/Beast-Master. Pure SUMMONER: WEAPONLESS
+(weapon_slot 0), PETS do all damage; starts 1 Lootworm, +2% speed/pet; pets scale
+with all 4 offensive stats. PROBLEM: pets are items whose effect has an EMPTY stat
+key (EFFECT_PET_*), so the stat scorer valued them 0 and never bought them. FIX:
+item_bonus +40 on every pet id (lootworm/ratzilla/bot_o_mine/blazemander/bonk_dog/
+catling_gun/doc_moth/jellyshield/scapegoat) so the bot floods the screen with pets
+(its shop is tag-boosted to offer them). Weights: harvesting + speed + the 4 pet-
+scaling damage stats; dumped attack speed/range/lifesteal. Batch: WON / WON /
+died 10 -- 73-75 items (pet army + stats), 510+ kills/run. RUN 3 died wave 10
+(guide's known RNG-dependent early pet drops). The item_bonus mechanism cleanly
+handles special non-stat items -- reusable for any summon/structure character.
