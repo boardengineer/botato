@@ -691,3 +691,14 @@ scaling damage stats; dumped attack speed/range/lifesteal. Batch: WON / WON /
 died 10 -- 73-75 items (pet army + stats), 510+ kills/run. RUN 3 died wave 10
 (guide's known RNG-dependent early pet drops). The item_bonus mechanism cleanly
 handles special non-stat items -- reusable for any summon/structure character.
+
+### Wounded (#50, last) -- Danger 1: wins 0/3 (1-hit death, boundary)
+Guide: brotato.wiki.fextralife.com/Wounded. DIES IN ONE HIT; +5% speed, +8
+harvesting start. Its shop/crates are CLEARED of Max HP / HP regen / lifesteal /
+armor items (useless at 1 HP) -- so those are omitted; the ONLY defence is DODGE
+(avoid the fatal hit) + SPEED (kite). Jousting Lance start (guide pick, melee long
+reach) + melee/attack speed/crit. Batch: died 11 / 18 / 16 -- the bot's clean
+dodge-kiting kept it HITLESS deep into runs (many dmg=0 waves, RUN 2 to w18), and
+only a single stray hit at rising density ended each. Inherently boundary 0/3:
+surviving to wave 20 without one fatal hit is near-impossible for any player. The
+dodge+speed plan is correct; the ceiling is the 1-hit mechanic, not shopping.
