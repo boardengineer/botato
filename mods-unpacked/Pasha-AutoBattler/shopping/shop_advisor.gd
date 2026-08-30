@@ -11,6 +11,7 @@ const COMBINE_SCORE = 100.0   # combining upgrades a weapon's tier -- almost alw
 const NEW_WEAPON_MATCH = 22.0 # an empty slot filled with an on-type weapon
 const HITRATE_W = 1.6         # hitrate_pref: weight per hit/sec (SMG ~15 clamped 12 -> ~+19)
 const SCALING_W = 1.2         # scaling-aware: weight per (plan_stat_weight * scaling_factor)
+const STACK_COMBINE_BONUS = 9.0  # stack_combine: bonus per copy already held (build toward a triple)
 
 static func get_plan(character_id):
 	return BuildPlans.get_plan(character_id)
@@ -109,11 +110,29 @@ static func score_weapon(wdata, plan, player_index):
 	if RunData.get_player_weapons(player_index).size() >= plan["max_weapons"]:
 		return -1.0
 	if want_set != "":
-		return NEW_WEAPON_MATCH + float(wdata.tier) * 3.0 + hitrate_bonus(wdata, plan) + scaling_score(wdata, plan)  # in-set verified
+		return NEW_WEAPON_MATCH + float(wdata.tier) * 3.0 + hitrate_bonus(wdata, plan) + scaling_score(wdata, plan) + stack_bonus(wdata, plan, player_index)  # in-set verified
 	var type_ok = plan["weapon_type"] == "any" or weapon_type_str(wdata) == plan["weapon_type"]
 	if not type_ok:
 		return -1.0   # a typed plan never fills a slot with the wrong damage type
-	return NEW_WEAPON_MATCH + float(wdata.tier) * 3.0 + hitrate_bonus(wdata, plan) + scaling_score(wdata, plan)
+	return NEW_WEAPON_MATCH + float(wdata.tier) * 3.0 + hitrate_bonus(wdata, plan) + scaling_score(wdata, plan) + stack_bonus(wdata, plan, player_index)
+
+# For economy-starved / thin-spread plans (Fisherman), completing a 3-of-a-kind to
+# tier a weapon UP is far better than a 6th distinct tier-1 that can never combine.
+# Bias toward a family already held (1-2 copies) so the board sets up combines
+# instead of a scatter of weak tier-1s. Opt-in via stack_combine -- a GLOBAL stack
+# bonus was neutral/negative for fragile melee chars (Brawler/Chunky), so it is
+# only enabled where the thin spread is the actual failure. Reserved to non-
+# unique_weapons plans (Gladiator/Vagabond want the OPPOSITE -- all different).
+static func stack_bonus(wdata, plan, player_index):
+	if not plan.get("stack_combine", false) or plan.get("unique_weapons", false):
+		return 0.0
+	var same = 0
+	for w in RunData.get_player_weapons(player_index):
+		if w.my_id == wdata.my_id:
+			same += 1
+	if same <= 0:
+		return 0.0
+	return STACK_COMBINE_BONUS * float(min(same, 2))
 
 # A weapon deals damage that scales with specific stats (WeaponStats.scaling_stats:
 # [[stat_key, factor], ...], defaulting to [["stat_melee_damage", 1.0]]). A weapon whose

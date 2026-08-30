@@ -702,3 +702,29 @@ dodge-kiting kept it HITLESS deep into runs (many dmg=0 waves, RUN 2 to w18), an
 only a single stray hit at rising density ended each. Inherently boundary 0/3:
 surviving to wave 20 without one fatal hit is near-impossible for any player. The
 dodge+speed plan is correct; the ceiling is the 1-hit mechanic, not shopping.
+
+## Optimization pass (post-baseline)
+
+Systemic levers, each validated against its target + a winner regression. Naive
+perturbations regress winners, so each change is opt-in or additive.
+
+1. **Scaling-aware weapon scoring** (shop_advisor SCALING_W): a weapon's value gets
+   a bonus for each scaling_stat the plan weights. Golem now builds PURE spiky
+   shields (armor-scaling) instead of rock/spoon dilution. Golem 1/3 -> 1/3 (win
+   NEUTRAL -- its ceiling is the w17-18 wall, not weapons -- but builds are correct).
+   Mage regression WON/WON/WON = 3/3 (no regression). Commit dc933bb.
+2. **spend_surplus** (base_shop): weaponless/1-weapon chars keep rerolling past
+   max_rerolls while a big gold surplus remains. One-Armed 1/3 -> 2/3; Beast Master
+   2/3 -> 2/3 (85 items); Bull 1/3 -> 1/3. gold_out fell from 300-650 banked to
+   1-27 (Beast Master wave15 gold_in=647 -> gold_out=1). Commit f2c0aae.
+3. **HP-currency buffer (Demon): TRIED, REVERTED.** reserve_frac 0.4 -> 0/3
+   (starved the snowball); flat reserve_min 25 -> 0/3 (one w19/110-item run but
+   died wave 8 twice). Root cause is combat (HP is currency AND health -> a hit
+   spirals), not shopping. Commit ceb3632.
+4. **stack_combine** (opt-in, shop_advisor STACK_COMBINE_BONUS): bias toward a
+   weapon family already held so an economy-starved board tiers UP instead of a
+   thin scatter of tier-1s. Fisherman RUN 2 improved wave 4 -> wave 8 (board:
+   pistol_1/pistol_1/pistol_2 + tier-2/3 weapons), but 0/3 overall -- its binding
+   constraint is ECONOMY (-50% gold, wave-1/2 deaths), same class as Farmer, which
+   weapon-stacking can't fix. Kept (opt-in, neutral-positive, reusable for the
+   thin-spread pattern). Excludes unique_weapons plans (Gladiator/Vagabond).

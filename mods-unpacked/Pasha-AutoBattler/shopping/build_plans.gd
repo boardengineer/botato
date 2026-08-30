@@ -1084,6 +1084,10 @@ const PLANS = {
 		"reroll_keep": 5,
 		"max_rerolls": 15,
 		"min_buy": 2.0,
+		# Economy-starved (-50% gold): v2 spread its scarce gold across 6 distinct
+		# tier-1 weapons that never combine. stack_combine biases toward duplicates
+		# so the board tiers UP (fewer, stronger weapons) instead of a thin scatter.
+		"stack_combine": true,
 	},
 	# --- #36. Guide: commonsensegamer.com/brotato-best-golem-build,
 	# brotatodex.com/character/character_golem. Unkillable armor/HP tank: +40%
