@@ -656,3 +656,14 @@ start; heavy early survival phase_boost. Batch: died 18 / WON / died 17 -- 6
 unique multi-class weapons every run (RUN 2 win: laser+pistol+cacti+hatchet+torch+
 icicle = ranged/melee/elemental tags). Both losses at the w17-18 wall. The
 unique_weapons + %damage synergy plan is a clean fit.
+
+### Technomage (#47) -- Danger 1: wins 2/3
+Guide: brotatodex.com/character/character_technomage. MELEE & RANGED damage both
+-100% (weapon damage does nothing); damage comes only from ELEMENTAL weapons +
+STRUCTURES (2 starting turrets; elemental dmg <-> structures feed each other).
+Mage+Engineer hybrid: locked to set_elemental (torch/wand/fireball/icicle -- same
+lock as Mage's 3/3), harness torch start, weights elemental damage + engineering
+(both pump turrets) + attack speed, NO melee/ranged damage. Batch: died 17 / WON
+(pure 6-torch board) / WON (wands + torches). The elemental lock + engineering
+turrets carry; one w17 wall death. Confirms the set-lock approach generalises
+(Mage, Golem, Technomage all work).

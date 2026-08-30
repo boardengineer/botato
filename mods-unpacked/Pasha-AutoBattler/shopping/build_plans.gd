@@ -1463,6 +1463,37 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+	# --- #48. Guide: number13.de/brotato-vampire-build, brotatodex.com/character/
+	# character_vampire. Plays at LOW HP: +1% lifesteal per 3% missing HP, +1 armor
+	# per 5% missing HP. Max HP HALVED, starts -30% damage, -100 HP REGEN, -100 HP
+	# from consumables. So HP regen is a DEAD stat (omitted) and max HP is weighted
+	# LOW (halved, and it wants to stay low). Build lifesteal + attack speed (fast
+	# hits = fast healing -> hitrate_pref) + armor, then melee damage (scales with
+	# the %damage). Sharp Tooth start (more damage for missing HP). Harvesting
+	# matters early (weak economy). Melee.
+	"character_vampire": {
+		"weapon_type": "melee",
+		"hitrate_pref": true,
+		"stats": {
+			"stat_lifesteal": 10.0,
+			"stat_attack_speed": 9.0,
+			"stat_armor": 7.0,
+			"stat_melee_damage": 7.0,
+			"stat_crit_chance": 5.0,
+			"stat_percent_damage": 5.0,
+			"stat_dodge": 4.0,
+			"stat_max_hp": 3.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_armor": 1.5, "stat_lifesteal": 1.4,
+		}},
+		"harvest_cap": 30,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):
