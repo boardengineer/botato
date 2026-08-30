@@ -607,3 +607,15 @@ the ramp trigger, like Bull -- high regen makes the hits safe). Harness rock sta
 pruner + sharp tooth). The regen-tank absorbs hits (hp 94 after 123 dmg at w14)
 while the damage-ramp builds; two w17 near-misses are the wall. Low-dodge tank
 plan validated.
+
+### Knight (#43) -- Danger 1: wins 1/3 (bimodal -- slow-melee opener)
+Guide: brotato-builds.com/builds/Knight. +2 melee damage per 1 ARMOR, melee-only,
+can't find tier-1 weapons (game-enforced). Plan: armor dominant (defence + damage)
+then melee damage / crit / dodge / HP / lifesteal; NO attack speed or harvesting
+(guide: inefficient). Harness sword_2 start. Batch: died 0 / WON / died 0. The
+armor tank WINS outright once it survives the opening (RUN 2: full tier-3 melee
+board -- sword/sickle/ghost-axe/scissors, 47 items). But armor->damage means turn
+1 it has little armor -> slow clears, and with no attack speed a bad opening
+surrounds and kills it at wave 0 (same slow-opener pattern as Soldier). Optimize-
+later lever: a touch of early dodge/attack to survive wave 1 (systemic: slow-melee
+openers die to opening RNG).

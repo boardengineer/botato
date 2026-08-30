@@ -1335,6 +1335,37 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+	# --- #44. Guide: metabrotato.com/blog/brotato-demon-build-the-ultimate-guide.
+	# Buys items with MAX HP instead of materials; 50% of materials -> Max HP at
+	# wave end. Ghost Scepter (kills -> Max HP) is the signature -- stacks with the
+	# passive. Ranged; harness ghost_scepter start. MAX HP is currency AND survival
+	# AND scaling, so weight it top; then ranged damage + attack speed + lifesteal.
+	# CAVEAT: the bot's affordability check reads gold, not Max HP -- if Demon's
+	# HP-currency doesn't flow through get_player_gold the shop may under-buy; the
+	# batch item-count will show whether HP-currency shopping works (a shopping-
+	# layer limitation to note, not a plan issue).
+	"character_demon": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_max_hp": 10.0,
+			"stat_ranged_damage": 8.0,
+			"stat_attack_speed": 7.0,
+			"stat_lifesteal": 6.0,
+			"stat_percent_damage": 5.0,
+			"stat_armor": 5.0,
+			"stat_dodge": 4.0,
+			"stat_hp_regeneration": 4.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.5, "stat_armor": 1.4,
+		}},
+		"harvest_cap": 20,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):
