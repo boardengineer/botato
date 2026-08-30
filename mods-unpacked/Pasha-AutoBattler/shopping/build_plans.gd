@@ -1247,6 +1247,36 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+	# --- #41. Guide: number13.de/brotato-soldier-build. Stationary TURRET: +50%
+	# damage & +50% attack speed while STANDING STILL, but CANNOT attack while
+	# moving (+10% haste, +200% pickup range, +15 knockback). Ranged; wants high
+	# crit (~70%), attack speed, ranged damage, then HP/dodge/lifesteal to hold
+	# ground. NOTE: partial steering tension -- the arbiter kites, and Soldier
+	# can't fire while moving + loses the stand-still bonus; the bot's "stand when
+	# safe" behaviour helps but heavy kiting will cost DPS. Ranged stat plan is
+	# still the right shopping baseline.
+	"character_soldier": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_crit_chance": 9.0,
+			"stat_attack_speed": 8.0,
+			"stat_ranged_damage": 8.0,
+			"stat_percent_damage": 6.0,
+			"stat_max_hp": 6.0,
+			"stat_dodge": 5.0,
+			"stat_lifesteal": 5.0,
+			"stat_armor": 4.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.5, "stat_dodge": 1.4,
+		}},
+		"harvest_cap": 25,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

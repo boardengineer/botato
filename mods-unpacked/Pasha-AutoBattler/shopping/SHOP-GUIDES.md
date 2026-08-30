@@ -573,3 +573,15 @@ max_rerolls 22 -- the Well-Rounded spend-the-gold fix) -> died18/died18/WON =
 1/3: extra item-buying pushed one run over the w18 wall. Gold still partly banks
 (shop item SUPPLY is the real cap, not the buy threshold) -- a surplus-gold
 force-spend mechanism is the optimize-later lever. Consistent w18 boundary.
+
+### Bull (#40) -- Danger 1: wins 1/3 (weaponless explosion tank -- pleasant surprise)
+Guide: number13.de/brotato-bull-build. WEAPONLESS: explodes when it takes damage
+(explosion scales with melee+ranged+elemental damage, +300% each); starts +20 HP,
++15 regen, +10 armor. Plan: HP regen + armor + max HP lead, then the three
+damage-type multipliers; SKIP lifesteal (no weapon hits). I expected a
+steering-bound flop like Pacifist -- but it WON / died 17 / died 18 = 1/3. The
+bot can't fully dodge at high density, so it TAKES the hits that fuel explosions,
+and all gold -> a huge item stack (48-55 items) of regen/armor/multipliers that
+out-heals the self-damage and clears packs (363 kills by wave 10!). Two deaths
+are the w17-18 wall, not the mechanic. Like One-Armed it banks surplus gold
+(weaponless -> item-supply cap) -- same force-spend lever applies.
