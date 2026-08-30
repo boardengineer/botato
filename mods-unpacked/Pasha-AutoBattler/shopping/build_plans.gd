@@ -1206,6 +1206,43 @@ const PLANS = {
 		"harvest_cap": 25,
 		"item_bonus": {},
 		"max_weapons": 1,
+		# One-Armed only ever buys ONE weapon, so its gold must all go to items.
+		# v1 banked ~330 gold/run (min_buy 2, reroll_keep 5) once the shredder was
+		# maxed and items thinned -- wasted damage/survival. Spend it: min_buy 1
+		# (scoop marginal items), reroll_keep 3 + max_rerolls 22 (dig for more
+		# items/HP/armor). Mirrors the Well-Rounded "spend the gold" fix.
+		"reroll_keep": 3,
+		"max_rerolls": 22,
+		"min_buy": 1.0,
+	},
+	# --- #40. Guide: number13.de/brotato-bull-build, metabrotato.com/characters/
+	# bull. WEAPONLESS: kills by EXPLODING when it takes damage; explosion scales
+	# with melee + ranged + elemental damage (+300% each) and starts +20 HP, +15
+	# regen, +10 armor, regen mods +50%. So the shop pours into HP regen + armor +
+	# max HP (survive the self-damage engine) then the three damage-type
+	# multipliers (bigger booms). SKIP LIFESTEAL -- it does nothing with explosions
+	# (no weapon hits). NOTE (like Pacifist): this is really a STEERING problem --
+	# the arbiter kites to AVOID damage, but Bull NEEDS to take controlled hits to
+	# explode. Shopping alone can't fix that; baseline expected low. No weapons
+	# buyable (0 slots) so weapon_type is irrelevant.
+	"character_bull": {
+		"weapon_type": "any",
+		"stats": {
+			"stat_hp_regeneration": 10.0,
+			"stat_armor": 9.0,
+			"stat_max_hp": 9.0,
+			"stat_percent_damage": 6.0,
+			"stat_melee_damage": 6.0,
+			"stat_ranged_damage": 6.0,
+			"stat_elemental_damage": 6.0,
+			"stat_dodge": 3.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_armor": 1.4, "stat_hp_regeneration": 1.4,
+		}},
+		"harvest_cap": 25,
+		"item_bonus": {},
+		"max_weapons": 6,
 		"reroll_keep": 5,
 		"max_rerolls": 15,
 		"min_buy": 2.0,

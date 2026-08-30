@@ -561,3 +561,15 @@ the many cheap tier-1 stat items (each unique = +10% damage). Batch: WON (smg_4 
 pistols) / WON (smg/shredder/flute, hp 114 -- lifesteal sustain huge) / died 18.
 Worked out of the box; RUN 3 just hit the w18 wall. The lifesteal + fire-rate
 combo is the key -- exactly the guide's plan.
+
+### One-Armed (#39) -- Danger 1: wins 1/3 (v2 spend-the-gold)
+Guide: metabrotato.com/blog/best-one-armed-build-brotato. Uses ONE weapon
+(max_weapons 1) with DOUBLED damage + attack speed; tiers it up only by combining
+duplicates of that weapon (1-slot combine). Harness starts weapon_shredder_1
+(guide ranged pick). Since no gold goes to 6 weapons, it funds a deep item stack
+(40-56 items!). v1 (min_buy 2, reroll_keep 5) died 18/16/18 and BANKED ~330
+gold/run once the shredder maxed and items thinned. v2 (min_buy 1, reroll_keep 3,
+max_rerolls 22 -- the Well-Rounded spend-the-gold fix) -> died18/died18/WON =
+1/3: extra item-buying pushed one run over the w18 wall. Gold still partly banks
+(shop item SUPPLY is the real cap, not the buy threshold) -- a surplus-gold
+force-spend mechanism is the optimize-later lever. Consistent w18 boundary.
