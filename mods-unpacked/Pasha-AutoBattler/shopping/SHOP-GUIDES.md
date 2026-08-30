@@ -709,10 +709,18 @@ Systemic levers, each validated against its target + a winner regression. Naive
 perturbations regress winners, so each change is opt-in or additive.
 
 1. **Scaling-aware weapon scoring** (shop_advisor SCALING_W): a weapon's value gets
-   a bonus for each scaling_stat the plan weights. Golem now builds PURE spiky
-   shields (armor-scaling) instead of rock/spoon dilution. Golem 1/3 -> 1/3 (win
-   NEUTRAL -- its ceiling is the w17-18 wall, not weapons -- but builds are correct).
-   Mage regression WON/WON/WON = 3/3 (no regression). Commit dc933bb.
+   a bonus for each scaling_stat the plan weights. Golem builds PURE spiky shields
+   (armor-scaling) instead of rock/spoon dilution. Golem 1/3 -> 1/3 (win NEUTRAL --
+   ceiling is the w17-18 wall, not weapons -- but builds are correct). Commit dc933bb.
+   **REGRESSION FOUND + FIXED (later):** scaling_stats are BLIND to weapon-CLASS
+   bonuses (Precise/Blunt/...). On a type-only plan it ranked Crazy toward rock/spear
+   (melee_damage factor 1.0) over knives (0.8), throwing away Crazy's +100% PRECISE
+   bonus -> Crazy 3/3 dropped to 2/6 (~33%) with rock/torch boards. FIX: scaling_score
+   now returns 0 unless the plan has a weapon_set lock (the set already fixes the class,
+   so refining within it is safe; type-only plans revert to class-bonus-respecting
+   behaviour). Crazy recovered to 4/5 with knife-focused Precise boards; Golem
+   (set_blunt) unchanged. LESSON: a "global" scoring tweak validated only on a set-
+   LOCKED winner (Mage) can silently regress type-only CLASS-synergy winners; test both.
 2. **spend_surplus** (base_shop): weaponless/1-weapon chars keep rerolling past
    max_rerolls while a big gold surplus remains. One-Armed 1/3 -> 2/3; Beast Master
    2/3 -> 2/3 (85 items); Bull 1/3 -> 1/3. gold_out fell from 300-650 banked to

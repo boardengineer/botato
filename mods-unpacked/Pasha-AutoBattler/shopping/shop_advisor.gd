@@ -135,13 +135,17 @@ static func stack_bonus(wdata, plan, player_index):
 	return STACK_COMBINE_BONUS * float(min(same, 2))
 
 # A weapon deals damage that scales with specific stats (WeaponStats.scaling_stats:
-# [[stat_key, factor], ...], defaulting to [["stat_melee_damage", 1.0]]). A weapon whose
-# scaling stats are ones the PLAN invests in is far stronger than one scaling on a stat the
-# plan ignores -- e.g. for Golem (armor-only) the Spiky Shield (scales on armor, weighted 10)
-# hugely outdamages a Rock (scales on melee damage, weight 0). Returns the plan-weighted
-# scaling match. For typed plans where every valid weapon scales on the same stat (Ranger:
-# all ranged weapons scale ranged_damage) the bonus is uniform and harmless.
+# [[stat_key, factor], ...], defaulting to [["stat_melee_damage", 1.0]]). Within a fixed
+# weapon CLASS, a weapon whose scaling stats match the plan's investments is stronger --
+# e.g. for Golem (armor) the Spiky Shield (scales on armor) outdamages a Rock (melee dmg)
+# INSIDE set_blunt. ONLY applied to weapon_set-locked plans: scaling_stats are blind to
+# weapon-CLASS bonuses (Precise/Blunt/...), so on a type-only plan this would drag a class-
+# synergy character off its class -- it ranked Crazy toward rock/spear (melee_damage 1.0)
+# over knives (0.8), throwing away Crazy's +100% Precise bonus and dropping it 3/3 -> 1/3.
+# The set lock already fixes the class, so refining within it is safe.
 static func scaling_score(wdata, plan):
+	if plan.get("weapon_set", "") == "":
+		return 0.0   # type-only plans: class bonuses matter more than raw scaling factor
 	if wdata.stats == null:
 		return 0.0
 	var ss = wdata.stats.scaling_stats
