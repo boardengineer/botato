@@ -728,3 +728,19 @@ perturbations regress winners, so each change is opt-in or additive.
    constraint is ECONOMY (-50% gold, wave-1/2 deaths), same class as Farmer, which
    weapon-stacking can't fix. Kept (opt-in, neutral-positive, reusable for the
    thin-spread pattern). Excludes unique_weapons plans (Gladiator/Vagabond).
+
+5. **Sell-and-replace (recycle weak weapons to buy tier-3/4): TRIED, REVERTED.**
+   The bot could never upgrade a straggler on a full board -- a straight tier-4 on
+   offer scores -1 (no slot, no combine), so it kept tier-1s forever. Built a
+   sell-and-replace step (recycle the weakest same-type SINGLETON via the game's
+   _on_item_discard_button_pressed -> refund gold + free the slot -> buy the strong
+   weapon; guards: never break a combine pair, never sell tier-3+, respect the
+   weapon lock). It WORKED mechanically -- boards came out clean tier-3/4, no
+   stragglers (e.g. Lich recycled medical_gun_1 + smg_1 for two harpoon_gun_3). BUT
+   it REGRESSED win rates: Ranger 3/3 -> 2/3 (aggressive, 3 replace/shop) and even
+   3/3 -> 1/3 (conservative, 1 replace/shop, tier<=2 only); Lich 2/3 -> 0/3. Root
+   cause: at Danger 1 the bot wins on its DEEP ITEM STACK (49-54 items), and gold
+   spent churning weapons to higher tiers trades away that item budget. The tier-1
+   stragglers were NOT costing wins -- the other 5 weapons + items carry. LESSON:
+   "obviously correct" behaviour (a human sells weak weapons) is empirically a net
+   LOSS for the bot; items > perfect weapon tiers at Danger 1. Reverted global.

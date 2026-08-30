@@ -1,0 +1,51 @@
+﻿#,Character,Character ID,Win (D1 n=3),Verdict,Weapon type,Weapon set,Max weapons,Harvest cap,Top stats (weight),Mechanisms,Guide
+1,Well Rounded,character_well_rounded,WON*,WON (20/20),ranged,,6,40,harvesting(10) > ranged_damage(8) > attack_speed(7) > percent_damage(6.5),,brotato-builds.com/builds/Well-Rounded
+2,Brawler,character_brawler,1/3,"wins ~1/3, floor lifted from wave 8 to 15",melee,,6,0,attack_speed(9) > melee_damage(8) > crit_chance(7) > dodge(7),phase_boost to w7,brotato-builds.com/builds/Brawler
+3,Crazy,character_crazy,3/3,WON 3/3,melee,,6,0,crit_chance(10) > melee_damage(8) > attack_speed(8) > crit_damage(7),phase_boost to w6,brotato-builds.com/builds/Crazy
+4,Ranger,character_ranger,3/3,WON 3/3,ranged,,6,35,ranged_damage(10) > attack_speed(8) > harvesting(8) > percent_damage(7),,brotato-builds.com/builds/Ranger
+5,Mage,character_mage,3/3,WON 3/3 (with fixes),any,set_elemental,6,0,elemental_damage(10) > attack_speed(8) > percent_damage(6.5) > luck(5.5),"set=set_elemental, phase_boost to w6",brotato-builds.com/builds/Mage
+6,Chunky,character_chunky,1/3,wins ~1/3 (borderline),melee,,6,0,max_hp(10) > armor(8) > percent_damage(6) > attack_speed(6),,brotato-builds.com/builds/Chunky
+7,Old,character_old,2/3,wins ~2/3,ranged,,6,40,ranged_damage(8) > attack_speed(7) > harvesting(7) > percent_damage(6.5),,brotato-builds.com/builds/Old
+8,Lucky,character_lucky,1/3,wins ~1/3 (borderline),ranged,,6,35,attack_speed(10) > ranged_damage(8) > percent_damage(7) > max_hp(7),phase_boost to w7,
+9,Mutant,character_mutant,1/3,"~1/3, near-misses (borderline)",ranged,,6,40,ranged_damage(8) > attack_speed(7) > max_hp(6.5) > percent_damage(6.5),,brotato-builds.com/builds/Mutant
+10,Generalist,character_generalist,1/3,"~1/3, both deaths at wave 19 (borderline)",any,,6,35,melee_damage(8) > ranged_damage(8) > max_hp(6.5) > attack_speed(6.5),,brotatodex.com/character/character_generalist
+11,Loud,character_loud,2/3,wins ~2/3,ranged,,6,0,attack_speed(9) > ranged_damage(8) > max_hp(7.5) > percent_damage(7),,brotatodex.com/character/character_loud
+12,Multitasker,character_multitasker,1/3,~1/3 (borderline),melee,,12,0,melee_damage(9) > percent_damage(8) > attack_speed(7.5) > max_hp(7),"max_weapons=12, phase_boost to w6",brotatodex.com/character/character_multitasker
+13,Wildling,character_wildling,1/3,~1/3 (borderline),any,set_primitive,6,0,melee_damage(8.5) > attack_speed(8) > percent_damage(7) > max_hp(6),"set=set_primitive, phase_boost to w6",brotato-builds.com/builds/Wildling
+14,Pacifist,character_pacifist,0/3,"0/3, HARD (needs steering, not shopping)",any,set_support,6,60,harvesting(10) > dodge(7) > armor(6.5) > max_hp(6),"set=set_support, phase_boost to w8",brotatodex.com/character/character_pacifist
+15,Gladiator,character_gladiator,1/3,"~1/3, first clear after two fixes",melee,,6,0,attack_speed(9) > melee_damage(8.5) > percent_damage(6.5) > max_hp(6.5),"unique_weapons, phase_boost to w6",brotato-builds.com/builds/Gladiator
+16,Saver,character_saver,0/3,"0/3 (near-misses 16/17/17), gold_floor validated",melee,,6,60,attack_speed(7.5) > melee_damage(7) > harvesting(7) > max_hp(6.5),"gold_floor=250, phase_boost to w6",brotatodex.com/character/character_saver
+17,Sick,character_sick,2/3,wins 2/3 (hitrate_pref fixed it),ranged,,6,0,ranged_damage(8.5) > attack_speed(8.5) > max_hp(6.5) > armor(6.5),"hitrate_pref, phase_boost to w6",brotato-builds.com/builds/Sick
+18,Farmer,character_farmer,0/3,"0/3, economy-slow (borderline)",ranged,,6,60,harvesting(10) > ranged_damage(7.5) > attack_speed(7) > max_hp(6.5),phase_boost to w7,metabrotato.com
+19,Ghost,character_ghost,3/3,WON 3/3 (after ghost_axe start fix),any,set_ethereal,6,0,dodge(12) > max_hp(8) > lifesteal(6) > hp_regeneration(6),"set=set_ethereal, phase_boost to w7",brotatodex.com/character/character_ghost
+20,Speedy,character_speedy,0/3,"0/3 baseline (14/18/18, borderline)",melee,,6,0,speed(9) > melee_damage(8) > attack_speed(7) > max_hp(7),phase_boost to w6,brotato-builds.com/builds/Speedy
+21,Entrepreneur,character_entrepreneur,0/3,0/3 baseline (16/10/19),ranged,,6,50,harvesting(9) > ranged_damage(8.5) > attack_speed(8) > percent_damage(7.5),phase_boost to w6,brotato-builds.com/builds/Entrepreneur
+22,Engineer,character_engineer,3/3,WON 3/3 (turrets work!),any,set_tool,6,30,engineering(12) > armor(7) > max_hp(6.5) > hp_regeneration(6),"set=set_tool, phase_boost to w7",brotato-builds.com/builds/Engineer
+23,Explorer,character_explorer,2/3,wins 2/3,ranged,,6,45,ranged_damage(8.5) > attack_speed(8) > percent_damage(7) > harvesting(7),phase_boost to w6,brotatodex.com/character/character_explorer
+24,Doctor,character_doctor,1/3,1/3 near-misses (WON/17/18),any,set_medical,6,40,ranged_damage(9) > attack_speed(8) > hp_regeneration(7) > max_hp(6.5),"set=set_medical, phase_boost to w6",brotatodex.com/character/character_doctor
+25,Hunter,character_hunter,1/3,1/3 (16/15/WON),ranged,,6,0,crit_chance(10) > ranged_damage(8) > range(7) > crit_damage(7),phase_boost to w6,brotato-builds.com/builds/Hunter
+26,Artificer,character_artificer,3/3,WON 3/3,any,set_explosive,6,0,attack_speed(9) > elemental_damage(9) > max_hp(7) > range(6),"set=set_explosive, phase_boost to w6",brotatodex.com/character/character_artificer
+27,Arms Dealer,character_arms_dealer,0/3,0/3 baseline (8/18/18),any,,6,40,percent_damage(8) > harvesting(8) > ranged_damage(7) > attack_speed(7),phase_boost to w6,brotato-builds.com/builds/Arms-Dealer
+28,Streamer,character_streamer,0/3,0/3 baseline (13/16/18),ranged,,6,40,ranged_damage(8.5) > attack_speed(7.5) > armor(7) > max_hp(7),phase_boost to w6,brotato-builds.com/builds/Streamer
+29,Cyborg,character_cyborg,1/3,1/3 (16/11/WON),ranged,,6,0,ranged_damage(10) > attack_speed(8) > max_hp(7) > percent_damage(6.5),phase_boost to w6,brotatodex.com/character/character_cyborg
+30,Glutton,character_glutton,0/3,0/3 baseline (18/16/16),any,,6,30,max_hp(8.5) > luck(8) > melee_damage(7.5) > elemental_damage(7),phase_boost to w6,brotatodex.com/character/character_glutton
+31,Jack,character_jack,2/3,wins 2/3,ranged,,6,0,ranged_damage(9) > crit_chance(8.5) > attack_speed(8.5) > percent_damage(8),phase_boost to w6,brotatodex.com/character/character_jack
+32,Lich,character_lich,2/3,wins 2/3,any,,6,0,max_hp(10) > lifesteal(8) > hp_regeneration(8) > armor(7),"hitrate_pref, phase_boost to w6",brotato-builds.com/builds/Lich
+33,Apprentice,character_apprentice,1/3,wins 1/3,ranged,,6,30,max_hp(10) > attack_speed(8) > dodge(7) > ranged_damage(6),phase_boost to w6,thegamer.com/brotato-best-apprentice-build
+34,Cryptid,character_cryptid,0/3,"wins 0/3 (damage-ceiling, not fragility)",melee,,6,40,dodge(9) > attack_speed(8) > melee_damage(8) > crit_chance(6),"hitrate_pref, phase_boost to w6",commonsensegamer.com/brotato-best-cryptid-build
+35,Fisherman,character_fisherman,0/3,"wins 0/3 (economy-starved, v2)",ranged,,6,45,ranged_damage(9) > attack_speed(7) > max_hp(7) > armor(6),"stack_combine, phase_boost to w6",commonsensegamer.com/brotato-best-fisherman-build
+36,Golem,character_golem,1/3,wins 1/3 (set-lock works; spoon leak dilutes it),melee,set_blunt,6,30,armor(10) > max_hp(9) > attack_speed(6) > percent_damage(5),"set=set_blunt, phase_boost to w6",commonsensegamer.com/brotato-best-golem-build
+37,King,character_king,2/3,wins 2/3 (v2 -- harness tier-2 start was the fix),ranged,,6,25,ranged_damage(9) > crit_chance(8) > attack_speed(6) > max_hp(6),phase_boost to w7,gamepressure.com/brotato-king-build
+38,Renegade,character_renegade,2/3,wins 2/3,ranged,,6,35,attack_speed(9) > lifesteal(8) > ranged_damage(7) > max_hp(6),"hitrate_pref, phase_boost to w6",commonsensegamer.com/brotato-best-renegade-build
+39,One-Armed,character_one_arm,1/3,wins 1/3 (v2 spend-the-gold),ranged,,1,25,ranged_damage(10) > percent_damage(8) > attack_speed(7) > crit_chance(6),"spend_surplus, max_weapons=1, phase_boost to w6",commonsensegamer.com/brotato-best-one-armed-weapon-build
+40,Bull,character_bull,1/3,wins 1/3 (weaponless explosion tank -- pleasant surprise),any,,6,25,hp_regeneration(10) > armor(9) > max_hp(9) > percent_damage(6),"spend_surplus, phase_boost to w6",number13.de/brotato-bull-build
+41,Soldier,character_soldier,0/3,wins 0/3 (bimodal -- steering-sensitive),ranged,,6,25,crit_chance(9) > attack_speed(8) > ranged_damage(8) > percent_damage(6),phase_boost to w6,number13.de/brotato-soldier-build
+42,Masochist,character_masochist,1/3,wins 1/3,melee,,6,25,hp_regeneration(10) > armor(8) > max_hp(8) > melee_damage(7),phase_boost to w6,number13.de/brotato-masochist-build
+43,Knight,character_knight,1/3,wins 1/3 (bimodal -- slow-melee opener),melee,,6,0,armor(10) > melee_damage(8) > crit_chance(6) > dodge(6),phase_boost to w6,brotato-builds.com/builds/Knight
+44,Demon,character_demon,1/3,wins 1/3 (HP-currency works; over-spend risk),ranged,,6,20,max_hp(10) > ranged_damage(8) > attack_speed(7) > lifesteal(6),phase_boost to w6,metabrotato.com/blog/brotato-demon-build-the-ultimate-guide
+45,Baby,character_baby,3/3,WON 3/3 (weapon-stacking -- max_weapons was the key),melee,,18,60,harvesting(8) > max_hp(7) > melee_damage(7) > attack_speed(6),"max_weapons=18, phase_boost to w7",brotatodex.com/character/character_baby
+46,Vagabond,character_vagabond,1/3,wins 1/3,any,,6,15,percent_damage(10) > attack_speed(7) > max_hp(7) > armor(6),"unique_weapons, phase_boost to w7",number13.de/brotato-vagabond-build
+47,Technomage,character_technomage,2/3,wins 2/3,any,set_elemental,6,25,elemental_damage(10) > engineering(9) > attack_speed(7) > max_hp(6),"set=set_elemental, phase_boost to w7",number13.de/brotato-technomage-build
+48,Vampire,character_vampire,0/3,"wins 0/3 (low-HP design, boundary)",melee,,6,30,lifesteal(10) > attack_speed(9) > armor(7) > melee_damage(7),"hitrate_pref, phase_boost to w6",number13.de/brotato-vampire-build
+49,Beast Master,character_beast_master,2/3,wins 2/3 (pet item_bonus was the fix),any,,6,55,harvesting(9) > speed(8) > melee_damage(7) > ranged_damage(6),"spend_surplus, item_bonus, phase_boost to w7",brotato-builds.com/builds/Beast-Master
+50,Wounded,character_wounded,0/3,"wins 0/3 (1-hit death, boundary)",melee,,6,35,dodge(10) > speed(9) > melee_damage(8) > attack_speed(7),phase_boost to w6,brotato.wiki.fextralife.com/Wounded
