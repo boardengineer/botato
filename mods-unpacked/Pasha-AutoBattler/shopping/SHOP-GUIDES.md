@@ -632,3 +632,16 @@ the bot's aggressive spend-down left too thin an HP buffer -> RUN 3 died wave 5
 (the guide's own "always leave an HP buffer" warning). OPTIMIZE-LATER LEVER: for
 HP-currency chars, reserve a survival buffer (an HP gold_floor). Two strong runs
 otherwise; the snowball is powerful.
+
+### Baby (#45) -- Danger 1: WON 3/3 (weapon-stacking -- max_weapons was the key)
+Guide: brotatodex.com/character/character_baby (Mass Stick XP). Snowballs by
+STACKING WEAPONS (up to 24 slots) instead of level-up stats -- Stick deals
++4/6/8/10 per additional stick, so many sticks = huge damage without damage stats.
+THE FIX: max_weapons 18 (default 6 would cap Baby at 6 and kill its identity) +
+harvesting weighted high early to earn XP and unlock slots. Batch: WON / WON /
+WON -- 15-18 weapon melee swarms every run (RUN 3 converged on the guide's build:
+7 sticks + fighting sticks). The bot fills slots with melee and the sheer weapon
+count carries; with many slots the board rarely fills so sticks stack WITHOUT
+combining (combining would reduce the count Baby wants) -- the natural behaviour
+is exactly right. 7th clean 3/3. A stick-family focus could push it even harder
+(optimize-later), but the generic melee stack already wins outright.

@@ -1398,6 +1398,39 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+	# --- #46. Guide: number13.de/brotato-vagabond-build, brotatodex.com/character/
+	# character_vagabond (Tag Synergy Master). CANNOT equip duplicate weapons --
+	# wants 6 DIFFERENT weapons so it collects every weapon-class synergy tag (each
+	# unique tag = free stats). Exactly the unique_weapons flag (built for
+	# Gladiator). Starts -5 armor, -50% luck & harvesting -> fragile early. %DAMAGE
+	# is the key stat (it buffs all 6 different weapons regardless of type, unlike
+	# ranged/melee_damage). weapon_type any (variety across classes). Harness
+	# cacti_club start (guide pick). Heavy early survival phase_boost for the
+	# negative-armor opening; harvest_cap low (halved harvesting).
+	"character_vagabond": {
+		"weapon_type": "any",
+		"unique_weapons": true,
+		"stats": {
+			"stat_percent_damage": 10.0,
+			"stat_attack_speed": 7.0,
+			"stat_max_hp": 7.0,
+			"stat_armor": 6.0,
+			"stat_crit_chance": 5.0,
+			"stat_melee_damage": 5.0,
+			"stat_ranged_damage": 5.0,
+			"stat_dodge": 5.0,
+			"stat_lifesteal": 4.0,
+		},
+		"phase_boost": {"until_wave": 7, "stats": {
+			"stat_max_hp": 1.6, "stat_armor": 1.6, "stat_dodge": 1.4,
+		}},
+		"harvest_cap": 15,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):
