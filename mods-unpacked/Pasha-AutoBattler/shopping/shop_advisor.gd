@@ -10,6 +10,7 @@ const BuildPlans = preload("res://mods-unpacked/Pasha-AutoBattler/shopping/build
 const COMBINE_SCORE = 100.0   # combining upgrades a weapon's tier -- almost always take it
 const NEW_WEAPON_MATCH = 22.0 # an empty slot filled with an on-type weapon
 const HITRATE_W = 1.6         # hitrate_pref: weight per hit/sec (SMG ~15 clamped 12 -> ~+19)
+const SCALING_W = 1.2         # scaling-aware: weight per (plan_stat_weight * scaling_factor)
 
 static func get_plan(character_id):
 	return BuildPlans.get_plan(character_id)
@@ -99,18 +100,43 @@ static func score_weapon(wdata, plan, player_index):
 			if w.weapon_id == wdata.weapon_id:
 				return -1.0
 	if would_combine(wdata, player_index):
-		return COMBINE_SCORE + float(wdata.tier) * 5.0
+		# Among several combinable weapons, prefer the one whose damage scales on
+		# stats the plan invests in (half weight -- combines are already top priority).
+		return COMBINE_SCORE + float(wdata.tier) * 5.0 + scaling_score(wdata, plan) * 0.5
 	var has_slot = RunData.has_weapon_slot_available(wdata, player_index)
 	if not has_slot:
 		return -1.0   # board full and it will not combine -> not buyable/useful
 	if RunData.get_player_weapons(player_index).size() >= plan["max_weapons"]:
 		return -1.0
 	if want_set != "":
-		return NEW_WEAPON_MATCH + float(wdata.tier) * 3.0 + hitrate_bonus(wdata, plan)  # in-set verified
+		return NEW_WEAPON_MATCH + float(wdata.tier) * 3.0 + hitrate_bonus(wdata, plan) + scaling_score(wdata, plan)  # in-set verified
 	var type_ok = plan["weapon_type"] == "any" or weapon_type_str(wdata) == plan["weapon_type"]
 	if not type_ok:
 		return -1.0   # a typed plan never fills a slot with the wrong damage type
-	return NEW_WEAPON_MATCH + float(wdata.tier) * 3.0 + hitrate_bonus(wdata, plan)
+	return NEW_WEAPON_MATCH + float(wdata.tier) * 3.0 + hitrate_bonus(wdata, plan) + scaling_score(wdata, plan)
+
+# A weapon deals damage that scales with specific stats (WeaponStats.scaling_stats:
+# [[stat_key, factor], ...], defaulting to [["stat_melee_damage", 1.0]]). A weapon whose
+# scaling stats are ones the PLAN invests in is far stronger than one scaling on a stat the
+# plan ignores -- e.g. for Golem (armor-only) the Spiky Shield (scales on armor, weighted 10)
+# hugely outdamages a Rock (scales on melee damage, weight 0). Returns the plan-weighted
+# scaling match. For typed plans where every valid weapon scales on the same stat (Ranger:
+# all ranged weapons scale ranged_damage) the bonus is uniform and harmless.
+static func scaling_score(wdata, plan):
+	if wdata.stats == null:
+		return 0.0
+	var ss = wdata.stats.scaling_stats
+	if ss == null:
+		return 0.0
+	var weights = plan["stats"]
+	var s = 0.0
+	for pair in ss:
+		if pair == null or pair.size() < 2:
+			continue
+		var key = pair[0]
+		if weights.has(key):
+			s += float(weights[key]) * float(pair[1])
+	return s * SCALING_W
 
 # Sick's lifesteal (and any hit-count kit) scales with HITS, not damage: prefer
 # fast, multi-projectile weapons (SMG cd 4 vs pistol/wand cd 40-60). Returns a
