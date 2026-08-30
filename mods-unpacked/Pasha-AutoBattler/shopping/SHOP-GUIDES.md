@@ -524,8 +524,16 @@ CANNOT HEAL (lifesteal/regen omitted). Damage from Spiky Shield (armor-scaling),
 NOT melee_damage. Locked to set_blunt (hammer/rock/spiky_shield); harness starts
 spiky_shield_1. Batch: WON (4 shields + 2 rocks, pure blunt, face-tanked at
 hp 65-96 / dmg 4-9!) / died 18 / died 17. The set-lock + no-heal weights are
-clearly right -- RUN 1 is a textbook blunt board. BUT runs 2-3 accumulated 2-3
-SPOONS (off-set weapons that leak in as LEVEL-UP weapon rewards, not shop buys
-which the lock blocks); they combined and diluted the blunt count. SYSTEMIC BUG:
-off-set level-up weapons aren't discarded -- also a latent risk to the other
-set-locked winners (Mage/Ghost/Artificer/Doctor). Fix pending.
+clearly right -- RUN 1 is a textbook blunt board. Runs 2-3 accumulated rocks +
+SPOONS. CORRECTION (initial "spoon leak / systemic discard bug" was WRONG -- my
+first grep only scanned base ./weapons and missed the DLC spoon): spoon IS a
+legit set_blunt weapon (dlcs/dlc_1), bought correctly under the lock; there is
+NO discard bug and the set-locked winners are NOT at risk. The REAL issue is
+intra-set weapon quality: only spiky_shield scales on stat_armor (1.0) -- perfect
+for Golem's armor stack; rock scales on stat_melee_damage (1.0) and spoon on
+stat_melee_damage (0.5)+max_hp, and Golem invests ZERO melee damage, so rock/spoon
+are weak blunts for it. RUN 1 won on 4 shields; runs 2-3 had only 2-3 shields +
+melee-scaling rock/spoon -> too little armor-damage at the w18 wall. OPTIMIZE-
+LATER LEVER: scaling-aware weapon scoring (prefer weapons whose scaling_stats
+align with the plan's top-weighted stats) -- would bias Golem to pure shields,
+and generally improve every plan. Systemic, so deferred to a dedicated pass.
