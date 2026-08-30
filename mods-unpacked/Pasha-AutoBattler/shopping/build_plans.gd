@@ -1179,6 +1179,37 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 1.0,
 	},
+	# --- #39. Guide: commonsensegamer.com/brotato-best-one-armed-weapon-build,
+	# metabrotato.com/blog/best-one-armed-build-brotato. Uses ONLY ONE weapon
+	# (max_weapons 1) but with DOUBLED damage + attack speed -- one strong weapon
+	# melts everything. It can only tier that weapon up by combining duplicates of
+	# it (1-slot combine), so the single harness start defines the run: Shredder
+	# (guide ranged pick, in its pool). Ranged, damage-heavy: ranged damage +
+	# %damage + attack speed + crit, with just enough armor/HP/dodge to not get
+	# one-shot. Since gold isn't spent on 6 weapons, it funds a deep stat/item
+	# stack -- which is exactly One-Armed's game plan.
+	"character_one_arm": {
+		"weapon_type": "ranged",
+		"stats": {
+			"stat_ranged_damage": 10.0,
+			"stat_percent_damage": 8.0,
+			"stat_attack_speed": 7.0,
+			"stat_crit_chance": 6.0,
+			"stat_max_hp": 6.0,
+			"stat_armor": 6.0,
+			"stat_lifesteal": 5.0,
+			"stat_dodge": 5.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.5, "stat_armor": 1.4,
+		}},
+		"harvest_cap": 25,
+		"item_bonus": {},
+		"max_weapons": 1,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

@@ -551,3 +551,13 @@ up to tier 3-4 and the passive explodes damage. Medical-gun overrank still steal
 a slot or two but the tier-IV pistols/slingshot carry. LESSON: characters with a
 non-tier-1 start (King) need a tier-matched harness start, else the baseline is
 unfair.
+
+### Renegade (#38) -- Danger 1: wins 2/3
+Guide: metabrotato.com/blog/best-renegade-build-brotato. -400% damage & -50%
+accuracy, offset by +2 projectiles + innate pierce and +10% damage per UNIQUE
+tier-1 item. Plan: ranged + hitrate_pref (spam fast projectiles), attack_speed +
+LIFESTEAL (8) lead for sustain through slow low-damage kills, min_buy 1 to scoop
+the many cheap tier-1 stat items (each unique = +10% damage). Batch: WON (smg_4 +
+pistols) / WON (smg/shredder/flute, hp 114 -- lifesteal sustain huge) / died 18.
+Worked out of the box; RUN 3 just hit the w18 wall. The lifesteal + fire-rate
+combo is the key -- exactly the guide's plan.
