@@ -18,16 +18,41 @@ const SURPLUS_MAX_REROLLS = 45  # spend_surplus: hard cap on total rerolls per s
 
 func _ready() -> void:
 	._ready()
-	if _ab_enabled():
+	if _any_autoshop():
 		call_deferred("_auto_shop")
 
-func _ab_enabled() -> bool:
+# Should the bot auto-shop for this player slot? Mirrors the combat AI's dispatch
+# (player_movement_behavior.gd): the global enable_autobattler toggle makes EVERY
+# slot a bot (pure AutoBattler / WaveLab), while CoopService.is_bot_by_index[pi]
+# flags an individual co-op slot added with F1. Gated by enable_autoshop so the
+# shop layer can be turned off independently of combat.
+func _should_autoshop(pi) -> bool:
 	var opts = get_node_or_null("/root/AutobattlerOptions")
-	return opts != null and opts.enable_autobattler and opts.enable_autoshop
+	if opts == null or not opts.enable_autoshop:
+		return false
+	if opts.enable_autobattler:
+		return true
+	var coop = get_node_or_null("/root/CoopService")
+	return coop != null and pi < coop.is_bot_by_index.size() and coop.is_bot_by_index[pi]
 
+func _any_autoshop() -> bool:
+	for pi in range(RunData.get_player_count()):
+		if _should_autoshop(pi):
+			return true
+	return false
+
+# One shop scene serves all co-op players (per-player containers). Drive each
+# bot-controlled slot's shop in turn, then leave human slots to shop manually --
+# the wave only starts once every player (bots via _on_GoButton_pressed below,
+# humans by hand) has pressed GO.
 func _auto_shop() -> void:
-	var pi = 0
 	yield(get_tree().create_timer(SETUP_WAIT), "timeout")
+	for pi in range(RunData.get_player_count()):
+		if _should_autoshop(pi):
+			yield(_auto_shop_player(pi), "completed")
+
+# Auto-shop a single player: score the offering, buy / reroll / lock-and-save, GO.
+func _auto_shop_player(pi) -> void:
 	var character = RunData.get_player_character(pi)
 	var plan = ShopAdvisor.get_plan(character.my_id if character != null else "")
 	var gold_in = RunData.get_player_gold(pi)
@@ -118,10 +143,10 @@ func _auto_shop() -> void:
 			yield(get_tree().create_timer(REROLL_WAIT), "timeout")
 			continue
 		break
-	print("BOTLOG SHOP wave=%d gold_in=%d gold_out=%d buys=%d rerolls=%d bought=%s%s" % [
-		RunData.current_wave, gold_in, RunData.get_player_gold(pi), buys, rerolls, str(bought), saved_note])
+	print("BOTLOG SHOP player=%d wave=%d gold_in=%d gold_out=%d buys=%d rerolls=%d bought=%s%s" % [
+		pi, RunData.current_wave, gold_in, RunData.get_player_gold(pi), buys, rerolls, str(bought), saved_note])
 	yield(get_tree().create_timer(GO_WAIT), "timeout")
-	if _ab_enabled():
+	if _should_autoshop(pi):
 		_on_GoButton_pressed(pi)
 
 # The weapon on offer worth saving for: a strong weapon (tier 2+ / combine) we

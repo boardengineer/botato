@@ -9,17 +9,17 @@ const ShopAdvisor = preload("res://mods-unpacked/Pasha-AutoBattler/shopping/shop
 const PICK_WAIT = 0.06   # let the container's button-delay timer clear between picks
 
 var _auto_busy = false
-var _plan_cache = null
+var _plan_cache = {}   # player_index -> plan (co-op players can be different characters)
 
 func _ab_enabled() -> bool:
 	var opts = get_node_or_null("/root/AutobattlerOptions")
 	return opts != null and opts.enable_autobattler and opts.enable_autoshop
 
 func _plan_for(player_index):
-	if _plan_cache == null:
+	if not _plan_cache.has(player_index):
 		var c = RunData.get_player_character(player_index)
-		_plan_cache = ShopAdvisor.get_plan(c.my_id if c != null else "")
-	return _plan_cache
+		_plan_cache[player_index] = ShopAdvisor.get_plan(c.my_id if c != null else "")
+	return _plan_cache[player_index]
 
 func _show_next_player_options() -> bool:
 	var r = ._show_next_player_options()

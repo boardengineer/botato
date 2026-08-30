@@ -865,7 +865,7 @@ func gather(main, player) -> void:
 
 	weapon_range = _weapon_range(player)
 	_refresh_kill_ref(player)
-	var character_id = RunData.get_player_character(0).my_id
+	var character_id = RunData.get_player_character(player.player_index).my_id
 	# char_profile = 0 (--arb-charprofile=0) empties the row, which is what makes
 	# "this character, generic steering" an exact control arm rather than an
 	# approximation of one.
@@ -1022,9 +1022,9 @@ func gather(main, player) -> void:
 		# The not-moving material tick, in the pickup unit (gold_value per
 		# material), and how far into the current second the stand is.
 		var per_sec = 0.0
-		for ts in RunData.get_player_effect(Keys.temp_stats_while_not_moving_hash, 0):
+		for ts in RunData.get_player_effect(Keys.temp_stats_while_not_moving_hash, player.player_index):
 			if ts[0] == Keys.percent_materials_hash:
-				var v = max(1.0, abs(float(ts[1]) / 100.0 * float(RunData.get_player_gold(0))))
+				var v = max(1.0, abs(float(ts[1]) / 100.0 * float(RunData.get_player_gold(player.player_index))))
 				if ts.size() >= 3:
 					v = min(v, float(ts[2]))
 				per_sec += v
@@ -1123,7 +1123,7 @@ func _phase_value(phases: Array, fallback: float) -> float:
 func _gold_value(row: Dictionary, player) -> float:
 	var mode = row.get("gold_mode", "")
 	if mode == "builder":
-		return _builder_gold_value()
+		return _builder_gold_value(player)
 	if gold_value_override != null:
 		return gold_value_override
 	# End-of-wave sweep: characters that spend the wave NOT collecting (Soldier
@@ -1354,11 +1354,11 @@ func _builder_turret(spawner):
 	return null
 
 
-func _builder_gold_value() -> float:
+func _builder_gold_value(player) -> float:
 	var phase = 1
 	var struct_range = 0
 	if RunData.current_wave > BUILDER_ECON_WAVES:
-		struct_range = int(RunData.get_player_effect(Keys.structure_range_hash, 0))
+		struct_range = int(RunData.get_player_effect(Keys.structure_range_hash, player.player_index))
 		phase = 2 if BuilderTurret.get_level(struct_range) < BUILDER_TURRET_MAX_LEVEL else 3
 	if phase != _builder_phase:
 		_builder_phase = phase
