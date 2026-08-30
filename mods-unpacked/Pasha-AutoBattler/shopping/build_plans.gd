@@ -1210,10 +1210,12 @@ const PLANS = {
 		# v1 banked ~330 gold/run (min_buy 2, reroll_keep 5) once the shredder was
 		# maxed and items thinned -- wasted damage/survival. Spend it: min_buy 1
 		# (scoop marginal items), reroll_keep 3 + max_rerolls 22 (dig for more
-		# items/HP/armor). Mirrors the Well-Rounded "spend the gold" fix.
+		# items/HP/armor). spend_surplus keeps rerolling past the cap while a big
+		# surplus remains. Mirrors the Well-Rounded "spend the gold" fix.
 		"reroll_keep": 3,
 		"max_rerolls": 22,
 		"min_buy": 1.0,
+		"spend_surplus": true,
 	},
 	# --- #40. Guide: number13.de/brotato-bull-build, metabrotato.com/characters/
 	# bull. WEAPONLESS: kills by EXPLODING when it takes damage; explosion scales
@@ -1246,6 +1248,7 @@ const PLANS = {
 		"reroll_keep": 5,
 		"max_rerolls": 15,
 		"min_buy": 2.0,
+		"spend_surplus": true,   # weaponless: pour banked gold into more items
 	},
 	# --- #41. Guide: number13.de/brotato-soldier-build. Stationary TURRET: +50%
 	# damage & +50% attack speed while STANDING STILL, but CANNOT attack while
@@ -1529,6 +1532,7 @@ const PLANS = {
 		"reroll_keep": 5,
 		"max_rerolls": 15,
 		"min_buy": 2.0,
+		"spend_surplus": true,   # weaponless summoner: reroll surplus gold into more pets/items
 	},
 	# --- #50 (last). Guide: brotato.wiki.fextralife.com/Wounded. DIES IN ONE HIT;
 	# starts +5% speed, +8 harvesting, 1 Tardigrade. Its shop/crates are CLEARED of

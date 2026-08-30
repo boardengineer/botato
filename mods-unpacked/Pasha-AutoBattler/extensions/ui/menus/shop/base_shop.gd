@@ -10,9 +10,11 @@ const SETUP_WAIT = 0.35   # let _ready() finish populating the offering + UI
 const BUY_WAIT = 0.09     # container enforces a 0.05s buy lockout; clear it
 const REROLL_WAIT = 0.12
 const GO_WAIT = 0.15
-const MAX_ACTIONS = 150   # hard stop against any pathological loop (buys + up to ~15 rerolls)
+const MAX_ACTIONS = 250   # hard stop against any pathological loop (buys + rerolls, incl. surplus-spend)
 const LOCK_MIN_SCORE = 28.0  # only save for a weapon at least this good (tier 2+ on-plan, or a combine)
 const LOCK_REACH = 70        # only save if its price is within ~one wave's income of current gold
+const SURPLUS_KEEP = 120     # spend_surplus: keep rerolling while gold stays above this
+const SURPLUS_MAX_REROLLS = 45  # spend_surplus: hard cap on total rerolls per shop
 
 func _ready() -> void:
 	._ready()
@@ -102,7 +104,14 @@ func _auto_shop() -> void:
 		if save_floor > keep:
 			keep = save_floor
 		var can_pay = gold - price >= keep and rerolls < plan["max_rerolls"]
-		if _reroll_price.size() > pi and (free or can_pay):
+		# Weaponless / single-weapon characters (Bull, Beast Master, One-Armed) can
+		# never spend gold on weapons, so once the shop's items thin out they bank a
+		# huge surplus (300-450g = wasted damage/survival). With spend_surplus set,
+		# keep rerolling past max_rerolls while a big surplus remains, to surface more
+		# items/pets to buy. Bounded by SURPLUS_KEEP and a hard reroll cap.
+		var surplus_spend = plan.get("spend_surplus", false) \
+			and gold - price >= SURPLUS_KEEP and rerolls < SURPLUS_MAX_REROLLS
+		if _reroll_price.size() > pi and (free or can_pay or surplus_spend):
 			rerolls += 1
 			tried.clear()   # a reroll replaces the offering
 			_on_RerollButton_pressed(pi)
