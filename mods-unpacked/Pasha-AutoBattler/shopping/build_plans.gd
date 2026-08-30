@@ -1366,6 +1366,38 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+	# --- #45. Guide: brotatodex.com/character/character_baby (Mass Stick XP).
+	# Snowballs by STACKING WEAPONS (up to 24 slots) instead of level-up stats --
+	# Stick deals +4/6/8/10 per additional stick, so many sticks = huge damage
+	# WITHOUT damage stats. So max_weapons is cranked to 18 (default 6 would cap
+	# Baby at 6 and kill its identity), and the bot fills slots with melee (stick
+	# is the default melee harness start). Harvesting weighted high to earn XP and
+	# unlock slots fast; keep buying survival items too (Baby lacks stat level-ups).
+	# NOTE: with many slots the board rarely fills, so sticks stack without
+	# combining (combining would REDUCE the count Baby wants) -- the natural
+	# behaviour is correct. A stick-family focus is an optimize-later lever.
+	"character_baby": {
+		"weapon_type": "melee",
+		"stats": {
+			"stat_harvesting": 8.0,
+			"stat_max_hp": 7.0,
+			"stat_melee_damage": 7.0,
+			"stat_attack_speed": 6.0,
+			"stat_armor": 6.0,
+			"stat_dodge": 4.0,
+			"stat_lifesteal": 4.0,
+			"stat_percent_damage": 4.0,
+		},
+		"phase_boost": {"until_wave": 7, "stats": {
+			"stat_harvesting": 1.4, "stat_max_hp": 1.5, "stat_armor": 1.4,
+		}},
+		"harvest_cap": 60,
+		"item_bonus": {},
+		"max_weapons": 18,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

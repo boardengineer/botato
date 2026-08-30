@@ -619,3 +619,16 @@ board -- sword/sickle/ghost-axe/scissors, 47 items). But armor->damage means tur
 surrounds and kills it at wave 0 (same slow-opener pattern as Soldier). Optimize-
 later lever: a touch of early dodge/attack to survive wave 1 (systemic: slow-melee
 openers die to opening RNG).
+
+### Demon (#44) -- Danger 1: wins 1/3 (HP-currency works; over-spend risk)
+Guide: metabrotato.com/blog/brotato-demon-build-the-ultimate-guide. Buys items
+with MAX HP (not materials); 50% materials -> Max HP at wave end; Ghost Scepter
+(kills -> Max HP) is signature. Plan: Max HP top (currency + survival + scaling),
+ranged damage / attack speed / lifesteal; harness ghost_scepter start. RESULT:
+HP-currency shopping FLOWS through the gold check fine -- the bot bought 76-88
+items (double normal!) and stacked 5 ghost scepters. Batch died 18 / WON / died 5.
+The catch: for Demon, spending "gold" = spending MAX HP = spending survival, and
+the bot's aggressive spend-down left too thin an HP buffer -> RUN 3 died wave 5
+(the guide's own "always leave an HP buffer" warning). OPTIMIZE-LATER LEVER: for
+HP-currency chars, reserve a survival buffer (an HP gold_floor). Two strong runs
+otherwise; the snowball is powerful.
