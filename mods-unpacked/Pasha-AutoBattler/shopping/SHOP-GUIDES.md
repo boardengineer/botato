@@ -645,3 +645,14 @@ count carries; with many slots the board rarely fills so sticks stack WITHOUT
 combining (combining would reduce the count Baby wants) -- the natural behaviour
 is exactly right. 7th clean 3/3. A stick-family focus could push it even harder
 (optimize-later), but the generic melee stack already wins outright.
+
+### Vagabond (#46) -- Danger 1: wins 1/3
+Guide: number13.de/brotato-vagabond-build (Tag Synergy Master). CANNOT equip
+duplicate weapons -- wants 6 DIFFERENT weapons to collect every weapon-class
+synergy tag (each = free stats). Reused the unique_weapons flag (built for
+Gladiator). Starts -5 armor, -50% luck/harvesting -> fragile early. %DAMAGE is the
+key stat (buffs all 6 different weapons regardless of type). Harness cacti_club
+start; heavy early survival phase_boost. Batch: died 18 / WON / died 17 -- 6
+unique multi-class weapons every run (RUN 2 win: laser+pistol+cacti+hatchet+torch+
+icicle = ranged/melee/elemental tags). Both losses at the w17-18 wall. The
+unique_weapons + %damage synergy plan is a clean fit.

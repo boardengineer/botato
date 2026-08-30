@@ -1431,6 +1431,38 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+	# --- #47. Guide: number13.de/brotato-technomage-build, brotatodex.com/character/
+	# character_technomage. MELEE & RANGED damage both -100% -- weapon damage does
+	# NOTHING; damage comes only from ELEMENTAL weapons + STRUCTURES (starts 2
+	# turrets; +2 elemental dmg per structure, +5% structure attack speed per
+	# elemental dmg -- they feed each other). Like a Mage (set_elemental) + Engineer
+	# (engineering/turrets) hybrid. Lock to set_elemental (torch/fireball/wand/
+	# icicle -- same lock as Mage's 3/3); harness torch start. Weights: elemental
+	# damage + engineering (both pump the turrets) + attack speed; NO melee/ranged
+	# damage (dead stats). Extra survival -- Technomage has a raised XP requirement.
+	"character_technomage": {
+		"weapon_type": "any",
+		"weapon_set": "set_elemental",
+		"stats": {
+			"stat_elemental_damage": 10.0,
+			"stat_engineering": 9.0,
+			"stat_attack_speed": 7.0,
+			"stat_max_hp": 6.0,
+			"stat_armor": 6.0,
+			"stat_percent_damage": 5.0,
+			"stat_dodge": 4.0,
+			"stat_hp_regeneration": 3.0,
+		},
+		"phase_boost": {"until_wave": 7, "stats": {
+			"stat_max_hp": 1.5, "stat_armor": 1.5,
+		}},
+		"harvest_cap": 25,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):
