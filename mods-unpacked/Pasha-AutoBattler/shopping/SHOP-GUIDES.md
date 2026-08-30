@@ -667,3 +667,14 @@ lock as Mage's 3/3), harness torch start, weights elemental damage + engineering
 (pure 6-torch board) / WON (wands + torches). The elemental lock + engineering
 turrets carry; one w17 wall death. Confirms the set-lock approach generalises
 (Mage, Golem, Technomage all work).
+
+### Vampire (#48) -- Danger 1: wins 0/3 (low-HP design, boundary)
+Guide: number13.de/brotato-vampire-build. Plays at LOW HP: +lifesteal & armor per
+missing HP; max HP halved, -100 HP regen, -100 consumable heal. Plan: lifesteal +
+attack speed (hitrate_pref) + armor lead, melee damage, LOW max HP weight, NO HP
+regen (dead stat). Sharp Tooth start. Batch: died 14 / 17 / 18 -- losses climbing
+toward the wall. The low-HP identity is inherently swingy under the bot: playing
+low maximizes the lifesteal/armor scaling but one big hit at low HP ends the run,
+so it can't bank a survival buffer the way other tanks do. Boundary 0/3 (RUN 3
+reached w18), not structural. Optimize-later: the bot has no notion of "stay at
+the sweet-spot HP" -- that is steering/sustain, not shopping.

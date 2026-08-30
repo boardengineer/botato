@@ -1494,6 +1494,42 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+	# --- #49. Guide: brotato-builds.com/builds/Beast-Master. Pure SUMMONER:
+	# WEAPONLESS (weapon_slot 0, like Bull); PETS do all damage. Starts 1 Lootworm,
+	# +2% speed per pet. Every pet scales with ALL FOUR offensive stats (melee +
+	# ranged + elemental damage + engineering). PROBLEM: pets are ITEMS whose
+	# effect has an EMPTY stat key (EFFECT_PET_*), so the stat scorer values them 0
+	# and would never buy them. FIX: big item_bonus on every pet id so the bot
+	# floods the screen with pets (its shop is tag-boosted to offer them). Weights:
+	# harvesting (afford pets) + speed (kite, +2%/pet synergy) + the four pet-
+	# scaling damage stats + survival. DUMP attack speed / range / lifesteal (guide).
+	"character_beast_master": {
+		"weapon_type": "any",
+		"stats": {
+			"stat_harvesting": 9.0,
+			"stat_speed": 8.0,
+			"stat_melee_damage": 7.0,
+			"stat_ranged_damage": 6.0,
+			"stat_elemental_damage": 6.0,
+			"stat_engineering": 6.0,
+			"stat_max_hp": 6.0,
+			"stat_armor": 5.0,
+			"stat_dodge": 5.0,
+		},
+		"item_bonus": {
+			"item_lootworm": 40.0, "item_ratzilla": 40.0, "item_bot_o_mine": 40.0,
+			"item_blazemander": 40.0, "item_bonk_dog": 40.0, "item_catling_gun": 40.0,
+			"item_doc_moth": 40.0, "item_jellyshield": 40.0, "item_scapegoat": 40.0,
+		},
+		"phase_boost": {"until_wave": 7, "stats": {
+			"stat_max_hp": 1.5, "stat_armor": 1.4, "stat_harvesting": 1.3,
+		}},
+		"harvest_cap": 55,
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):
