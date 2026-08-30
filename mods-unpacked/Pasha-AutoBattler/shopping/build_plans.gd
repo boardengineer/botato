@@ -1277,6 +1277,35 @@ const PLANS = {
 		"max_rerolls": 15,
 		"min_buy": 2.0,
 	},
+	# --- #42. Guide: number13.de/brotato-masochist-build. Ramps +5% damage (until
+	# wave end) EACH time it takes damage; starts -100% damage, +10 HP, +20 regen,
+	# 8 armor -- so it must get hit a few times before it deals damage. Wants Rocks
+	# (primitive + blunt class bonuses; harness rock start) and HIGH HP regen +
+	# armor to survive the enemy hits AND self-damage while the ramp builds. Melee.
+	# Dodge weighted LOW on purpose -- dodging denies the damage-ramp trigger (like
+	# Bull, it wants controlled hits), and high regen makes taking them safe.
+	"character_masochist": {
+		"weapon_type": "melee",
+		"stats": {
+			"stat_hp_regeneration": 10.0,
+			"stat_armor": 8.0,
+			"stat_max_hp": 8.0,
+			"stat_melee_damage": 7.0,
+			"stat_attack_speed": 6.0,
+			"stat_percent_damage": 5.0,
+			"stat_lifesteal": 4.0,
+			"stat_dodge": 2.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_hp_regeneration": 1.5, "stat_armor": 1.4,
+		}},
+		"harvest_cap": 25,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 2.0,
+	},
 }
 
 static func get_plan(character_id):

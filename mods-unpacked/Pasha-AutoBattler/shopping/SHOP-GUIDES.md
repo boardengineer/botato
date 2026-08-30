@@ -585,3 +585,14 @@ and all gold -> a huge item stack (48-55 items) of regen/armor/multipliers that
 out-heals the self-damage and clears packs (363 kills by wave 10!). Two deaths
 are the w17-18 wall, not the mechanic. Like One-Armed it banks surplus gold
 (weaponless -> item-supply cap) -- same force-spend lever applies.
+
+### Soldier (#41) -- Danger 1: wins 0/3 (bimodal -- steering-sensitive)
+Guide: number13.de/brotato-soldier-build. Stationary turret: +50% damage & +50%
+attack speed while STANDING STILL, CANNOT attack while moving. Ranged crit plan
+(crit + attack speed + ranged damage + HP/dodge). Batch: died 0 / died 18 /
+died 0 -- BIMODAL. Two runs died at wave 0: when the arbiter kites through the
+opening swarm without pausing, Soldier never fires (no attack while moving) and
+is overrun; the one run that got space to stand ramped fine to the w18 wall
+(triple shredder + tier-4 pistols, 44 items). The shopping plan is correct -- the
+failure is STEERING (Soldier needs a stand-and-shoot bias early), like Pacifist/
+partial. Optimize-later lever: steering, not shopping.
