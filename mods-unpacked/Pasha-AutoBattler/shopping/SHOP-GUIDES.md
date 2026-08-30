@@ -537,3 +537,17 @@ melee-scaling rock/spoon -> too little armor-damage at the w18 wall. OPTIMIZE-
 LATER LEVER: scaling-aware weapon scoring (prefer weapons whose scaling_stats
 align with the plan's top-weighted stats) -- would bias Golem to pure shields,
 and generally improve every plan. Systemic, so deferred to a dedicated pass.
+
+### King (#37) -- Danger 1: wins 2/3 (v2 -- harness tier-2 start was the fix)
+Guide: gamepressure.com/brotato-king-build. S-tier: +50 luck, starts with a
+random TIER-II weapon, big %damage + attack speed per TIER-IV weapon; PENALISED
+for tier-I gear. v1 (harness pistol_1 start) died 8/6/5 -- the tier-1 start both
+weakened it AND triggered King's tier-1 penalty, and the bot spread across single
+tier-1 families that never combined -> the tier-IV engine never turned on. FIX
+(harness fairness, like the weaponless-start fixes): start King with weapon_pistol_2
+(tier-2, matches the pistol-rush guide) + extend early survival phase_boost to
+wave 7. v2 -> died 14 / WON / WON: the tier-2 seed lets the pistol family combine
+up to tier 3-4 and the passive explodes damage. Medical-gun overrank still steals
+a slot or two but the tier-IV pistols/slingshot carry. LESSON: characters with a
+non-tier-1 start (King) need a tier-matched harness start, else the baseline is
+unfair.

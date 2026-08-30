@@ -1137,8 +1137,8 @@ const PLANS = {
 			"stat_dodge": 4.0,
 			"stat_lifesteal": 3.0,
 		},
-		"phase_boost": {"until_wave": 5, "stats": {
-			"stat_max_hp": 1.5, "stat_dodge": 1.4,
+		"phase_boost": {"until_wave": 7, "stats": {
+			"stat_max_hp": 1.6, "stat_dodge": 1.4, "stat_armor": 1.4,
 		}},
 		"harvest_cap": 25,
 		"item_bonus": {},
@@ -1146,6 +1146,38 @@ const PLANS = {
 		"reroll_keep": 5,
 		"max_rerolls": 15,
 		"min_buy": 2.0,
+	},
+	# --- #38. Guide: commonsensegamer.com/brotato-best-renegade-build,
+	# metabrotato.com/blog/best-renegade-build-brotato. -400% damage & -50%
+	# accuracy, BUT +2 projectiles + innate pierce, and +10% damage per UNIQUE
+	# tier-I item. So it spams weak bouncing projectiles and claws damage back by
+	# HOARDING cheap tier-1 items -- attack speed to fire constantly, and 15-20%
+	# LIFESTEAL to sustain through the slow low-damage kills. Ranged (Slingshot/SMG
+	# spam), hitrate_pref. min_buy 1 so the bot scoops up the many cheap tier-1
+	# stat items (each unique one is +10% damage; the item-count scaling is hidden
+	# from stat weights but low min_buy + cheap items approximates the hoard).
+	"character_renegade": {
+		"weapon_type": "ranged",
+		"hitrate_pref": true,
+		"stats": {
+			"stat_attack_speed": 9.0,
+			"stat_lifesteal": 8.0,
+			"stat_ranged_damage": 7.0,
+			"stat_max_hp": 6.0,
+			"stat_percent_damage": 5.0,
+			"stat_armor": 5.0,
+			"stat_dodge": 5.0,
+			"stat_crit_chance": 4.0,
+		},
+		"phase_boost": {"until_wave": 6, "stats": {
+			"stat_max_hp": 1.5, "stat_lifesteal": 1.4,
+		}},
+		"harvest_cap": 35,
+		"item_bonus": {},
+		"max_weapons": 6,
+		"reroll_keep": 5,
+		"max_rerolls": 15,
+		"min_buy": 1.0,
 	},
 }
 
