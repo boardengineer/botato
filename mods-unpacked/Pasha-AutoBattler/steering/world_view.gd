@@ -377,11 +377,14 @@ const CHARACTER_PROFILES = {
 	# repeating; handle_gold_stat pays min(cap, max(1, pct x held))): standing
 	# earns it, and a step forfeits the second already accumulated.
 	# stand x3 vs x1, gold gained (n=4): w10 613 vs 497 but 2/4 died at 33 HP,
-	# w13 701 vs 441, w15 497 vs 415, w17 763 vs 680, all 4/4. x1 through w10,
-	# x3 from w11, x1 whenever below half HP.
+	# w13 701 vs 441, w15 497 vs 415, w17 763 vs 680, all 4/4.
+	# USER OVERRIDE: prioritise MATERIALS in the FIRST 10 WAVES -- hold ground
+	# firmly (stand x3 from wave 1, the +23% income seen above) instead of the old
+	# survival-first x1-early. stand_below still drops to x1 below half HP so a
+	# critical Streamer retreats and lives to keep farming (a dead bot earns 0).
 	"character_streamer": {"anchor": "structures", "anchor_radius": 240.0,
 			"still": "prefer", "stand_income": true,
-			"stand_phases": [[10, 1.0], [99, 3.0]], "stand_below": [0.5, 1.0],
+			"stand_phases": [[99, 3.0]], "stand_below": [0.5, 1.0],
 			"gold_end": 1.6, "end_secs": 6},
 	"character_multitasker": {"anchor": "structures", "anchor_radius": 320.0,
 			"caution": 0.75},
