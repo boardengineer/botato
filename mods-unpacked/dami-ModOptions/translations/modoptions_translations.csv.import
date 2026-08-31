@@ -1,0 +1,16 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+
+[deps]
+
+files=[ "res://mods-unpacked/dami-ModOptions/translations/modoptions_translations.fr.translation", "res://mods-unpacked/dami-ModOptions/translations/modoptions_translations.en.translation" ]
+
+source_file="res://mods-unpacked/dami-ModOptions/translations/modoptions_translations.csv"
+dest_files=[ "res://mods-unpacked/dami-ModOptions/translations/modoptions_translations.fr.translation", "res://mods-unpacked/dami-ModOptions/translations/modoptions_translations.en.translation" ]
+
+[params]
+
+compress=true
+delimiter=0

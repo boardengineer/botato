@@ -82,10 +82,14 @@ func _ready():
 			arb_overrides[key.substr(4)] = float(startup_args[key])
 	
 	if not get_node("/root/ModLoader").has_node("dami-ModOptions"):
+		# Shop controls are exposed and toggled through the ModOptions mod. Without
+		# it there is no UI to turn them on, so they DEFAULT OFF (the bot still fights
+		# when enabled, but never auto-shops). Install dami-ModOptions to control them.
+		enable_autoshop = false
 		return
-	
+
 	var mod_configs_interface = get_node("/root/ModLoader/dami-ModOptions/ModsConfigInterface")
-	
+
 	if mod_configs_interface:
 		mod_configs_interface.connect("setting_changed", self, "setting_changed")
 
