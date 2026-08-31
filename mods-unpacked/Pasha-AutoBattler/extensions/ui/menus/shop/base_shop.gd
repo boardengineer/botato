@@ -71,6 +71,11 @@ func _auto_shop_player(pi) -> void:
 	var save_floor = gold_floor   # gold reserved: floor + any locked weapon's price
 	var saved_note = ""
 	var tried = {}   # ShopItem instance_id -> true, so a failed buy is not retried
+	# Proactive bans: spend the run's ban tokens to permanently remove items this
+	# character never wants (e.g. medical guns on a glass cannon) -- they leave BOTH
+	# this shop and all future ones (added to banned_items). Done once up front so the
+	# buy loop and every later reroll are already clean.
+	_apply_bans(pi, plan)
 	var actions = 0
 	while actions < MAX_ACTIONS:
 		actions += 1
@@ -174,6 +179,28 @@ func _weapon_to_save_for(nodes, gold, plan, pi):
 			best_sc = sc
 			best = node
 	return best
+
+# Proactive item bans. If the run has ban mode active (settings ban_mode_toggled ->
+# players_data.uses_ban) and tokens remain, ban every offered shop item whose my_id is
+# in the plan's ban_items list. ban_item() adds it to banned_items, so ItemService also
+# filters it out of every future shop and reroll this run -- a hard, permanent version
+# of avoid_weapons that never fires unless the player opted into ban mode. Fixes e.g.
+# the medical-gun overrank diluting glass-cannon boards, without a scoring hack.
+func _apply_bans(pi, plan) -> void:
+	var bans = plan.get("ban_items", [])
+	if bans.empty() or not RunData.is_ban_active_in_current_run():
+		return
+	var container = _get_shop_items_container(pi)
+	var pdata = RunData.players_data[pi]
+	for node in Array(container._shop_items):   # copy: banning mutates the offering
+		if node == null or not node.active:
+			continue
+		if pdata.remaining_ban_token <= 0:
+			break
+		if bans.has(node.item_data.my_id) and not pdata.banned_items.has(node.item_data.my_id_hash):
+			container.on_shop_item_ban_button_pressed(node)
+			print("BOTLOG BAN player=%d wave=%d item=%s tokens_left=%d" % [
+				pi, RunData.current_wave, node.item_data.my_id, pdata.remaining_ban_token])
 
 # Does the weapon match this plan's weapon class (set, or melee/ranged type)?
 func _on_plan_weapon(wdata, plan, pi):

@@ -752,3 +752,24 @@ perturbations regress winners, so each change is opt-in or additive.
    stragglers were NOT costing wins -- the other 5 weapons + items carry. LESSON:
    "obviously correct" behaviour (a human sells weak weapons) is empirically a net
    LOSS for the bot; items > perfect weapon tiers at Danger 1. Reverted global.
+
+## Plan-driven ban tokens (prototype)
+
+The game's ban-token tool (hold the Ban button on a shop item; challenge/settings-
+gated via ban_mode_toggled -> players_data.uses_ban, BAN_MAX_TOKEN=8/run) lets a
+player permanently remove an item from this run's shops. The bot now uses it: a new
+`ban_items` plan key lists my_ids to ban; base_shop `_apply_bans(pi, plan)` runs once
+per shop entry and, when `RunData.is_ban_active_in_current_run()` and tokens remain,
+calls `container.on_shop_item_ban_button_pressed(node)` for each offered item in the
+list (-> banned_items, so ItemService filters it from every future reroll too). No-op
+unless the player enabled ban mode, so it never affects normal runs.
+
+First target: **Apprentice** bans weapon_medical_gun_1..4 -- the base scorer over-values
+medical guns (healing ranks above their low damage) and 3 of them diluted this glass
+cannon's DPS (baseline died wave 16 with 3 medical guns). Test (ban mode forced on in
+the WaveLab harness): BOTLOG BAN fires on the wave it appears (token 8->7), boards come
+out medical-gun-free, and Apprentice went 1/3 -> 2/3 (WON / died 14 / WON). A cleaner,
+harder fix than the avoid_weapons SCORING approach that was reverted early (that also
+suppressed the medical gun's HEALING value for Doctor/Old; a per-character ban list does
+not over-generalize). Prototype -- n=3, directional; extend ban_items to other glass
+cannons (King) as wanted.

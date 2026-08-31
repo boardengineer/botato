@@ -1021,6 +1021,11 @@ const PLANS = {
 		"reroll_keep": 5,
 		"max_rerolls": 15,
 		"min_buy": 2.0,
+		# BAN prototype: the base scorer over-values medical guns (their healing ranks
+		# above their low damage), and they repeatedly diluted this glass cannon's DPS
+		# board (died wave 16 with 3 medical guns). Ban them outright when ban mode is
+		# on -- gone from this shop and every reroll after. Needs settings ban_mode.
+		"ban_items": ["weapon_medical_gun_1", "weapon_medical_gun_2", "weapon_medical_gun_3", "weapon_medical_gun_4"],
 	},
 	# --- #34. Guide: commonsensegamer.com/brotato-best-cryptid-build,
 	# gamerdiscovery.com/brotato-cryptid-build-guide. Living-tree scaler: each
