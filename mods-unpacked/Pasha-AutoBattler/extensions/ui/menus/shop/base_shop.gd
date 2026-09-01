@@ -31,6 +31,84 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	Coop.keep_mouse_enabled()
 
+# The shop's buy / reroll / go buttons are plain Buttons that do NOT receive the
+# GUI click in co-op even with listening_for_inputs held true. Route the mouse to
+# the item / button under the cursor directly (same hit-test as the level-up
+# screen): motion drives hover (item popup + highlight), a left-click buys / rerolls
+# / goes. Only for the lone human (slot 0); bots shop via _auto_shop_player.
+var _shop_hover_item = null
+func _input(event: InputEvent) -> void:
+	._input(event)
+	if not Coop.only_p1_is_human():
+		return
+	var pi = 0
+	if pi < _player_pressed_go_button.size() and _player_pressed_go_button[pi]:
+		return   # this slot already pressed GO -- done shopping
+	if event is InputEventMouseMotion:
+		_update_shop_hover(pi)
+		return
+	# Lock ('e' / ui_select) the item under the cursor -- the base uses the
+	# device-specific ui_select_<device> action, which does not fire for the
+	# remapped keyboard slot, so handle the raw action here.
+	if event is InputEventKey and event.pressed and not event.echo and event.is_action_pressed("ui_select"):
+		_shop_lock_hovered(pi)
+		return
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT):
+		return
+	var mouse = get_global_mouse_position()
+	# Buy the shop item under the cursor.
+	var over = _shop_item_at(pi, mouse)
+	if over != null:
+		_get_shop_items_container(pi).on_shop_item_buy_button_pressed(over)
+		get_tree().set_input_as_handled()
+		return
+	# Reroll / Go.
+	if _shop_hit(_get_reroll_button(pi), mouse):
+		_on_RerollButton_pressed(pi)
+		get_tree().set_input_as_handled()
+		return
+	if _shop_hit(_get_go_button(pi), mouse):
+		_on_GoButton_pressed(pi)
+		get_tree().set_input_as_handled()
+
+# Toggle the lock on the shop item under the cursor (or the focused one).
+func _shop_lock_hovered(pi) -> void:
+	var target = _shop_item_at(pi, get_global_mouse_position())
+	if target == null and pi < _focused_shop_item.size():
+		target = _focused_shop_item[pi]
+	if target == null or not is_instance_valid(target) or target.item_data == null:
+		return
+	if not target.item_data.is_lockable or RunData.get_player_effect_bool(Keys.disable_item_locking_hash, pi):
+		return
+	target.change_lock_status(not target.locked)
+	get_tree().set_input_as_handled()
+
+# The shop item under the cursor for slot pi, or null.
+func _shop_item_at(pi, mouse):
+	var container = _get_shop_items_container(pi)
+	if container == null:
+		return null
+	for item in container._shop_items:
+		if item != null and is_instance_valid(item) and item.active \
+				and item.is_visible_in_tree() and item.get_global_rect().has_point(mouse):
+			return item
+	return null
+
+# Move the keyboard selection to the item under the cursor as it moves: focusing
+# it (like an up/down nav) draws the highlight, shows the popup, and sets it as
+# the focused item so lock/ban act on it. Focusing its buy button drives the same
+# focus_entered -> shop_item_focused chain the FocusEmulator uses.
+func _update_shop_hover(pi) -> void:
+	var over = _shop_item_at(pi, get_global_mouse_position())
+	if over == null or over == _shop_hover_item:
+		return
+	_shop_hover_item = over
+	if over._button != null:
+		Utils.focus_player_control(over._button, pi)
+
+func _shop_hit(btn, mouse) -> bool:
+	return btn != null and btn.is_visible_in_tree() and not btn.disabled and btn.get_global_rect().has_point(mouse)
+
 # Should the bot auto-shop for this player slot? Mirrors the combat AI's dispatch
 # (player_movement_behavior.gd): the global enable_autobattler toggle makes EVERY
 # slot a bot (pure AutoBattler / WaveLab), while CoopService.is_bot_by_index[pi]

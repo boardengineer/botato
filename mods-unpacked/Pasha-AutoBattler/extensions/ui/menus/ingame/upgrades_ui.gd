@@ -26,6 +26,38 @@ var _plan_cache = {}   # player_index -> plan (co-op players can be different ch
 func _process(_delta: float) -> void:
 	Coop.keep_mouse_enabled()
 
+# The upgrade choose / item take-discard buttons are plain Buttons that do NOT
+# receive the GUI click in co-op even with listening_for_inputs held true (the
+# same blocker as the shop). So route a left-click to the option under the cursor
+# directly. Only for the lone human (slot 0); bots choose via _auto_pick_loop.
+func _input(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT):
+		return
+	if not Coop.only_p1_is_human() or _player_is_choosing.size() <= 0 or not _player_is_choosing[0]:
+		return
+	var container = _get_player_container(0)
+	if container == null:
+		return
+	var mouse = get_global_mouse_position()
+	if container._upgrades_container.visible:
+		for u in [container._upgrade_ui_1, container._upgrade_ui_2, container._upgrade_ui_3, container._upgrade_ui_4]:
+			if u != null and is_instance_valid(u) and u.is_visible_in_tree() \
+					and u.upgrade_data != null and u.button != null \
+					and u.button.get_global_rect().has_point(mouse):
+				container._on_choose_button_pressed(u.upgrade_data)
+				get_tree().set_input_as_handled()
+				return
+	elif container._items_container.visible:
+		if _upg_hit(container._take_button, mouse):
+			container._on_TakeButton_pressed()
+			get_tree().set_input_as_handled()
+		elif _upg_hit(container._discard_button, mouse):
+			container._on_DiscardButton_pressed()
+			get_tree().set_input_as_handled()
+
+func _upg_hit(btn, mouse) -> bool:
+	return btn != null and btn.is_visible_in_tree() and not btn.disabled and btn.get_global_rect().has_point(mouse)
+
 func _should_autopick(pi) -> bool:
 	var opts = get_node_or_null("/root/AutobattlerOptions")
 	if opts == null:
