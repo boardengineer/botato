@@ -2,7 +2,6 @@ extends "res://entities/units/player/player.gd"
 
 var ai_icon_scene = preload("res://mods-unpacked/Pasha-AutoBattler/ui/AIScene.tscn")
 var ai_icon
-var ModsConfigInterface
 
 func _ready():
 	ai_icon = ai_icon_scene.instance()
@@ -22,9 +21,7 @@ func on_setting_changed(_setting_name:String, _value, _mod_name):
 
 func check_marker_params():
 	var options_node = $"/root/AutobattlerOptions"
-	
-	options_node.load_mod_options()
-	
+
 	var ai_enabled = options_node.enable_autobattler
 	var ai_marker_enabled = options_node.enable_ai_marker
 	
@@ -36,9 +33,7 @@ func check_marker_params():
 
 func check_smoother_params():
 	var options_node = $"/root/AutobattlerOptions"
-	
-	options_node.load_mod_options()
-	
+
 	var enable_smoothing = options_node.enable_smoothing
 	var smoothing_speed = options_node.smoothing_speed
 

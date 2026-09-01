@@ -12,6 +12,8 @@ const NEW_WEAPON_MATCH = 22.0 # an empty slot filled with an on-type weapon
 const HITRATE_W = 1.6         # hitrate_pref: weight per hit/sec (SMG ~15 clamped 12 -> ~+19)
 const SCALING_W = 1.2         # scaling-aware: weight per (plan_stat_weight * scaling_factor)
 const STACK_COMBINE_BONUS = 9.0  # stack_combine: bonus per copy already held (build toward a triple)
+const DEPRIORITIZE_PENALTY = 30.0  # deprioritize_weapons: soft demotion for a trap weapon (medical gun on a glass cannon)
+const PRIORITIZE_BONUS = 25.0  # prefer_weapons: soft promotion for a key utility weapon (taser STUN on the zero-damage Pacifist -- crowd control is its only survival tool)
 
 static func get_plan(character_id):
 	return BuildPlans.get_plan(character_id)
@@ -92,6 +94,27 @@ static func score_weapon(wdata, plan, player_index):
 	var want_set = plan.get("weapon_set", "")
 	if want_set != "" and not weapon_in_set(wdata, want_set):
 		return -1.0
+	# Opt-in soft demotion for a weapon this character does NOT want but the base
+	# scorer over-values -- e.g. the medical gun (its healing ranks above its low
+	# damage) diluting a glass cannon's DPS board. A SOFT penalty (not the reverted
+	# hard avoid_weapons -1) so it still fills a slot / combines when nothing better
+	# is offered, but a real DPS weapon always outranks it. Matches by my_id
+	# substring so "weapon_medical_gun" covers every tier. Never applied globally --
+	# Doctor/Old WANT medical guns, so only their plans omit this key.
+	var deprio = 0.0
+	for dep in plan.get("deprioritize_weapons", []):
+		if dep in wdata.my_id:
+			deprio = DEPRIORITIZE_PENALTY
+			break
+	# Opt-in soft promotion for a key UTILITY weapon the base scorer under-values --
+	# e.g. the taser on Pacifist: at -100% damage its only survival tool is the
+	# stun it applies regardless of damage, so it should win support-set slots over
+	# a plain hand/lute. Matches by my_id substring ("weapon_taser" = every tier).
+	var prefer = 0.0
+	for pref in plan.get("prefer_weapons", []):
+		if pref in wdata.my_id:
+			prefer = PRIORITIZE_BONUS
+			break
 	# Gladiator: +attack speed per UNIQUE weapon family, so it wants 6 DIFFERENT
 	# weapons. Combines still tier a family up WITHOUT losing uniqueness (3 -> 1
 	# of the same family) so they stay valuable; but a NON-combining duplicate of
@@ -103,18 +126,18 @@ static func score_weapon(wdata, plan, player_index):
 	if would_combine(wdata, player_index):
 		# Among several combinable weapons, prefer the one whose damage scales on
 		# stats the plan invests in (half weight -- combines are already top priority).
-		return COMBINE_SCORE + float(wdata.tier) * 5.0 + scaling_score(wdata, plan) * 0.5
+		return COMBINE_SCORE + float(wdata.tier) * 5.0 + scaling_score(wdata, plan) * 0.5 - deprio + prefer
 	var has_slot = RunData.has_weapon_slot_available(wdata, player_index)
 	if not has_slot:
 		return -1.0   # board full and it will not combine -> not buyable/useful
 	if RunData.get_player_weapons(player_index).size() >= plan["max_weapons"]:
 		return -1.0
 	if want_set != "":
-		return NEW_WEAPON_MATCH + float(wdata.tier) * 3.0 + hitrate_bonus(wdata, plan) + scaling_score(wdata, plan) + stack_bonus(wdata, plan, player_index)  # in-set verified
+		return NEW_WEAPON_MATCH + float(wdata.tier) * 3.0 + hitrate_bonus(wdata, plan) + scaling_score(wdata, plan) + stack_bonus(wdata, plan, player_index) - deprio + prefer  # in-set verified
 	var type_ok = plan["weapon_type"] == "any" or weapon_type_str(wdata) == plan["weapon_type"]
 	if not type_ok:
 		return -1.0   # a typed plan never fills a slot with the wrong damage type
-	return NEW_WEAPON_MATCH + float(wdata.tier) * 3.0 + hitrate_bonus(wdata, plan) + scaling_score(wdata, plan) + stack_bonus(wdata, plan, player_index)
+	return NEW_WEAPON_MATCH + float(wdata.tier) * 3.0 + hitrate_bonus(wdata, plan) + scaling_score(wdata, plan) + stack_bonus(wdata, plan, player_index) - deprio + prefer
 
 # For economy-starved / thin-spread plans (Fisherman), completing a 3-of-a-kind to
 # tier a weapon UP is far better than a 6th distinct tier-1 that can never combine.

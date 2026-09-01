@@ -5,15 +5,46 @@ extends "res://ui/menus/ingame/upgrades_ui.gd"
 # any consumable/crate item. Gated by AutobattlerOptions.enable_autobattler.
 
 const ShopAdvisor = preload("res://mods-unpacked/Pasha-AutoBattler/shopping/shop_advisor.gd")
+const Coop = preload("res://mods-unpacked/Pasha-AutoBattler/extensions/ui/menus/run/coop_mouse_select.gd")
 
 const PICK_WAIT = 0.06   # let the container's button-delay timer clear between picks
 
 var _auto_busy = false
 var _plan_cache = {}   # player_index -> plan (co-op players can be different characters)
 
-func _ab_enabled() -> bool:
+# Should THIS player slot's level-up be auto-picked by the bot? Mirrors the shop
+# dispatch in base_shop._should_autoshop so combat, shopping and level-ups all
+# agree on which slots are bot-controlled: global enable_autobattler makes every
+# slot a bot (pure AutoBattler/WaveLab), otherwise it is the per-slot co-op flag
+# (F1-added bots). Each bot slot's per-bot autoshop toggle (CoopService.
+# autoshop_by_index, default on) then gates shopping AND level-ups for that slot.
+# A human slot in a mixed run returns false so the player picks it.
+# The level-up / crate-pickup UI runs with CoopService.listening_for_inputs =
+# false, so the FocusEmulators swallow the human's mouse clicks on the choose /
+# take / discard buttons. Hold it true (when a lone human commands bots) so those
+# buttons are mouse-clickable. Harmless mid-wave (those emulators focus nothing).
+func _process(_delta: float) -> void:
+	Coop.keep_mouse_enabled()
+
+func _should_autopick(pi) -> bool:
 	var opts = get_node_or_null("/root/AutobattlerOptions")
-	return opts != null and opts.enable_autobattler and opts.enable_autoshop
+	if opts == null:
+		return false
+	# Pure-AutoBattler / WaveLab: gated by the global enable_autoshop flag (default
+	# OFF; WaveLab sets it true).
+	if opts.enable_autobattler:
+		return opts.enable_autoshop
+	# Co-op: each F1-added bot opts in via its AUTO-SHOP toggle (default OFF).
+	var coop = get_node_or_null("/root/CoopService")
+	if coop == null or pi >= coop.is_bot_by_index.size() or not coop.is_bot_by_index[pi]:
+		return false
+	return pi < coop.autoshop_by_index.size() and coop.autoshop_by_index[pi]
+
+func _any_autopick() -> bool:
+	for pi in range(RunData.get_player_count()):
+		if _should_autopick(pi):
+			return true
+	return false
 
 func _plan_for(player_index):
 	if not _plan_cache.has(player_index):
@@ -23,7 +54,7 @@ func _plan_for(player_index):
 
 func _show_next_player_options() -> bool:
 	var r = ._show_next_player_options()
-	if r and _ab_enabled() and not _auto_busy:
+	if r and _any_autopick() and not _auto_busy:
 		_auto_pick_loop()
 	return r
 
@@ -39,6 +70,8 @@ func _auto_pick_loop() -> void:
 		for pi in range(RunData.get_player_count()):
 			if not _player_is_choosing[pi]:
 				continue
+			if not _should_autopick(pi):
+				continue   # human slot in a mixed run: let the player choose
 			var container = _get_player_container(pi)
 			yield(get_tree().create_timer(PICK_WAIT), "timeout")
 			if not _player_is_choosing[pi]:

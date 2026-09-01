@@ -5,6 +5,7 @@ extends "res://ui/menus/shop/base_shop.gd"
 # human runs are completely untouched.
 
 const ShopAdvisor = preload("res://mods-unpacked/Pasha-AutoBattler/shopping/shop_advisor.gd")
+const Coop = preload("res://mods-unpacked/Pasha-AutoBattler/extensions/ui/menus/run/coop_mouse_select.gd")
 
 const SETUP_WAIT = 0.35   # let _ready() finish populating the offering + UI
 const BUY_WAIT = 0.09     # container enforces a 0.05s buy lockout; clear it
@@ -15,25 +16,41 @@ const LOCK_MIN_SCORE = 28.0  # only save for a weapon at least this good (tier 2
 const LOCK_REACH = 70        # only save if its price is within ~one wave's income of current gold
 const SURPLUS_KEEP = 120     # spend_surplus: keep rerolling while gold stays above this
 const SURPLUS_MAX_REROLLS = 45  # spend_surplus: hard cap on total rerolls per shop
+const HUNT_KEEP = 30         # reroll-to-find (prefer_weapons): keep at least this much gold to buy the weapon once found (30 surfaced tasers + a taser_4 win; 60 was too passive to find any)
+const HUNT_MAX_REROLLS = 15  # reroll-to-find: hard cap on hunt rerolls per shop
 
 func _ready() -> void:
 	._ready()
+	Coop.keep_mouse_enabled()
 	if _any_autoshop():
 		call_deferred("_auto_shop")
+
+# The shop enters with CoopService.listening_for_inputs = false, which makes the
+# FocusEmulators swallow the human's mouse clicks. Hold it true (when a lone human
+# is commanding bots) so buy / reroll / go and owned-gear clicks work by mouse.
+func _process(_delta: float) -> void:
+	Coop.keep_mouse_enabled()
 
 # Should the bot auto-shop for this player slot? Mirrors the combat AI's dispatch
 # (player_movement_behavior.gd): the global enable_autobattler toggle makes EVERY
 # slot a bot (pure AutoBattler / WaveLab), while CoopService.is_bot_by_index[pi]
-# flags an individual co-op slot added with F1. Gated by enable_autoshop so the
-# shop layer can be turned off independently of combat.
+# flags an individual co-op slot added with F1. Then each bot slot's per-bot
+# autoshop toggle (CoopService.autoshop_by_index[pi], default on) gates its shop +
+# level-ups, so the shop layer can be turned off per bot, independently of combat.
 func _should_autoshop(pi) -> bool:
 	var opts = get_node_or_null("/root/AutobattlerOptions")
-	if opts == null or not opts.enable_autoshop:
+	if opts == null:
 		return false
+	# Pure-AutoBattler / WaveLab (every slot a bot): the global enable_autoshop
+	# flag decides. Default OFF; WaveLab sets it true explicitly.
 	if opts.enable_autobattler:
-		return true
+		return opts.enable_autoshop
+	# Co-op with a human: each F1-added bot slot opts in via its own AUTO-SHOP
+	# panel toggle (CoopService.autoshop_by_index, default OFF).
 	var coop = get_node_or_null("/root/CoopService")
-	return coop != null and pi < coop.is_bot_by_index.size() and coop.is_bot_by_index[pi]
+	if coop == null or pi >= coop.is_bot_by_index.size() or not coop.is_bot_by_index[pi]:
+		return false
+	return pi < coop.autoshop_by_index.size() and coop.autoshop_by_index[pi]
 
 func _any_autoshop() -> bool:
 	for pi in range(RunData.get_player_count()):
@@ -141,7 +158,16 @@ func _auto_shop_player(pi) -> void:
 		# items/pets to buy. Bounded by SURPLUS_KEEP and a hard reroll cap.
 		var surplus_spend = plan.get("spend_surplus", false) \
 			and gold - price >= SURPLUS_KEEP and rerolls < SURPLUS_MAX_REROLLS
-		if _reroll_price.size() > pi and (free or can_pay or surplus_spend):
+		# Reroll-to-find: a character whose survival hinges on a specific weapon
+		# (Pacifist's taser STUN -- its only crowd control at -100% damage) can't
+		# rely on whatever the RNG offers. While no preferred weapon is on the board
+		# and a weapon slot is still open, keep rerolling (down to HUNT_KEEP) to
+		# surface one. No-op for every plan without prefer_weapons.
+		var hunting = not plan.get("prefer_weapons", []).empty() \
+			and RunData.get_player_weapons(pi).size() < int(plan.get("max_weapons", 6)) \
+			and not _offering_has_preferred(nodes, plan) \
+			and gold - price >= HUNT_KEEP and rerolls < HUNT_MAX_REROLLS
+		if _reroll_price.size() > pi and (free or can_pay or surplus_spend or hunting):
 			rerolls += 1
 			tried.clear()   # a reroll replaces the offering
 			_on_RerollButton_pressed(pi)
@@ -158,6 +184,21 @@ func _auto_shop_player(pi) -> void:
 # cannot afford this wave but could next wave. Already-locked weapons always
 # qualify (we committed to them last wave and must keep reserving), and are
 # exempt from the reach cap. Returns the ShopItem node, or null.
+# Is any offered weapon one of the plan's prefer_weapons (matched by my_id
+# substring)? Used by reroll-to-find to stop rerolling once a taser is on the
+# board (the buy loop / lock-and-save then handles acquiring it).
+func _offering_has_preferred(nodes, plan) -> bool:
+	var prefs = plan.get("prefer_weapons", [])
+	if prefs.empty():
+		return false
+	for node in nodes:
+		if node == null or not node.active or not (node.item_data is WeaponData):
+			continue
+		for pref in prefs:
+			if pref in node.item_data.my_id:
+				return true
+	return false
+
 func _weapon_to_save_for(nodes, gold, plan, pi):
 	var best = null
 	var best_sc = LOCK_MIN_SCORE

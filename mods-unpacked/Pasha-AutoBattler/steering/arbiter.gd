@@ -249,6 +249,11 @@ const TRADE_KILLABLE_MIN = 0.15  # only bodies at least this killable join the p
 # floor, and only THERE does it stand again. Escape at the loss of firing,
 # but triggered by geometry before the pin instead of by a timer after it.
 const FIRE_STILL_WALL_MIN = 220.0
+# The perks also drop when a threat closes to melee range: a fragile stand-and-
+# shoot kit (Soldier, 10 HP) that holds its stand into the swarm at the open-
+# center spawn dies wave 0. Below this distance the stand permission is revoked so
+# the arbiter dodges; above it the kit stands, fires, and collects its +50% perks.
+const FIRE_STILL_DANGER = 130.0
 # -- Hop candidates --
 # The croc's second form drops a 10-pillar ring 250 px around the bot that
 # arms 0.54 s later; every full-speed candidate covers ~280 px over the
@@ -435,6 +440,7 @@ var predict_secs = PREDICT_SECS  # --arb-predsecs
 var w_tangent = W_TANGENT        # --arb-tangent
 var wall_swerve = 1.0            # --arb-swerve=0 reverts the dodge sim to raw v
 var w_anchor = W_ANCHOR          # --arb-anchor
+var fire_still_danger = FIRE_STILL_DANGER  # --arb-firedanger: break the fire_still stand when a threat is this close (0 = never)
 var trade_share = TRADE_HP_SHARE # --arb-trade: the damage-trade budget as a share of HP
 var fire_floor = FIRE_STILL_FLOOR # --arb-floor: the stand-and-shoot floor
 var trade_killable_min = TRADE_KILLABLE_MIN # --arb-tradekill: pool admission threshold
@@ -584,6 +590,7 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("dps"): w_dps = float(d["dps"])
 	if d.has("pickup"): w_pickup = float(d["pickup"])
 	if d.has("taken"): pickup_taken = float(d["taken"])
+	if d.has("firedanger"): fire_still_danger = float(d["firedanger"])
 	if d.has("hop"): hop_enable = float(d["hop"])
 	if d.has("stand"): stand_mult = float(d["stand"])
 	if d.has("standcommit"): stand_commit = float(d["standcommit"])
@@ -647,6 +654,15 @@ func choose(p0: Vector2, speed: float, body_radius: float, far: Vector2,
 	# One flag for every stand perk: fire_still, not escaping, and enough wall
 	# room that the stand cannot become the corner (see FIRE_STILL_WALL_MIN).
 	_stand_ok = _fire_still and not escaping and edge >= FIRE_STILL_WALL_MIN
+	# Break the stand and dodge when a threat is at melee range (see FIRE_STILL_
+	# DANGER): stand-fire when safe, run when swarmed. Keeps the +50% perks in the
+	# gaps without the fragile kit tanking the open-center opening to death.
+	if _stand_ok and fire_still_danger > 0.0:
+		var danger_sq = fire_still_danger * fire_still_danger
+		for t in threats:
+			if p0.distance_squared_to(t[0]) < danger_sq:
+				_stand_ok = false
+				break
 	last_stand_ok = _stand_ok
 
 	_anchor_on = profile.has("anchor") and w_anchor > 0.0

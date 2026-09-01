@@ -454,6 +454,15 @@ const PLANS = {
 		}},
 		"harvest_cap": 60,
 		"item_bonus": {},
+		# With -100% damage the taser's STUN is Pacifist's only crowd control, and
+		# CC is what survives the ever-growing swarm (enemies never die). Winning
+		# runs stacked tasers; taser-less runs died wave 4-9. Bias the support-set
+		# buys toward tasers so it reliably builds that CC.
+		"prefer_weapons": ["weapon_taser"],
+		# Buy duplicate tasers and combine them up: 3x taser_4 (max tier) is the
+		# crowd-control density that survives the swarm; scattered tier-2s are not
+		# enough. stack_combine biases toward stacking the tasers it already holds.
+		"stack_combine": true,
 		"max_weapons": 6,
 		"reroll_keep": 5,
 		"max_rerolls": 15,
@@ -1155,6 +1164,7 @@ const PLANS = {
 		"reroll_keep": 5,
 		"max_rerolls": 15,
 		"min_buy": 2.0,
+		# King is a crit-ranged boss-hunter that wants tier-IV pistols.
 	},
 	# --- #38. Guide: commonsensegamer.com/brotato-best-renegade-build,
 	# metabrotato.com/blog/best-renegade-build-brotato. -400% damage & -50%

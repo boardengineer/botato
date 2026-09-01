@@ -144,6 +144,15 @@ const EGG_VALUE = 60.0           # a spawner is worth far more dead than its own
 # a roaming-collection phase, and a leash would cost every material lying
 # outside it.
 const GOLD_VALUE = 0.8
+# Extra pull toward gold/material drops -- but ONLY when the floor near the player
+# is quiet (no live enemy within GOLD_DRAW_QUIET_RADIUS). A flat always-on boost
+# tanked survival (WR w18/18/20 -> w9/14/20 at just 1.2x): with many drops down,
+# their pickup pulls sum and yank the bot into danger. Gating on "no enemy close"
+# keeps the greed for the calm windows between spawn bursts -- which is exactly
+# where a human vacuums the free money -- without ever pulling into a fight.
+# Applies to the ground-material reward only (not food, not standing income).
+const GOLD_PICKUP_DRAW = 1.5
+const GOLD_DRAW_QUIET_RADIUS = 280.0  # no live enemy within this = safe to grab greedily
 const SWEEP_RADIUS = 420.0       # no enemy inside this = a quiet field, sweep the drops
 # -- Scapegoat --
 # item_scapegoat spawns a pet that enemies target INSTEAD of the player; when
@@ -462,7 +471,7 @@ const CHARACTER_PROFILES = {
 	# Pin escape overrides every fire_still perk while it runs: no floor, no
 	# kill-discount, no trade budget, no taps -- escape at the loss of firing.
 	"character_soldier": {"still": "prefer", "fire_still": true, "pin": true,
-			"caution": 0.7, "gold": 1.2, "gold_end": 2.0, "end_secs": 10},
+			"caution_phases": [[3, 1.1], [99, 0.9]], "gold": 1.2, "gold_end": 2.0, "end_secs": 10},
 	"character_speedy": {"still": "never", "caution": 1.15},
 
 	# --- Caution-only rows ---
@@ -653,6 +662,7 @@ var _kill_ref_logged = -1e9      # last value announced on BOTLOG DPSREF
 # --arb-goldval overrides just the Builder's gold value (0 = ignore, positive
 # = generic greed) to sweep the avoidance separately from the anchor.
 var char_profile = 1.0
+var gold_pickup_draw = GOLD_PICKUP_DRAW  # --arb-golddraw: sweep the gold-pickup pull
 var gold_value_override = null
 var anchor_inner_override = null # --arb-inner: sweep a perimeter row's keep-out radius
 var center_mode_override = 0.0   # --arb-centermode=<radius>: perimeter row -> center anchor
@@ -806,6 +816,9 @@ func apply_overrides(d: Dictionary) -> void:
 	if d.has("goldval"):
 		gold_value_override = float(d["goldval"])
 		print("WORLDVIEW gold_value_override=%.2f" % gold_value_override)
+	if d.has("golddraw"):
+		gold_pickup_draw = float(d["golddraw"])
+		print("WORLDVIEW gold_pickup_draw=%.2f" % gold_pickup_draw)
 	if d.has("inner"):
 		anchor_inner_override = float(d["inner"])
 		print("WORLDVIEW anchor_inner_override=%.0f" % anchor_inner_override)
@@ -952,6 +965,16 @@ func gather(main, player) -> void:
 		if shape != null and shape.shape != null and "radius" in shape.shape:
 			pickup_radius = float(shape.shape.radius)
 	var gold_value = _gold_value(row, player)
+	# Safe-gated extra greed: boost the pull toward drops only while no live enemy
+	# is within GOLD_DRAW_QUIET_RADIUS, so it never yanks the bot into a fight.
+	var draw_sq = GOLD_DRAW_QUIET_RADIUS * GOLD_DRAW_QUIET_RADIUS
+	var enemy_near = false
+	for en in spawner.enemies:
+		if is_instance_valid(en) and not en.dead and not en.is_loot \
+				and en.position.distance_squared_to(pos) < draw_sq:
+			enemy_near = true
+			break
+	var draw = 1.0 if enemy_near else gold_pickup_draw
 	# Sweep: between spawn bursts the floor is free money and the human walks
 	# it (Explorer #27048 left 2-34 bonus gold a wave, the bot ~half its
 	# drops). With no enemy inside sweep_radius the drops are worth more.
@@ -973,7 +996,7 @@ func gather(main, player) -> void:
 		if "attracted_by" in g and g.attracted_by != null:
 			continue
 		if g.position.distance_squared_to(pos) < pickup_sq:
-			rewards.push_back([g.position, gold_value])
+			rewards.push_back([g.position, gold_value * draw])
 
 	# Scapegoat revive (see REVIVE_VALUE): a dead goat's zone is a held reward.
 	if revive_mult > 0.0 and ("pets" in spawner):
