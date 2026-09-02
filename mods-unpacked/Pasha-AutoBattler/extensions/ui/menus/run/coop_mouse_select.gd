@@ -120,6 +120,37 @@ static func keep_mouse_enabled() -> void:
 		CoopService.listening_for_inputs = true
 
 
+# Advance the active-player focus to the next connected slot (wraps). Used by the
+# in-run TAB cycling so a lone human can take over any player's panel. No-op unless
+# a lone human is commanding bots.
+static func cycle_focus() -> void:
+	if not only_p1_is_human():
+		return
+	var count = CoopService.connected_players.size()
+	if count < 2:
+		return
+	CoopService.current_player_index = (CoopService.current_player_index + 1) % count
+
+
+# Position an outline Panel (from make_outline) over an arbitrary control, tinted
+# with the given slot's player color. Hides it when the panel is gone. Used by the
+# in-run screens (shop, level-up, HUD) that don't expose sel._get_panels().
+static func update_outline_panel(outline, panel, idx: int) -> void:
+	if outline == null:
+		return
+	if panel == null or not (panel is Control) or not panel.is_visible_in_tree() \
+			or idx < 0 or idx >= RunData.get_player_count():
+		outline.visible = false
+		return
+	var rect = panel.get_global_rect()
+	outline.rect_global_position = rect.position
+	outline.rect_size = rect.size
+	var sb = outline.get_stylebox("panel")
+	if sb is StyleBoxFlat and CoopService.has_method("get_player_color"):
+		sb.border_color = CoopService.get_player_color(idx)
+	outline.visible = true
+
+
 # A raw mouse event carries no player (FocusEmulatorSignal == -1, then rejected).
 # Point it at the given slot so the base handler assigns the pick to that player.
 # A real emulator (keyboard/gamepad) event already carries its player, so leave it.

@@ -39,10 +39,8 @@ func _process(_delta):
 
 	if not _options.enable_autobattler:
 		_apply("BOT OFF   shift+space", COLOR_OFF)
-	elif _options.use_arbiter:
-		_apply("BOT ON - ARBITER   shift+A", COLOR_ARBITER)
 	else:
-		_apply("BOT ON - FIELD   shift+A", COLOR_FIELD)
+		_apply("BOT ON - ARBITER", COLOR_ARBITER)
 
 
 # NOT named _set: that is an Object virtual (property setter) and overriding it

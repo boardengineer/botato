@@ -56,5 +56,12 @@ func _on_element_pressed(element: InventoryElement, inventory_player_index: int)
 
 
 func _on_element_focused(element: InventoryElement, inventory_player_index: int, displayPanelData: bool = true) -> void:
+	# With bots present, a hover must not wipe an already-confirmed weapon: the base
+	# focus handler unconditionally nulls _player_weapons[pi] and clears the selection.
+	# Skip it for a slot that has already chosen -- a click still changes the pick.
+	if Coop.only_p1_is_human():
+		var pi = FocusEmulatorSignal.get_player_index(element)
+		if pi >= 0 and pi < _player_weapons.size() and _player_weapons[pi] != null:
+			return
 	Coop.route_to(element, inventory_player_index)
 	._on_element_focused(element, inventory_player_index, displayPanelData)

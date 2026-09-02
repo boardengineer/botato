@@ -12,6 +12,11 @@ func _ready() -> void:
 	._ready()
 	Coop.enable_mouse_grid(self, RunData.is_coop_run)
 	Coop.keep_mouse_enabled()
+	# Character select leaves current_player_index wherever the F1 bot-add cycling
+	# last put it (often a bot slot). Danger is a single shared choice driven by the
+	# human, so default it back to the first player on entry.
+	if Coop.only_p1_is_human():
+		CoopService.current_player_index = 0
 
 
 func _process(delta: float) -> void:

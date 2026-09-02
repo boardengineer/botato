@@ -19,11 +19,6 @@ const ENABLE_AUTOSHOP_OPTION_NAME = "ENABLE_AUTOSHOP"
 var enable_ai_visuals : bool = false
 const ENABLE_AI_VISUALS_OPTION_NAME = "ENABLE_AI_VISUALS"
 
-# Steering controller select: false = potential field, true = candidate-action
-# arbiter. Benchmarks set it with --arbiter=1; Shift+A toggles it live. Defaults
-# ON (the controller under development). Not persisted -- startup arg or hotkey only.
-var use_arbiter : bool = true
-
 # Arbiter weight overrides harvested from --arb-<name>=<value> startup args.
 var arb_overrides : Dictionary = {}
 
@@ -72,9 +67,6 @@ func _ready():
 	# Benchmarks pick the controller on the command line; it must win over the
 	# saved config so a bench run never inherits whatever was toggled by hand.
 	var startup_args = Utils.get_startup_arguments()
-	if startup_args.has("arbiter"):
-		use_arbiter = int(startup_args["arbiter"]) != 0
-		print("ARBITER %s (startup arg)" % ("on" if use_arbiter else "off"))
 	for key in startup_args.keys():
 		if key.begins_with("arb-"):
 			arb_overrides[key.substr(4)] = float(startup_args[key])
@@ -83,10 +75,6 @@ func _ready():
 func _input(event):
 	# `pressed` + `echo` guards stop a toggle firing twice per press / on auto-repeat.
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.shift and event.scancode == KEY_A and option_cooldown < 0.0:
-			option_cooldown = DEFAULT_COOLDOWN
-			use_arbiter = not use_arbiter
-			print("ARBITER %s" % ("on" if use_arbiter else "off"))
 		if event.shift and event.scancode == KEY_SPACE and option_cooldown < 0.0:
 			option_cooldown = DEFAULT_COOLDOWN
 			enable_autobattler = not enable_autobattler
@@ -141,7 +129,6 @@ func reset_defaults() -> void:
 	enable_ai_marker = true
 	enable_ai_visuals = false
 	enable_smoothing = true
-	use_arbiter = true
 
 	smoothing_speed = 1
 	item_weight = 0.5

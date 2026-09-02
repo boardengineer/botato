@@ -45,6 +45,13 @@ func _on_element_pressed(element: InventoryElement, _inventory_player_index: int
 
 
 func _on_element_focused(element: InventoryElement, inventory_player_index: int, displayPanelData: bool = true) -> void:
+	# With bots present, don't let a hover disturb an already-confirmed character (a
+	# click still changes it). The base clears only when nothing is confirmed, but
+	# skip it outright here so the confirmed slot's highlight/panel stay put.
+	if Coop.only_p1_is_human():
+		var pi = FocusEmulatorSignal.get_player_index(element)
+		if pi >= 0 and pi < _player_characters.size() and _player_characters[pi] != null:
+			return
 	Coop.route_to(element, CoopService.current_player_index)
 	._on_element_focused(element, inventory_player_index, displayPanelData)
 
@@ -61,20 +68,24 @@ func _build_panel_toggles() -> void:
 		var panel = panels[i]
 		if toggle == null or panel == null:
 			continue
-		# Drop it into the panel's content column, at the top so it never fights
-		# the character visual (which expands to fill the rest).
+		# Drop a labeled row into the panel's content column, at the top so it never
+		# fights the character visual (which expands to fill the rest). The row's
+		# visibility is what we show/hide; the switch inside stays visible.
 		var host = panel.get_node("vboxContainer") if panel.has_node("vboxContainer") else panel
-		host.add_child(toggle)
-		host.move_child(toggle, 0)
+		var row = HBoxContainer.new()
+		row.alignment = BoxContainer.ALIGN_CENTER
+		row.visible = false
+		var label = Label.new()
+		label.text = "Auto-shop"
+		row.add_child(label)
+		row.add_child(toggle)
+		host.add_child(row)
+		host.move_child(row, 0)
 
 
 func _make_toggle(slot: int) -> CheckButton:
 	var toggle = CheckButton.new()
-	toggle.text = "AUTO-SHOP"
-	toggle.clip_text = true
-	toggle.visible = false
 	toggle.focus_mode = Control.FOCUS_NONE   # keep it out of the co-op focus chain
-	toggle.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	toggle.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var _e = toggle.connect("toggled", self, "_on_panel_toggle_toggled", [slot])
 	return toggle
@@ -93,7 +104,8 @@ func _refresh_panel_toggles() -> void:
 			continue
 		var is_bot = i < CoopService.is_bot_by_index.size() and CoopService.is_bot_by_index[i]
 		var show = RunData.is_coop_run and is_bot and i < count
-		toggle.visible = show
+		if toggle.get_parent() != null:
+			toggle.get_parent().visible = show   # the labeled row
 		if show and i < CoopService.autoshop_by_index.size():
 			toggle.pressed = CoopService.autoshop_by_index[i]
 

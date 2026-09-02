@@ -19,17 +19,37 @@ const SURPLUS_MAX_REROLLS = 45  # spend_surplus: hard cap on total rerolls per s
 const HUNT_KEEP = 30         # reroll-to-find (prefer_weapons): keep at least this much gold to buy the weapon once found (30 surfaced tasers + a taser_4 win; 60 was too passive to find any)
 const HUNT_MAX_REROLLS = 15  # reroll-to-find: hard cap on hunt rerolls per shop
 
+var _focus_outline = null
+
 func _ready() -> void:
 	._ready()
 	Coop.keep_mouse_enabled()
+	if Coop.only_p1_is_human():
+		# Start each shop on the human's own panel; TAB cycles to a bot's shop.
+		CoopService.current_player_index = 0
+		_focus_outline = Coop.make_outline()
+		add_child(_focus_outline)
 	if _any_autoshop():
 		call_deferred("_auto_shop")
+
+# The co-op shop container (panel) for slot pi, or null. _get_coop_player_container
+# is CoopShop-only, so invoke it dynamically to satisfy the BaseShop parser.
+func _shop_panel(pi):
+	if not has_method("_get_coop_player_container"):
+		return null
+	return call("_get_coop_player_container", pi)
 
 # The shop enters with CoopService.listening_for_inputs = false, which makes the
 # FocusEmulators swallow the human's mouse clicks. Hold it true (when a lone human
 # is commanding bots) so buy / reroll / go and owned-gear clicks work by mouse.
 func _process(_delta: float) -> void:
 	Coop.keep_mouse_enabled()
+	# Outline the TAB-focused player's shop panel. current_player_index (set by TAB,
+	# CoopService._input) is the slot the human's mouse + keyboard drive; the base
+	# FocusEmulators already process that slot, so no pin is needed here anymore.
+	if _focus_outline != null:
+		var pi = CoopService.current_player_index
+		Coop.update_outline_panel(_focus_outline, _shop_panel(pi), pi)
 
 # The shop's buy / reroll / go buttons are plain Buttons that do NOT receive the
 # GUI click in co-op even with listening_for_inputs held true. Route the mouse to
@@ -38,10 +58,30 @@ func _process(_delta: float) -> void:
 # / goes. Only for the lone human (slot 0); bots shop via _auto_shop_player.
 var _shop_hover_item = null
 func _input(event: InputEvent) -> void:
+	# TAB cycles the active player. Intercept it BEFORE the base _input (the shop's
+	# carousel / focus navigation consumes TAB before the CoopService global handler).
+	if Coop.only_p1_is_human() and event is InputEventKey and event.pressed \
+			and not event.echo and event.scancode == KEY_TAB:
+		var before = CoopService.current_player_index
+		Coop.cycle_focus()
+		if CoopService.current_player_index != before:
+			get_tree().set_input_as_handled()
+		return
 	._input(event)
 	if not Coop.only_p1_is_human():
 		return
-	var pi = 0
+	# Act on the TAB-focused player's shop region (their items/buttons are hit-tested
+	# under the cursor). Defaults to slot 0 (the human) until TAB cycles.
+	var pi = CoopService.current_player_index
+	if pi < 0 or pi >= RunData.get_player_count():
+		pi = 0
+	# When the owned-gear actions popup is OPEN (its cancel button is showing --
+	# buttons_enabled is always true in the scene, so gate on real visibility),
+	# its combine / discard / cancel buttons take the mouse.
+	var popup = _get_item_popup(pi)
+	if popup != null and popup._cancel_button != null and popup._cancel_button.is_visible_in_tree():
+		_handle_shop_popup(popup, event)
+		return
 	if pi < _player_pressed_go_button.size() and _player_pressed_go_button[pi]:
 		return   # this slot already pressed GO -- done shopping
 	if event is InputEventMouseMotion:
@@ -53,9 +93,29 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.is_action_pressed("ui_select"):
 		_shop_lock_hovered(pi)
 		return
+	# Space / ui_accept opens the actions popup on the hovered OWNED weapon/item --
+	# the device-specific ui_accept never fires for the remapped keyboard slot, so
+	# press the hovered gear element ourselves (its press emits element_pressed,
+	# which the popup manager routes to the actions handler).
+	if event is InputEventKey and event.pressed and not event.echo and event.is_action_pressed("ui_accept"):
+		if _shop_hover_item != null and is_instance_valid(_shop_hover_item) and _shop_hover_item is InventoryElement:
+			_shop_hover_item._on_InventoryElement_pressed()
+			get_tree().set_input_as_handled()
+		return
 	if not (event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT):
 		return
 	var mouse = get_global_mouse_position()
+	# Tab arrows: switch the carousel between the shop and the character stats.
+	var car = _shop_carousel(pi)
+	if car != null:
+		if _shop_hit(car.arrow_left, mouse):
+			car.index = car.index - 1
+			get_tree().set_input_as_handled()
+			return
+		if _shop_hit(car.arrow_right, mouse):
+			car.index = car.index + 1
+			get_tree().set_input_as_handled()
+			return
 	# Buy the shop item under the cursor.
 	var over = _shop_item_at(pi, mouse)
 	if over != null:
@@ -94,20 +154,83 @@ func _shop_item_at(pi, mouse):
 			return item
 	return null
 
-# Move the keyboard selection to the item under the cursor as it moves: focusing
-# it (like an up/down nav) draws the highlight, shows the popup, and sets it as
-# the focused item so lock/ban act on it. Focusing its buy button drives the same
-# focus_entered -> shop_item_focused chain the FocusEmulator uses.
+# Move the keyboard selection to whatever the cursor is over as it moves --
+# shop item, reroll/go button, or an owned weapon/item -- so the highlight and
+# popup follow the mouse like an up/down nav (and lock/ban act on the hovered
+# shop item). Focusing the control drives the same focus_entered chain the
+# FocusEmulator uses.
 func _update_shop_hover(pi) -> void:
-	var over = _shop_item_at(pi, get_global_mouse_position())
-	if over == null or over == _shop_hover_item:
+	var target = _shop_hover_target(pi, get_global_mouse_position())
+	if target == null or target == _shop_hover_item:
 		return
-	_shop_hover_item = over
-	if over._button != null:
-		Utils.focus_player_control(over._button, pi)
+	_shop_hover_item = target
+	Utils.focus_player_control(target, pi)
+
+# The carousel (shop <-> stats tabs) for slot pi, or null.
+func _shop_carousel(pi):
+	# _get_coop_player_container is CoopShop-only (not declared on BaseShop), so
+	# invoke it dynamically to satisfy the parser.
+	if not has_method("_get_coop_player_container"):
+		return null
+	var c = call("_get_coop_player_container", pi)
+	return c.carousel if (c != null and ("carousel" in c)) else null
+
+# The focusable control under the cursor for slot pi (its focus target), or null.
+func _shop_hover_target(pi, mouse):
+	var car = _shop_carousel(pi)
+	if car != null:
+		if _shop_hit(car.arrow_left, mouse):
+			return car.arrow_left
+		if _shop_hit(car.arrow_right, mouse):
+			return car.arrow_right
+	var items = _get_shop_items_container(pi)
+	if items != null:
+		for item in items._shop_items:
+			if item != null and is_instance_valid(item) and item.active \
+					and item.is_visible_in_tree() and item.get_global_rect().has_point(mouse):
+				return item._button
+	if _shop_hit(_get_reroll_button(pi), mouse):
+		return _get_reroll_button(pi)
+	if _shop_hit(_get_go_button(pi), mouse):
+		return _get_go_button(pi)
+	var gear = _get_gear_container(pi)
+	if gear != null:
+		for src in [gear.weapons_container, gear.items_container]:
+			# The elements live under the InventoryContainer's inner Inventory
+			# (_elements), not as its direct children.
+			if src == null or not ("_elements" in src) or src._elements == null:
+				continue
+			for e in src._elements.get_children():
+				if e is Control and e.is_visible_in_tree() and e.get_global_rect().has_point(mouse):
+					return e
+	return null
 
 func _shop_hit(btn, mouse) -> bool:
 	return btn != null and btn.is_visible_in_tree() and not btn.disabled and btn.get_global_rect().has_point(mouse)
+
+# Mouse hover + click for the owned-gear actions popup (combine / discard / cancel).
+func _handle_shop_popup(popup, event) -> void:
+	var mouse = get_global_mouse_position()
+	var buttons = [popup._combine_button, popup._discard_button, popup._cancel_button]
+	if event is InputEventMouseMotion:
+		for btn in buttons:
+			if _shop_hit(btn, mouse):
+				if btn != _shop_hover_item:
+					_shop_hover_item = btn
+					Utils.focus_player_control(btn, 0)
+				break
+		return
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT):
+		return
+	if _shop_hit(popup._combine_button, mouse):
+		popup.emit_signal("item_combine_button_pressed", popup._item_data)
+		get_tree().set_input_as_handled()
+	elif _shop_hit(popup._discard_button, mouse):
+		popup.emit_signal("item_discard_button_pressed", popup._item_data)
+		get_tree().set_input_as_handled()
+	elif _shop_hit(popup._cancel_button, mouse):
+		popup.emit_signal("item_cancel_button_pressed", popup._item_data)
+		get_tree().set_input_as_handled()
 
 # Should the bot auto-shop for this player slot? Mirrors the combat AI's dispatch
 # (player_movement_behavior.gd): the global enable_autobattler toggle makes EVERY
@@ -119,16 +242,19 @@ func _should_autoshop(pi) -> bool:
 	var opts = get_node_or_null("/root/AutobattlerOptions")
 	if opts == null:
 		return false
-	# Pure-AutoBattler / WaveLab (every slot a bot): the global enable_autoshop
-	# flag decides. Default OFF; WaveLab sets it true explicitly.
+	# A co-op bot slot (F1-added) uses its OWN per-slot AUTO-SHOP toggle, checked
+	# FIRST -- independent of the global AutoBattler switch, which may be on for the
+	# human's own AI assist. Mirrors the combat gate (player_movement_behavior: AI
+	# runs when enable_autobattler OR is_bot_by_index[pi]); checking the global flag
+	# first here instead would ignore the per-bot toggles in co-op.
+	var coop = get_node_or_null("/root/CoopService")
+	if coop != null and pi < coop.is_bot_by_index.size() and coop.is_bot_by_index[pi]:
+		return pi < coop.autoshop_by_index.size() and coop.autoshop_by_index[pi]
+	# Otherwise pure-AutoBattler / WaveLab (every slot a bot): the global
+	# enable_autoshop flag decides. Default OFF; WaveLab sets it true explicitly.
 	if opts.enable_autobattler:
 		return opts.enable_autoshop
-	# Co-op with a human: each F1-added bot slot opts in via its own AUTO-SHOP
-	# panel toggle (CoopService.autoshop_by_index, default OFF).
-	var coop = get_node_or_null("/root/CoopService")
-	if coop == null or pi >= coop.is_bot_by_index.size() or not coop.is_bot_by_index[pi]:
-		return false
-	return pi < coop.autoshop_by_index.size() and coop.autoshop_by_index[pi]
+	return false
 
 func _any_autoshop() -> bool:
 	for pi in range(RunData.get_player_count()):
