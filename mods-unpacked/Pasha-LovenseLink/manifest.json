@@ -1,8 +1,8 @@
 {
-	"name": "AutoBattler",
+	"name": "LovenseLink",
 	"namespace": "Pasha",
-	"version_number": "2.0.0",
-	"description": "Do you want to work for potatoes or do you want potatoes to work for you?",
+	"version_number": "0.1.0",
+	"description": "Drives a Lovense device from the enemy count. Configure from the Lovense button on the main menu; needs Game Mode enabled in the Lovense Remote app on the same network.",
 	"website_url": "",
 	"dependencies": [],
 	"extra": {
