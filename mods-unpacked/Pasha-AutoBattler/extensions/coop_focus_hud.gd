@@ -1,6 +1,6 @@
 extends CanvasLayer
 # In-arena highlight for the TAB-focused co-op player. A self-contained node added
-# to Main (alongside ai_hud) so it never has to touch Main's _ready/_process chain.
+# to Main so it never has to touch Main's _ready/_process chain.
 # Each frame it outlines the focused player's HUD block (PlayerUIElements.hud_
 # container), tinted with their color -- the same outline used on the menu screens.
 # Only active for a lone human commanding bots; the shop / level-up screens draw
