@@ -20,6 +20,7 @@ const HUNT_KEEP = 30         # reroll-to-find (prefer_weapons): keep at least th
 const HUNT_MAX_REROLLS = 15  # reroll-to-find: hard cap on hunt rerolls per shop
 
 var _focus_outline = null
+var _prev_ban_cur = -1   # last slot whose ban buttons were restored on TAB focus change
 
 func _ready() -> void:
 	._ready()
@@ -50,6 +51,33 @@ func _process(_delta: float) -> void:
 	if _focus_outline != null:
 		var pi = CoopService.current_player_index
 		Coop.update_outline_panel(_focus_outline, _shop_panel(pi), pi)
+	# Suppress the cross-player ban flicker at the source. The device-7 remap can
+	# fire a non-focused player's ban button (banning their selected item; the
+	# on_shop_item_banned guard then undoes it -- a visible blip). A disabled ban
+	# button makes _on_BanButton_button_down early-return, so keep every non-focused
+	# player's ban buttons disabled. The focused slot keeps the base's own handling
+	# (so the human can still ban there); bots auto-ban via _apply_bans, which calls
+	# the container directly and never touches these buttons.
+	if Coop.only_p1_is_human():
+		var cur = CoopService.current_player_index
+		# On a TAB focus change, restore the newly-focused player's ban buttons (they
+		# were held disabled while another slot was focused) via the base's own logic.
+		if cur != _prev_ban_cur:
+			_prev_ban_cur = cur
+			var ccont = _get_shop_items_container(cur)
+			if ccont != null:
+				for cit in ccont._shop_items:
+					if cit != null and is_instance_valid(cit) and cit.has_method("manage_ban_button_visibility"):
+						cit.manage_ban_button_visibility()
+		for p in range(RunData.get_player_count()):
+			if p == cur:
+				continue
+			var cont = _get_shop_items_container(p)
+			if cont == null:
+				continue
+			for it in cont._shop_items:
+				if it != null and is_instance_valid(it) and ("_ban_button" in it) and it._ban_button != null:
+					it._ban_button.disabled = true
 
 # The shop's buy / reroll / go buttons are plain Buttons that do NOT receive the
 # GUI click in co-op even with listening_for_inputs held true. Route the mouse to
@@ -67,6 +95,22 @@ func _input(event: InputEvent) -> void:
 		if CoopService.current_player_index != before:
 			get_tree().set_input_as_handled()
 		return
+	# Coop-ban scoping. The base _input loop drives the ban on EVERY player whose
+	# is_player_ui_coop_ban_pressed is true, and the device-7 remap makes that true
+	# for all players from one key -- so a ban press starts the ban on every focused
+	# item at once (every open ban dialog fires). Handle the ban ONLY for the TAB-
+	# focused player and consume it, so the base loop never bans the others.
+	if Coop.only_p1_is_human():
+		var bpi = CoopService.current_player_index
+		if bpi >= 0 and bpi < RunData.get_player_count():
+			if Utils.is_player_ui_coop_ban_pressed(event, bpi):
+				_shop_ban_press(bpi)
+				get_tree().set_input_as_handled()
+				return
+			if Utils.is_player_ui_coop_ban_released(event, bpi):
+				_shop_ban_release(bpi)
+				get_tree().set_input_as_handled()
+				return
 	._input(event)
 	if not Coop.only_p1_is_human():
 		return
@@ -142,6 +186,61 @@ func _shop_lock_hovered(pi) -> void:
 		return
 	target.change_lock_status(not target.locked)
 	get_tree().set_input_as_handled()
+
+# Drive the ban press / release on ONLY player pi's focused shop item, mirroring
+# the base _input loop's conditions -- so the human's single ban key bans just the
+# TAB-focused player, never every player's focused item at once.
+func _shop_ban_target(pi):
+	if pi < 0 or pi >= _focused_shop_item.size():
+		return null
+	var item = _focused_shop_item[pi]
+	if item == null or not is_instance_valid(item) or item.item_data == null or item.item_data is WeaponData:
+		return null
+	var pdata = RunData.players_data[pi]
+	if pdata.remaining_ban_token <= 0 or pdata.banned_items.has(item.item_data.my_id_hash):
+		return null
+	return item
+
+func _shop_ban_press(pi) -> void:
+	if not ChallengeService.is_challenge_completed(ChallengeService.chal_banned_items_hash) \
+			or not RunData.is_ban_active_in_current_run():
+		return
+	# Cancel any ban HOLD still filling on another player before starting this one.
+	# The device-7 remap lets a single key start a hold on any focused item; if one
+	# was left open on a different player it would complete on its own (a second
+	# ban). Clearing ban_button_presed stops that fill loop WITHOUT banning.
+	for other in range(RunData.get_player_count()):
+		if other != pi and other < _focused_shop_item.size():
+			var oitem = _focused_shop_item[other]
+			if oitem != null and is_instance_valid(oitem) and ("ban_button_presed" in oitem) and oitem.ban_button_presed:
+				oitem.ban_button_presed = false
+	var item = _shop_ban_target(pi)
+	if item != null:
+		item._on_BanButton_button_down()
+
+func _shop_ban_release(pi) -> void:
+	var item = _shop_ban_target(pi)
+	if item != null:
+		item._release_BanButton()
+
+# DIAGNOSTIC: fires for every ban regardless of path -- if one ban action logs
+# multiple players, the multi-ban is happening (and via what index).
+func on_shop_item_banned(shop_item, player_index) -> void:
+	# Ban-scope guard (catch-all). The device-7 remap lets one ban key reach every
+	# player's focused item, so a single ban can land on a slot other than the TAB-
+	# focused one. Every ban -- whatever triggered it -- funnels through here, so if
+	# it hit a NON-focused player (and it isn't a bot auto-banning its own shop),
+	# reverse it: restore the token, drop it from the banned list, re-activate the
+	# item, and DON'T remove it from the offering.
+	if Coop.only_p1_is_human() and not CoopService.auto_banning \
+			and player_index != CoopService.current_player_index:
+		var pdata = RunData.players_data[player_index]
+		pdata.banned_items.erase(shop_item.item_data.my_id_hash)
+		pdata.remaining_ban_token += 1
+		if shop_item.has_method("activate"):
+			shop_item.activate()
+		return
+	.on_shop_item_banned(shop_item, player_index)
 
 # The shop item under the cursor for slot pi, or null.
 func _shop_item_at(pi, mouse):
@@ -437,6 +536,9 @@ func _apply_bans(pi, plan) -> void:
 		return
 	var container = _get_shop_items_container(pi)
 	var pdata = RunData.players_data[pi]
+	# The ban-scope guard (shop_items_container) blocks bans on any non-focused
+	# player's shop; this bot is legitimately banning its OWN shop, so flag it.
+	CoopService.auto_banning = true
 	for node in Array(container._shop_items):   # copy: banning mutates the offering
 		if node == null or not node.active:
 			continue
@@ -446,6 +548,7 @@ func _apply_bans(pi, plan) -> void:
 			container.on_shop_item_ban_button_pressed(node)
 			print("BOTLOG BAN player=%d wave=%d item=%s tokens_left=%d" % [
 				pi, RunData.current_wave, node.item_data.my_id, pdata.remaining_ban_token])
+	CoopService.auto_banning = false
 
 # Does the weapon match this plan's weapon class (set, or melee/ranged type)?
 func _on_plan_weapon(wdata, plan, pi):
