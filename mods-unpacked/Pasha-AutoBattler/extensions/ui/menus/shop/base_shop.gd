@@ -86,6 +86,15 @@ func _process(_delta: float) -> void:
 # / goes. Only for the lone human (slot 0); bots shop via _auto_shop_player.
 var _shop_hover_item = null
 func _input(event: InputEvent) -> void:
+	# Solo 'e'-lock fix: do NOT forward the ui_select press to the base _input. BaseShop's
+	# lock-on-select code is dead in vanilla solo (Shop._input never calls super); this
+	# extension's wrapper was resurrecting it, and it double-toggled against the scene's
+	# own native lock handler -- lock+unlock on every press, i.e. 'e' appeared dead while
+	# mouse-clicking the lock button (single toggle) worked. Step aside WITHOUT consuming,
+	# so the native handler stays the one and only lock path, exactly like an unmodded game.
+	if not RunData.is_coop_run and event is InputEventKey and event.pressed and not event.echo \
+			and event.is_action_pressed("ui_select"):
+		return
 	# TAB cycles the active player. Intercept it BEFORE the base _input (the shop's
 	# carousel / focus navigation consumes TAB before the CoopService global handler).
 	if Coop.only_p1_is_human() and event is InputEventKey and event.pressed \
@@ -113,6 +122,9 @@ func _input(event: InputEvent) -> void:
 				return
 	._input(event)
 	if not Coop.only_p1_is_human():
+		# Plain solo: nothing more to do -- 'e' locking is handled by the scene's own native
+		# path (this wrapper steps aside for ui_select above), and the FocusEmulator is held
+		# dormant (see focus_emulator.gd), so input behaves exactly like an unmodded game.
 		return
 	# Act on the TAB-focused player's shop region (their items/buttons are hit-tested
 	# under the cursor). Defaults to slot 0 (the human) until TAB cycles.
@@ -131,9 +143,9 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		_update_shop_hover(pi)
 		return
-	# Lock ('e' / ui_select) the item under the cursor -- the base uses the
-	# device-specific ui_select_<device> action, which does not fire for the
-	# remapped keyboard slot, so handle the raw action here.
+	# Lock ('e' / ui_select) the hovered item for the TAB-focused player. In co-op the base
+	# loop's is_player_select_pressed uses the shared device-7 "ui_select_7" action, which
+	# the physical 'e' never fires, so the base never locks here -- drive it ourselves.
 	if event is InputEventKey and event.pressed and not event.echo and event.is_action_pressed("ui_select"):
 		_shop_lock_hovered(pi)
 		return
