@@ -3,9 +3,11 @@ extends Node
 signal setting_changed(setting_name, value, mod_name)
 
 # Runtime option store for the AutoBattler mod. Values are mirrored as plain vars
-# for short reads. Persisted to a ConfigFile directly -- no dami-ModOptions
-# dependency (removed for a clean, standalone export). Toggled via the hotkeys
-# below and, for co-op bots, the per-bot AUTO-SHOP panel toggle.
+# for short reads, persisted to a ConfigFile directly. When the optional
+# dami-ModOptions mod is present, EXACTLY two of them -- Enable Bot
+# (ENABLE_AUTOBATTLER) and Autoshop (ENABLE_AUTOSHOP), declared in manifest
+# config_schema -- are exposed in its panel and kept in sync here; nothing else is
+# surfaced. Also toggled via the hotkey below and the per-bot AUTO-SHOP panel toggle.
 
 var enable_autobattler : bool = false
 const ENABLE_AUTOBATTLER_OPTION_NAME = "ENABLE_AUTOBATTLER"
@@ -53,6 +55,7 @@ var bumper_distance : float = 300
 const BUMPER_DISTANCE_OPTION_NAME = "BUMPER_DISTANCE"
 
 const DEFAULT_COOLDOWN = .2
+var _last_ss_ms = 0   # OS.get_ticks_msec of the last Shift+Space toggle (debounce)
 var option_cooldown = DEFAULT_COOLDOWN
 
 const MOD_NAME = "Pasha-AutoBattler"
@@ -63,6 +66,9 @@ const CONFIG_SECTION = "options"
 func _ready():
 	reset_defaults()
 	load_mod_options()
+	# When ModOptions is installed, let its panel own the two exposed toggles: read
+	# their current values and listen for live changes. No-op without the mod.
+	_connect_modoptions()
 
 	# Benchmarks pick the controller on the command line; it must win over the
 	# saved config so a bench run never inherits whatever was toggled by hand.
@@ -72,14 +78,73 @@ func _ready():
 			arb_overrides[key.substr(4)] = float(startup_args[key])
 
 
+# --- Optional dami-ModOptions integration (Enable Bot + Autoshop only) --------
+func _modoptions_interface():
+	var ml = get_node_or_null("/root/ModLoader")
+	if ml == null or not ml.has_node("dami-ModOptions/ModsConfigInterface"):
+		return null
+	return ml.get_node("dami-ModOptions/ModsConfigInterface")
+
+
+func _connect_modoptions() -> void:
+	var iface = _modoptions_interface()
+	if iface == null:
+		return
+	# Apply the panel's stored values for the two toggles we expose.
+	if iface.has_method("get_settings"):
+		var s = iface.get_settings(MOD_NAME)
+		if typeof(s) == TYPE_DICTIONARY:
+			if s.has(ENABLE_AUTOBATTLER_OPTION_NAME):
+				enable_autobattler = s[ENABLE_AUTOBATTLER_OPTION_NAME]
+			if s.has(ENABLE_AUTOSHOP_OPTION_NAME):
+				enable_autoshop = s[ENABLE_AUTOSHOP_OPTION_NAME]
+	if not iface.is_connected("setting_changed", self, "setting_changed"):
+		var _e = iface.connect("setting_changed", self, "setting_changed")
+
+
+# Called by ModOptions when a panel toggle changes. We only own two keys.
+func setting_changed(key: String, value, mod) -> void:
+	if mod != MOD_NAME:
+		return
+	if key == ENABLE_AUTOBATTLER_OPTION_NAME:
+		enable_autobattler = value
+		# Re-fire our own signal so the player's ai_icon marker refreshes when the
+		# toggle is flipped from the ModOptions panel (not just the hotkey). This
+		# does not re-enter here -- this handler listens to ModOptions' signal, not
+		# ours; ours drives only the player marker.
+		emit_signal("setting_changed", key, value, MOD_NAME)
+	elif key == ENABLE_AUTOSHOP_OPTION_NAME:
+		enable_autoshop = value
+
+
+# Push a hotkey/programmatic change back into the ModOptions panel so its checkbox
+# reflects the new state. No-op without the mod.
+func _push_modoption(key: String, value) -> void:
+	var iface = _modoptions_interface()
+	if iface == null:
+		return
+	if ("mod_configs" in iface) and iface.mod_configs.has(MOD_NAME):
+		iface.mod_configs[MOD_NAME][key] = value
+	if iface.has_method("on_setting_changed"):
+		iface.on_setting_changed(key, value, MOD_NAME)
+
+
 func _input(event):
 	# `pressed` + `echo` guards stop a toggle firing twice per press / on auto-repeat.
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.shift and event.scancode == KEY_SPACE and option_cooldown < 0.0:
-			option_cooldown = DEFAULT_COOLDOWN
-			enable_autobattler = not enable_autobattler
-			emit_signal("setting_changed", ENABLE_AUTOBATTLER_OPTION_NAME, enable_autobattler, MOD_NAME)
-			save_configs()
+		if event.shift and event.scancode == KEY_SPACE:
+			# Debounce with a wall-clock timestamp -- Shift+Space arrives as a double
+			# event per physical press (~0.2-0.3s apart), which the old delta cooldown
+			# let slip through, double-toggling to no net change.
+			var now = OS.get_ticks_msec()
+			if now - _last_ss_ms >= 350:
+				_last_ss_ms = now
+				enable_autobattler = not enable_autobattler
+				# Notify our own listeners (the player's ai_icon marker updates from
+				# this) AND reflect into the ModOptions panel.
+				emit_signal("setting_changed", ENABLE_AUTOBATTLER_OPTION_NAME, enable_autobattler, MOD_NAME)
+				_push_modoption(ENABLE_AUTOBATTLER_OPTION_NAME, enable_autobattler)
+				save_configs()
 
 
 func _process(delta):

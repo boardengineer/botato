@@ -1,6 +1,20 @@
 extends "res://ui/menus/global/focus_emulator.gd"
 
 
+# A plain solo run (not a co-op run -- no F1 bots, no other humans) must not route input
+# through the co-op FocusEmulator at all. Vanilla leaves this emulator dormant in solo
+# (connected_players is empty, so _device stays -1); but the mod populates connected_players
+# via the device-add on the select screens, which activates it. An active emulator then
+# swallows the lone human's non-whitelisted keys in the shop -- ui_ban is whitelisted, but
+# ui_select ('e' / lock) is not, which is why ban worked and lock didn't -- and hijacks the
+# mouse's focus. So in a solo run, do nothing here and let vanilla Control focus + the shop's
+# own input handle everything, exactly as an unmodded game does.
+func _input(event: InputEvent) -> void:
+	if not RunData.is_coop_run:
+		return
+	._input(event)
+
+
 # Disable "wrong" players from using input
 # Process player change action
 func _handle_input(event:InputEvent) -> bool:

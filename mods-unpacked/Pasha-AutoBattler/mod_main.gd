@@ -20,6 +20,8 @@ func _init():
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/coop_service.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/input_service.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "singletons/cursor_manager.gd")
+	ModLoaderMod.install_script_extension(ext_dir + "singletons/progress_data.gd")
+	ModLoaderMod.install_script_extension(ext_dir + "singletons/run_data.gd")
 	
 	ModLoaderMod.install_script_extension(ext_dir + "ui/menus/global/focus_emulator.gd")
 	ModLoaderMod.install_script_extension(ext_dir + "ui/menus/ingame/upgrades_ui.gd")
